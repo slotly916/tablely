@@ -188,10 +188,10 @@ export default function Home() {
         .section-title { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 12px; line-height: 1.15; }
         .section-sub { color: var(--muted); font-size: 15px; line-height: 1.7; font-weight: 300; margin-bottom: 32px; }
         .feat-big { display: flex; flex-direction: column; gap: 16px; margin-bottom: 16px; }
-        .feat-big-card { border-radius: 18px; overflow: hidden; position: relative; min-height: 300px; display: flex; flex-direction: column; justify-content: flex-end; padding: 24px; }
+        .feat-big-card { border-radius: 18px; overflow: hidden; position: relative; min-height: 420px; display: flex; flex-direction: column; justify-content: flex-end; padding: 24px; }
         .feat-big-card.dark { background: var(--dark); }
         .feat-big-card.orange { background: var(--orange); }
-        .feat-big-visual { position: absolute; top: 0; left: 0; right: 0; }
+        .feat-big-visual { position: relative; top: auto; left: auto; right: auto; margin-bottom: 16px; }
         .feat-big-content { position: relative; z-index: 2; }
         .feat-big-tag { display: inline-block; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; padding: 3px 8px; border-radius: 5px; margin-bottom: 10px; }
         .dark .feat-big-tag { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); }
@@ -268,7 +268,7 @@ export default function Home() {
           .features { padding: 0 36px 80px; }
           .section-title { font-size: 34px; }
           .feat-big { flex-direction: row; gap: 20px; }
-          .feat-big-card { flex: 1; min-height: 340px; }
+          .feat-big-card { flex: 1; min-height: 400px; }
           .feat-mini-row { flex-direction: row; gap: 16px; }
           .feat-mini { flex: 1; }
 
@@ -309,7 +309,7 @@ export default function Home() {
           .features { padding: 0 48px 100px; }
           .section-title { font-size: 40px; }
           .section-sub { font-size: 16px; margin-bottom: 60px; }
-          .feat-big-card { min-height: 360px; padding: 32px; }
+          .feat-big-card { min-height: 420px; padding: 32px; }
           .feat-big-title { font-size: 24px; }
           .feat-big-desc { font-size: 14px; }
           .feat-mini { padding: 28px; }
