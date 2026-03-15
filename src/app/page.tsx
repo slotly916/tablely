@@ -55,43 +55,14 @@ function WaitlistSection() {
       <h2>Sei unter den <em>Ersten</em><br />in Österreich.</h2>
       <p>Tablely ist bald verfügbar. Trag dich jetzt ein und erhalte exklusiven Frühzugang — inklusive persönlicher Einrichtung durch unser Team.</p>
       <div className="waitlist-form">
-        <input
-          className="waitlist-input"
-          type="text"
-          placeholder="Dein Name"
-          value={name}
-          onChange={e => setName(e.target.value)}
-          disabled={status === "loading"}
-        />
-        <input
-          className="waitlist-input"
-          type="text"
-          placeholder="Name deines Restaurants"
-          value={restaurant}
-          onChange={e => setRestaurant(e.target.value)}
-          disabled={status === "loading"}
-        />
-        <input
-          className="waitlist-input"
-          type="email"
-          placeholder="deine@email.at"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          disabled={status === "loading"}
-          onKeyDown={e => e.key === "Enter" && handleSubmit()}
-        />
-        <button
-          className="waitlist-btn"
-          onClick={handleSubmit}
-          disabled={status === "loading"}
-          style={{opacity: status === "loading" ? 0.7 : 1}}
-        >
+        <input className="waitlist-input" type="text" placeholder="Dein Name" value={name} onChange={e => setName(e.target.value)} disabled={status === "loading"} />
+        <input className="waitlist-input" type="text" placeholder="Name deines Restaurants" value={restaurant} onChange={e => setRestaurant(e.target.value)} disabled={status === "loading"} />
+        <input className="waitlist-input" type="email" placeholder="deine@email.at" value={email} onChange={e => setEmail(e.target.value)} disabled={status === "loading"} onKeyDown={e => e.key === "Enter" && handleSubmit()} />
+        <button className="waitlist-btn" onClick={handleSubmit} disabled={status === "loading"} style={{opacity: status === "loading" ? 0.7 : 1}}>
           {status === "loading" ? "Wird eingetragen..." : "Jetzt eintragen →"}
         </button>
       </div>
-      {errorMsg && (
-        <p style={{color:"#E24B4A", fontSize:"13px", marginTop:"8px"}}>{errorMsg}</p>
-      )}
+      {errorMsg && <p style={{color:"#E24B4A", fontSize:"13px", marginTop:"8px"}}>{errorMsg}</p>}
       <p className="waitlist-note">Kein Spam. Nur eine E-Mail wenn Tablely live geht.</p>
     </section>
   );
@@ -115,7 +86,6 @@ export default function Home() {
         html { scroll-behavior: smooth; }
         body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--dark); overflow-x: hidden; }
 
-        /* ─── NAV ─── */
         nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; position: sticky; top: 0; background: rgba(255,250,245,0.97); backdrop-filter: blur(16px); z-index: 100; border-bottom: 1px solid var(--border); }
         .logo { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--dark); letter-spacing: -0.5px; }
         .logo span { color: var(--orange); }
@@ -126,7 +96,6 @@ export default function Home() {
         .nav-cta { background: var(--dark); color: #fff; border: none; padding: 9px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; transition: all .2s; white-space: nowrap; }
         .nav-cta:hover { background: var(--orange); }
 
-        /* ─── HERO ─── */
         .hero-wrap { background: var(--dark); overflow: hidden; position: relative; }
         .hero-wrap::before { content: ''; position: absolute; top: -200px; right: -200px; width: 600px; height: 600px; background: radial-gradient(circle, rgba(255,92,53,0.12) 0%, transparent 70%); pointer-events: none; }
         .hero { padding: 56px 24px 48px; max-width: 1200px; margin: 0 auto; }
@@ -142,7 +111,6 @@ export default function Home() {
         .hero-note { font-size: 12px; color: rgba(255,255,255,0.35); text-align: center; }
         .hero-visual { display: none; }
 
-        /* ─── DASHBOARD MOCK ─── */
         .dashboard-mock { background: #fff; border-radius: 16px 16px 0 0; padding: 18px; box-shadow: 0 -8px 60px rgba(0,0,0,0.4); }
         .dash-topbar { display: flex; align-items: center; gap: 6px; margin-bottom: 14px; }
         .dash-dot { width: 9px; height: 9px; border-radius: 50%; }
@@ -168,7 +136,6 @@ export default function Home() {
         .dash-notification-text { font-size: 10px; color: var(--dark); line-height: 1.4; }
         .dash-notification-text strong { font-weight: 600; }
 
-        /* ─── PROBLEM ─── */
         .problem { padding: 60px 24px; max-width: 1100px; margin: 0 auto; }
         .problem-grid { display: flex; flex-direction: column; gap: 40px; margin-top: 40px; }
         .stress-card { background: #fff; border-radius: 16px; padding: 20px; border: 1.5px solid var(--border); box-shadow: 0 4px 20px rgba(26,26,46,0.05); }
@@ -182,7 +149,6 @@ export default function Home() {
         .problem-content h2 { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; line-height: 1.15; margin-bottom: 16px; }
         .problem-content p { color: var(--muted); font-size: 15px; line-height: 1.75; font-weight: 300; margin-bottom: 12px; }
 
-        /* ─── FEATURES ─── */
         .features { padding: 0 24px 60px; max-width: 1100px; margin: 0 auto; }
         .section-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; color: var(--orange); margin-bottom: 10px; }
         .section-title { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 12px; line-height: 1.15; }
@@ -217,7 +183,6 @@ export default function Home() {
         .feat-mini-title { font-size: 14px; font-weight: 600; color: var(--dark); margin-bottom: 6px; }
         .feat-mini-desc { font-size: 13px; color: var(--muted); line-height: 1.6; font-weight: 300; }
 
-        /* ─── NUMBERS ─── */
         .numbers { background: var(--dark); padding: 60px 24px; }
         .numbers-inner { max-width: 1100px; margin: 0 auto; }
         .numbers-grid { display: flex; flex-direction: column; margin-top: 32px; border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; overflow: hidden; }
@@ -226,7 +191,6 @@ export default function Home() {
         .number-val { font-family: 'Playfair Display', serif; font-size: 44px; font-weight: 700; color: var(--orange); letter-spacing: -2px; margin-bottom: 8px; }
         .number-label { font-size: 14px; color: rgba(255,255,255,0.45); font-weight: 300; line-height: 1.5; }
 
-        /* ─── WAITLIST ─── */
         .waitlist { padding: 60px 24px; max-width: 680px; margin: 0 auto; text-align: center; }
         .waitlist h2 { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 700; letter-spacing: -1px; line-height: 1.1; margin-bottom: 14px; }
         .waitlist h2 em { color: var(--orange); font-style: italic; }
@@ -239,73 +203,58 @@ export default function Home() {
         .waitlist-btn:hover { background: var(--orange-light); }
         .waitlist-note { font-size: 12px; color: var(--muted); }
 
-        /* ─── FOOTER ─── */
-        footer { padding: 24px; border-top: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+        footer { padding: 24px; border-top: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
         .footer-logo { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 700; }
         .footer-logo span { color: var(--orange); }
+        .footer-links { display: flex; gap: 20px; }
+        .footer-links a { font-size: 12px; color: var(--muted); text-decoration: none; transition: color .2s; }
+        .footer-links a:hover { color: var(--dark); }
         footer p { font-size: 12px; color: var(--muted); }
 
-        /* ════════════════════════════════
-           TABLET — 768px+
-        ════════════════════════════════ */
         @media (min-width: 768px) {
           nav { padding: 18px 36px; }
           .nav-links { display: flex; }
           .nav-cta { padding: 10px 20px; font-size: 14px; }
-
           .hero { padding: 72px 36px 56px; }
           .hero h1 { font-size: 48px; letter-spacing: -1.5px; }
           .hero-sub { font-size: 16px; max-width: 520px; }
           .hero-actions { flex-direction: row; align-items: center; gap: 16px; }
           .btn-waitlist { width: auto; }
           .hero-note { text-align: left; }
-
           .problem { padding: 80px 36px; }
           .problem-grid { flex-direction: row; gap: 48px; align-items: center; margin-top: 48px; }
           .problem-grid > div { flex: 1; }
           .problem-content h2 { font-size: 34px; }
-
           .features { padding: 0 36px 80px; }
           .section-title { font-size: 34px; }
           .feat-big { flex-direction: row; gap: 20px; }
           .feat-big-card { flex: 1; min-height: 400px; }
           .feat-mini-row { flex-direction: row; gap: 16px; }
           .feat-mini { flex: 1; }
-
           .numbers { padding: 72px 36px; }
           .numbers-grid { flex-direction: row; }
           .number-item { flex: 1; border-bottom: none; border-right: 1px solid rgba(255,255,255,0.07); padding: 40px 32px; }
           .number-item:last-child { border-right: none; }
           .number-val { font-size: 48px; }
-
           .waitlist { padding: 80px 36px; }
           .waitlist h2 { font-size: 38px; }
-          .waitlist-form { flex-direction: row; gap: 10px; }
-          .waitlist-input { flex: 1; width: auto; }
-          .waitlist-btn { width: auto; padding: 13px 24px; }
-
-          footer { flex-direction: row; justify-content: space-between; padding: 24px 36px; }
+          .waitlist-form { flex-direction: column; gap: 10px; }
+          footer { flex-direction: row; justify-content: space-between; padding: 24px 36px; gap: 8px; }
         }
 
-        /* ════════════════════════════════
-           DESKTOP — 1024px+
-        ════════════════════════════════ */
         @media (min-width: 1024px) {
           nav { padding: 20px 48px; }
           .nav-right { gap: 32px; }
           .nav-links { gap: 28px; }
-
           .hero { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; padding: 100px 48px 0; align-items: flex-end; }
           .hero h1 { font-size: 58px; letter-spacing: -2px; }
           .hero-sub { font-size: 17px; max-width: 460px; margin-bottom: 40px; }
           .hero-actions { margin-bottom: 48px; }
           .hero-visual { display: block; }
-
           .problem { padding: 100px 48px; }
           .problem-grid { gap: 80px; margin-top: 60px; }
           .problem-content h2 { font-size: 40px; }
           .problem-content p { font-size: 16px; }
-
           .features { padding: 0 48px 100px; }
           .section-title { font-size: 40px; }
           .section-sub { font-size: 16px; margin-bottom: 60px; }
@@ -316,15 +265,12 @@ export default function Home() {
           .feat-mini-icon { width: 36px; height: 36px; margin-bottom: 16px; }
           .feat-mini-icon svg { width: 36px; height: 36px; }
           .feat-mini-title { font-size: 15px; }
-
           .numbers { padding: 80px 48px; }
           .number-item { padding: 48px 40px; }
           .number-val { font-size: 52px; }
-
           .waitlist { padding: 100px 48px; }
           .waitlist h2 { font-size: 44px; }
           .waitlist p { font-size: 17px; margin-bottom: 40px; }
-
           footer { padding: 28px 48px; }
         }
       `}</style>
@@ -446,7 +392,6 @@ export default function Home() {
         <div className="section-label">Wie Tablely funktioniert</div>
         <div className="section-title">Drei Wege zu reservieren.<br />Ein Dashboard für alles.</div>
         <p className="section-sub">WhatsApp, Telefon oder online — deine Gäste wählen wie sie buchen. Tablely übernimmt den Rest vollautomatisch.</p>
-
         <div className="feat-big">
           <div className="feat-big-card dark">
             <div className="feat-big-visual">
@@ -464,7 +409,6 @@ export default function Home() {
               <p className="feat-big-desc">Deine Gäste schreiben per WhatsApp. Die KI versteht Tisch, Personenzahl und Uhrzeit — antwortet in Sekunden und trägt die Reservierung automatisch ins Dashboard ein. Kein einziger Klick von dir.</p>
             </div>
           </div>
-
           <div className="feat-big-card orange">
             <div className="feat-big-visual">
               <div style={{margin:'20px 20px 0', background:'rgba(255,255,255,0.12)', borderRadius:'10px', padding:'14px', border:'1px solid rgba(255,255,255,0.15)'}}>
@@ -495,7 +439,6 @@ export default function Home() {
             </div>
           </div>
         </div>
-
         <div className="feat-mini-row">
           <div className="feat-mini">
             <div className="feat-mini-icon">
@@ -549,6 +492,11 @@ export default function Home() {
       {/* FOOTER */}
       <footer>
         <div className="footer-logo">table<span>ly</span></div>
+        <div className="footer-links">
+          <a href="/impressum">Impressum</a>
+          <a href="/datenschutz">Datenschutz</a>
+          <a href="/agb">AGB</a>
+        </div>
         <p>© 2026 Tablely · Ein Produkt aus Österreich</p>
       </footer>
     </>
