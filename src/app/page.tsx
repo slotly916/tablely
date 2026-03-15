@@ -346,63 +346,81 @@ export default function Home() {
 
       {/* FEATURES */}
       <section className="features" id="features">
-        <div className="section-label">Was Tablely kann</div>
-        <div className="section-title">Alles was du brauchst.<br />Nichts was du nicht brauchst.</div>
-        <p className="section-sub">Drei Kernprobleme. Gelöst. Automatisch.</p>
+        <div className="section-label">Wie Tablely funktioniert</div>
+        <div className="section-title">Drei Wege zu reservieren.<br />Ein Dashboard für alles.</div>
+        <p className="section-sub">WhatsApp, Telefon oder online — deine Gäste wählen wie sie buchen. Tablely übernimmt den Rest vollautomatisch.</p>
+
         <div className="feat-big">
           <div className="feat-big-card dark">
             <div className="feat-big-visual">
               <div className="phone-mini">
-                <div className="phone-mini-msg">Hallo, Tisch für 2 morgen um 19 Uhr möglich? 🙏</div>
+                <div className="phone-mini-msg">Hallo! Tisch für 3 Personen am Freitag um 19:30 Uhr? 🙏</div>
                 <div style={{height:'5px'}}/>
-                <div className="phone-mini-reply">Natürlich! Tisch für 2 am 16.03. um 19:00 Uhr ist reserviert ✅</div>
+                <div className="phone-mini-reply">Perfekt! Tisch für 3 am Fr. 20.03. um 19:30 Uhr ist reserviert ✅ Wir freuen uns auf euch!</div>
+                <div style={{height:'5px'}}/>
+                <div className="phone-mini-msg" style={{fontSize:'10px', opacity:0.7}}>Automatisch eingetragen ins Dashboard ↗</div>
               </div>
             </div>
             <div className="feat-big-content">
-              <div className="feat-big-tag">WhatsApp</div>
-              <div className="feat-big-title">Reservierungen per WhatsApp — vollautomatisch</div>
-              <p className="feat-big-desc">Deine Gäste schreiben wie gewohnt. Tablely antwortet in Sekunden, bestätigt die Buchung und trägt alles ein.</p>
+              <div className="feat-big-tag">WhatsApp KI</div>
+              <div className="feat-big-title">Gäste schreiben — KI antwortet &amp; bucht</div>
+              <p className="feat-big-desc">Deine Gäste schreiben per WhatsApp. Die KI versteht Tisch, Personenzahl und Uhrzeit — antwortet in Sekunden und trägt die Reservierung automatisch ins Dashboard ein. Kein einziger Klick von dir.</p>
             </div>
           </div>
+
           <div className="feat-big-card orange">
             <div className="feat-big-visual">
-              <div className="time-grid">
-                {['17:00','17:30','18:00','18:30','19:00','19:30','20:00','20:30'].map((t,i) => (
-                  <div key={i} className={`time-slot${i===1||i===3||i===6?' taken':i===4?' selected':''}`}>{t}</div>
+              <div style={{margin:'20px 20px 0', background:'rgba(255,255,255,0.12)', borderRadius:'10px', padding:'14px', border:'1px solid rgba(255,255,255,0.15)'}}>
+                <div style={{display:'flex', alignItems:'center', gap:'8px', marginBottom:'12px'}}>
+                  <div style={{width:'28px', height:'28px', borderRadius:'50%', background:'rgba(255,255,255,0.2)', display:'flex', alignItems:'center', justifyContent:'center'}}>
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M3 4a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4z" stroke="white" strokeWidth="1.2"/><path d="M6 8a2 2 0 1 0 4 0 2 2 0 0 0-4 0z" stroke="white" strokeWidth="1.2"/></svg>
+                  </div>
+                  <div style={{fontSize:'11px', color:'rgba(255,255,255,0.9)', fontWeight:500}}>KI Telefonassistent</div>
+                  <div style={{marginLeft:'auto', width:'7px', height:'7px', borderRadius:'50%', background:'#4ade80'}}></div>
+                </div>
+                {[
+                  {l:'Gast ruft an', r:'KI nimmt ab'},
+                  {l:'Tisch, Zeit, Personen', r:'KI versteht alles'},
+                  {l:'Reservierung', r:'Automatisch gespeichert'},
+                  {l:'Komplex oder gewünscht', r:'Weiterleitung ans Team'},
+                ].map((row,i) => (
+                  <div key={i} style={{display:'flex', justifyContent:'space-between', padding:'5px 0', borderBottom: i<3 ? '1px solid rgba(255,255,255,0.1)' : 'none', fontSize:'10px'}}>
+                    <span style={{color:'rgba(255,255,255,0.6)'}}>{row.l}</span>
+                    <span style={{color:'rgba(255,255,255,0.95)', fontWeight:500}}>→ {row.r}</span>
+                  </div>
                 ))}
               </div>
             </div>
             <div className="feat-big-content">
-              <div className="feat-big-tag">Online Buchung</div>
-              <div className="feat-big-title">Online buchen — rund um die Uhr</div>
-              <p className="feat-big-desc">Gäste buchen direkt über deine Website oder Google. Kein Anruf nötig. Auch nachts um 2 Uhr.</p>
+              <div className="feat-big-tag">KI Telefon</div>
+              <div className="feat-big-title">KI nimmt Anrufe entgegen — automatisch</div>
+              <p className="feat-big-desc">Kein Anruf geht mehr verloren. Die KI nimmt ab, fragt nach Tisch, Uhrzeit und Personenzahl — und trägt alles direkt ein. Bei komplexen Anfragen oder auf Wunsch wird sofort ans Personal weitergeleitet.</p>
             </div>
           </div>
         </div>
+
         <div className="feat-mini-row">
-          {[
-            {
-              icon: <svg viewBox="0 0 36 36" fill="none"><path d="M18 4v4M18 4a10 10 0 0 1 10 10c0 5-2 7-2 7H10s-2-2-2-7A10 10 0 0 1 18 4Z" stroke="#FF5C35" strokeWidth="1.6" strokeLinejoin="round"/><path d="M13 25s0 5 5 5 5-5 5-5" stroke="#FF5C35" strokeWidth="1.6" strokeLinecap="round"/></svg>,
-              title: 'Automatische Erinnerungen',
-              desc: 'Tablely erinnert jeden Gast 24h und 2h vor der Reservierung. No-Shows sinken auf nahezu null.'
-            },
-            {
-              icon: <svg viewBox="0 0 36 36" fill="none"><rect x="5" y="5" width="26" height="26" rx="3" stroke="#FF5C35" strokeWidth="1.6"/><path d="M11 26v-6M17 26v-10M23 26v-7M29 26v-13" stroke="#FF5C35" strokeWidth="1.6" strokeLinecap="round"/></svg>,
-              title: 'Echtzeit-Dashboard',
-              desc: 'Alle Reservierungen, Auslastung und Statistiken auf einen Blick. Kein Chaos mehr.'
-            },
-            {
-              icon: <svg viewBox="0 0 36 36" fill="none"><rect x="5" y="8" width="26" height="22" rx="3" stroke="#FF5C35" strokeWidth="1.6"/><path d="M5 14h26" stroke="#FF5C35" strokeWidth="1.6"/><path d="M12 6v4M24 6v4" stroke="#FF5C35" strokeWidth="1.6" strokeLinecap="round"/><path d="M10 20h5M10 25h8M21 20h5" stroke="#FF5C35" strokeWidth="1.6" strokeLinecap="round"/></svg>,
-              title: 'Tischplan-Verwaltung',
-              desc: 'Einmalig einrichten. Tablely weist Reservierungen automatisch zu — keine Doppelbuchungen.'
-            },
-          ].map((f,i) => (
-            <div className="feat-mini" key={i}>
-              <div className="feat-mini-icon">{f.icon}</div>
-              <div className="feat-mini-title">{f.title}</div>
-              <p className="feat-mini-desc">{f.desc}</p>
+          <div className="feat-mini">
+            <div className="feat-mini-icon">
+              <svg viewBox="0 0 36 36" fill="none"><rect x="5" y="8" width="26" height="22" rx="3" stroke="#FF5C35" strokeWidth="1.6"/><path d="M5 14h26" stroke="#FF5C35" strokeWidth="1.6"/><path d="M12 6v4M24 6v4" stroke="#FF5C35" strokeWidth="1.6" strokeLinecap="round"/><circle cx="12" cy="22" r="2" fill="#FF5C35"/><circle cx="18" cy="22" r="2" fill="#FF5C35"/><circle cx="24" cy="22" r="2" stroke="#FF5C35" strokeWidth="1.2"/></svg>
             </div>
-          ))}
+            <div className="feat-mini-title">Online Reservierung</div>
+            <p className="feat-mini-desc">Gäste wählen Tag, Uhrzeit und Personenzahl direkt auf deiner Website. Die Buchung erscheint sofort im Dashboard — ohne Anruf, ohne WhatsApp.</p>
+          </div>
+          <div className="feat-mini">
+            <div className="feat-mini-icon">
+              <svg viewBox="0 0 36 36" fill="none"><rect x="3" y="3" width="30" height="30" rx="4" stroke="#FF5C35" strokeWidth="1.6"/><path d="M3 13h30" stroke="#FF5C35" strokeWidth="1.6"/><path d="M9 8h2M15 8h2M21 8h2" stroke="#FF5C35" strokeWidth="1.4" strokeLinecap="round"/><rect x="8" y="18" width="8" height="6" rx="1.5" fill="#FF5C35" fillOpacity="0.2" stroke="#FF5C35" strokeWidth="1.2"/><rect x="20" y="18" width="8" height="6" rx="1.5" stroke="#FF5C35" strokeWidth="1.2" strokeDasharray="2 1"/></svg>
+            </div>
+            <div className="feat-mini-title">Alles im Dashboard</div>
+            <p className="feat-mini-desc">Egal ob WhatsApp, Telefon oder Online — jede Reservierung landet automatisch im selben Dashboard. Tisch, Personenzahl, Uhrzeit, Kanal. Übersichtlich, live, vollständig.</p>
+          </div>
+          <div className="feat-mini">
+            <div className="feat-mini-icon">
+              <svg viewBox="0 0 36 36" fill="none"><path d="M18 4v4M18 4a10 10 0 0 1 10 10c0 5-2 7-2 7H10s-2-2-2-7A10 10 0 0 1 18 4Z" stroke="#FF5C35" strokeWidth="1.6" strokeLinejoin="round"/><path d="M13 25s0 5 5 5 5-5 5-5" stroke="#FF5C35" strokeWidth="1.6" strokeLinecap="round"/></svg>
+            </div>
+            <div className="feat-mini-title">Automatische Erinnerungen</div>
+            <p className="feat-mini-desc">Tablely erinnert jeden Gast 24h und 2h vor der Reservierung per WhatsApp oder SMS. No-Shows sinken auf nahezu null.</p>
+          </div>
         </div>
       </section>
 
