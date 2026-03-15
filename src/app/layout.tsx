@@ -72,6 +72,7 @@ export default function RootLayout({
   return (
     <html lang="de">
       <head>
+        <meta name="google-site-verification" content="-XaSjn6X11sApCYbt0TT03zvh7MhqFR93FECzOfM8jg" />
         <link rel="icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/favicon.png" />
         <meta name="theme-color" content="#FF5C35" />
