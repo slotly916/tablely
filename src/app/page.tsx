@@ -10,29 +10,13 @@ function WaitlistSection() {
   const [errorMsg, setErrorMsg] = useState("");
 
   async function handleSubmit() {
-    if (!name || !restaurant || !email) {
-      setErrorMsg("Bitte alle Felder ausfüllen.");
-      return;
-    }
-    setStatus("loading");
-    setErrorMsg("");
+    if (!name || !restaurant || !email) { setErrorMsg("Bitte alle Felder ausfüllen."); return; }
+    setStatus("loading"); setErrorMsg("");
     try {
-      const res = await fetch("/api/waitlist", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, restaurant, email }),
-      });
+      const res = await fetch("/api/waitlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, restaurant, email }) });
       const data = await res.json();
-      if (data.success) {
-        setStatus("success");
-      } else {
-        setStatus("error");
-        setErrorMsg(data.error || "Unbekannter Fehler.");
-      }
-    } catch {
-      setStatus("error");
-      setErrorMsg("Verbindungsfehler. Bitte nochmal versuchen.");
-    }
+      if (data.success) { setStatus("success"); } else { setStatus("error"); setErrorMsg(data.error || "Unbekannter Fehler."); }
+    } catch { setStatus("error"); setErrorMsg("Verbindungsfehler. Bitte nochmal versuchen."); }
   }
 
   if (status === "success") {
@@ -69,20 +53,14 @@ function WaitlistSection() {
 }
 
 export default function Home() {
+  const [screenshotDark, setScreenshotDark] = useState(true);
+
   return (
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        :root {
-          --orange: #FF5C35;
-          --orange-light: #FF7A5A;
-          --orange-pale: #FFF0EB;
-          --cream: #FFFAF5;
-          --dark: #1A1A2E;
-          --muted: #6B6B80;
-          --border: #F0EBE3;
-        }
+        :root { --orange:#FF5C35; --orange-light:#FF7A5A; --orange-pale:#FFF0EB; --cream:#FFFAF5; --dark:#1A1A2E; --muted:#6B6B80; --border:#F0EBE3; }
         html { scroll-behavior: smooth; }
         body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--dark); overflow-x: hidden; }
 
@@ -110,7 +88,6 @@ export default function Home() {
         .btn-waitlist:hover { background: var(--orange-light); box-shadow: 0 8px 24px rgba(255,92,53,0.4); }
         .hero-note { font-size: 12px; color: rgba(255,255,255,0.35); text-align: center; }
         .hero-visual { display: none; }
-
         .dashboard-mock { background: #fff; border-radius: 16px 16px 0 0; padding: 18px; box-shadow: 0 -8px 60px rgba(0,0,0,0.4); }
         .dash-topbar { display: flex; align-items: center; gap: 6px; margin-bottom: 14px; }
         .dash-dot { width: 9px; height: 9px; border-radius: 50%; }
@@ -183,7 +160,23 @@ export default function Home() {
         .feat-mini-title { font-size: 14px; font-weight: 600; color: var(--dark); margin-bottom: 6px; }
         .feat-mini-desc { font-size: 13px; color: var(--muted); line-height: 1.6; font-weight: 300; }
 
-        .numbers { background: var(--dark); padding: 60px 24px; }
+        /* SCREENSHOTS SEKTION */
+        .screenshots { padding: 60px 24px; background: var(--dark); overflow: hidden; }
+        .screenshots-inner { max-width: 1100px; margin: 0 auto; }
+        .screenshots-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 40px; }
+        .mode-toggle { display: flex; gap: 4px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); borderRadius: 10px; padding: 4px; }
+        .mode-btn { padding: 7px 16px; border-radius: 7px; font-size: 12px; font-weight: 500; cursor: pointer; font-family: inherit; border: none; transition: all 0.2s; }
+        .mode-btn.active { background: rgba(255,255,255,0.12); color: #fff; }
+        .mode-btn.inactive { background: transparent; color: rgba(255,255,255,0.35); }
+        .screenshots-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+        .screenshot-card { border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08); position: relative; }
+        .screenshot-card img { width: 100%; height: auto; display: block; transition: transform 0.4s ease; }
+        .screenshot-card:hover img { transform: scale(1.02); }
+        .screenshot-label { position: absolute; bottom: 0; left: 0; right: 0; padding: 16px 20px; background: linear-gradient(transparent, rgba(15,15,20,0.9)); }
+        .screenshot-label-title { font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 2px; }
+        .screenshot-label-sub { font-size: 11px; color: rgba(255,255,255,0.45); }
+
+        .numbers { background: var(--dark); padding: 60px 24px; border-top: 1px solid rgba(255,255,255,0.06); }
         .numbers-inner { max-width: 1100px; margin: 0 auto; }
         .numbers-grid { display: flex; flex-direction: column; margin-top: 32px; border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; overflow: hidden; }
         .number-item { padding: 32px 24px; border-bottom: 1px solid rgba(255,255,255,0.07); text-align: center; }
@@ -231,6 +224,8 @@ export default function Home() {
           .feat-big-card { flex: 1; min-height: 400px; }
           .feat-mini-row { flex-direction: row; gap: 16px; }
           .feat-mini { flex: 1; }
+          .screenshots { padding: 80px 36px; }
+          .screenshots-grid { grid-template-columns: 1fr 1fr; }
           .numbers { padding: 72px 36px; }
           .numbers-grid { flex-direction: row; }
           .number-item { flex: 1; border-bottom: none; border-right: 1px solid rgba(255,255,255,0.07); padding: 40px 32px; }
@@ -265,6 +260,8 @@ export default function Home() {
           .feat-mini-icon { width: 36px; height: 36px; margin-bottom: 16px; }
           .feat-mini-icon svg { width: 36px; height: 36px; }
           .feat-mini-title { font-size: 15px; }
+          .screenshots { padding: 100px 48px; }
+          .screenshots-grid { grid-template-columns: 1fr 1fr; gap: 20px; }
           .numbers { padding: 80px 48px; }
           .number-item { padding: 48px 40px; }
           .number-val { font-size: 52px; }
@@ -281,6 +278,7 @@ export default function Home() {
         <div className="nav-right">
           <ul className="nav-links">
             <li><a href="#features">Funktionen</a></li>
+            <li><a href="#screenshots">App</a></li>
             <li><a href="#waitlist">Warteliste</a></li>
           </ul>
           <button className="nav-cta" onClick={() => document.getElementById('waitlist')?.scrollIntoView({behavior:'smooth'})}>
@@ -306,41 +304,20 @@ export default function Home() {
           <div className="hero-visual">
             <div className="dashboard-mock">
               <div className="dash-topbar">
-                <div className="dash-dot r"></div>
-                <div className="dash-dot y"></div>
-                <div className="dash-dot g"></div>
+                <div className="dash-dot r"></div><div className="dash-dot y"></div><div className="dash-dot g"></div>
                 <span className="dash-title">Tablely Dashboard – Heute</span>
               </div>
               <div className="dash-stats">
-                <div className="dash-stat">
-                  <div className="dash-stat-label">Reservierungen</div>
-                  <div className="dash-stat-val">24</div>
-                  <div className="dash-stat-sub">↑ +6 vs. gestern</div>
-                </div>
-                <div className="dash-stat">
-                  <div className="dash-stat-label">No-Shows</div>
-                  <div className="dash-stat-val">0</div>
-                  <div className="dash-stat-sub" style={{color:'var(--orange)'}}>Alle erinnert ✓</div>
-                </div>
-                <div className="dash-stat">
-                  <div className="dash-stat-label">WhatsApp</div>
-                  <div className="dash-stat-val">11</div>
-                  <div className="dash-stat-sub">Auto-beantwortet</div>
-                </div>
+                <div className="dash-stat"><div className="dash-stat-label">Reservierungen</div><div className="dash-stat-val">24</div><div className="dash-stat-sub">↑ +6 vs. gestern</div></div>
+                <div className="dash-stat"><div className="dash-stat-label">No-Shows</div><div className="dash-stat-val">0</div><div className="dash-stat-sub" style={{color:'var(--orange)'}}>Alle erinnert ✓</div></div>
+                <div className="dash-stat"><div className="dash-stat-label">WhatsApp</div><div className="dash-stat-val">11</div><div className="dash-stat-sub">Auto-beantwortet</div></div>
               </div>
               <div className="dash-section-title">Nächste Reservierungen</div>
               <div className="dash-reservations">
-                {[
-                  {i:'MK', name:'Maria K.', time:'18:30 · 4 Pers.', badge:'badge-confirmed', label:'Bestätigt'},
-                  {i:'TH', name:'Thomas H.', time:'19:00 · 2 Pers.', badge:'badge-wa', label:'via WhatsApp'},
-                  {i:'SF', name:'Sarah F.', time:'19:30 · 6 Pers.', badge:'badge-pending', label:'Ausstehend'},
-                ].map((r,i) => (
+                {[{i:'MK',name:'Maria K.',time:'18:30 · 4 Pers.',badge:'badge-confirmed',label:'Bestätigt'},{i:'TH',name:'Thomas H.',time:'19:00 · 2 Pers.',badge:'badge-wa',label:'via WhatsApp'},{i:'SF',name:'Sarah F.',time:'19:30 · 6 Pers.',badge:'badge-pending',label:'Ausstehend'}].map((r,i) => (
                   <div className="dash-res-row" key={i}>
                     <div className="dash-res-avatar">{r.i}</div>
-                    <div className="dash-res-info">
-                      <div className="dash-res-name">{r.name}</div>
-                      <div className="dash-res-time">{r.time}</div>
-                    </div>
+                    <div className="dash-res-info"><div className="dash-res-name">{r.name}</div><div className="dash-res-time">{r.time}</div></div>
                     <span className={`dash-res-badge ${r.badge}`}>{r.label}</span>
                   </div>
                 ))}
@@ -363,16 +340,9 @@ export default function Home() {
                 <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="#E24B4A" strokeWidth="1.2"/><path d="M8 4v5M8 11v1" stroke="#E24B4A" strokeWidth="1.2" strokeLinecap="round"/></svg>
                 So war es bisher
               </div>
-              {[
-                {t:'Telefon klingelt mitten in der Stoßzeit', d:'Du nimmst ab, verlierst den Faden — der Tisch wartet.'},
-                {t:'No-Show um 20:00 Uhr', d:'Tisch für 4 bleibt leer. Umsatz verloren, nichts zu machen.'},
-                {t:'WhatsApp-Chaos', d:'23 ungelesene Nachrichten. Wer hat wo gebucht?'},
-                {t:'Doppelbuchungen', d:'Zwei Gäste, ein Tisch. Peinlich und vermeidbar.'},
-              ].map((s,i) => (
+              {[{t:'Telefon klingelt mitten in der Stoßzeit',d:'Du nimmst ab, verlierst den Faden — der Tisch wartet.'},{t:'No-Show um 20:00 Uhr',d:'Tisch für 4 bleibt leer. Umsatz verloren, nichts zu machen.'},{t:'WhatsApp-Chaos',d:'23 ungelesene Nachrichten. Wer hat wo gebucht?'},{t:'Doppelbuchungen',d:'Zwei Gäste, ein Tisch. Peinlich und vermeidbar.'}].map((s,i) => (
                 <div className="stress-item" key={i}>
-                  <div className="stress-x">
-                    <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M8 2l-6 6" stroke="#E24B4A" strokeWidth="1.2" strokeLinecap="round"/></svg>
-                  </div>
+                  <div className="stress-x"><svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M8 2l-6 6" stroke="#E24B4A" strokeWidth="1.2" strokeLinecap="round"/></svg></div>
                   <div className="stress-text"><strong>{s.t}</strong>{s.d}</div>
                 </div>
               ))}
@@ -400,34 +370,29 @@ export default function Home() {
                 <div style={{height:'5px'}}/>
                 <div className="phone-mini-reply">Perfekt! Tisch für 3 am Fr. 20.03. um 19:30 Uhr ist reserviert ✅ Wir freuen uns auf euch!</div>
                 <div style={{height:'5px'}}/>
-                <div className="phone-mini-msg" style={{fontSize:'10px', opacity:0.7}}>Automatisch eingetragen ins Dashboard ↗</div>
+                <div className="phone-mini-msg" style={{fontSize:'10px',opacity:0.7}}>Automatisch eingetragen ins Dashboard ↗</div>
               </div>
             </div>
             <div className="feat-big-content">
               <div className="feat-big-tag">WhatsApp KI</div>
               <div className="feat-big-title">Gäste schreiben — KI antwortet &amp; bucht</div>
-              <p className="feat-big-desc">Deine Gäste schreiben per WhatsApp. Die KI versteht Tisch, Personenzahl und Uhrzeit — antwortet in Sekunden und trägt die Reservierung automatisch ins Dashboard ein. Kein einziger Klick von dir.</p>
+              <p className="feat-big-desc">Deine Gäste schreiben per WhatsApp. Die KI versteht Tisch, Personenzahl und Uhrzeit — antwortet in Sekunden und trägt die Reservierung automatisch ins Dashboard ein.</p>
             </div>
           </div>
           <div className="feat-big-card orange">
             <div className="feat-big-visual">
-              <div style={{margin:'20px 20px 0', background:'rgba(255,255,255,0.12)', borderRadius:'10px', padding:'14px', border:'1px solid rgba(255,255,255,0.15)'}}>
-                <div style={{display:'flex', alignItems:'center', gap:'8px', marginBottom:'12px'}}>
-                  <div style={{width:'28px', height:'28px', borderRadius:'50%', background:'rgba(255,255,255,0.2)', display:'flex', alignItems:'center', justifyContent:'center'}}>
+              <div style={{margin:'20px 20px 0',background:'rgba(255,255,255,0.12)',borderRadius:'10px',padding:'14px',border:'1px solid rgba(255,255,255,0.15)'}}>
+                <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'12px'}}>
+                  <div style={{width:'28px',height:'28px',borderRadius:'50%',background:'rgba(255,255,255,0.2)',display:'flex',alignItems:'center',justifyContent:'center'}}>
                     <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M3 4a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4z" stroke="white" strokeWidth="1.2"/><path d="M6 8a2 2 0 1 0 4 0 2 2 0 0 0-4 0z" stroke="white" strokeWidth="1.2"/></svg>
                   </div>
-                  <div style={{fontSize:'11px', color:'rgba(255,255,255,0.9)', fontWeight:500}}>KI Telefonassistent</div>
-                  <div style={{marginLeft:'auto', width:'7px', height:'7px', borderRadius:'50%', background:'#4ade80'}}></div>
+                  <div style={{fontSize:'11px',color:'rgba(255,255,255,0.9)',fontWeight:500}}>KI Telefonassistent</div>
+                  <div style={{marginLeft:'auto',width:'7px',height:'7px',borderRadius:'50%',background:'#4ade80'}}></div>
                 </div>
-                {[
-                  {l:'Gast ruft an', r:'KI nimmt ab'},
-                  {l:'Tisch, Zeit, Personen', r:'KI versteht alles'},
-                  {l:'Reservierung', r:'Automatisch gespeichert'},
-                  {l:'Komplex oder gewünscht', r:'Weiterleitung ans Team'},
-                ].map((row,i) => (
-                  <div key={i} style={{display:'flex', justifyContent:'space-between', padding:'5px 0', borderBottom: i<3 ? '1px solid rgba(255,255,255,0.1)' : 'none', fontSize:'10px'}}>
+                {[{l:'Gast ruft an',r:'KI nimmt ab'},{l:'Tisch, Zeit, Personen',r:'KI versteht alles'},{l:'Reservierung',r:'Automatisch gespeichert'},{l:'Komplex oder gewünscht',r:'Weiterleitung ans Team'}].map((row,i) => (
+                  <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'5px 0',borderBottom:i<3?'1px solid rgba(255,255,255,0.1)':'none',fontSize:'10px'}}>
                     <span style={{color:'rgba(255,255,255,0.6)'}}>{row.l}</span>
-                    <span style={{color:'rgba(255,255,255,0.95)', fontWeight:500}}>→ {row.r}</span>
+                    <span style={{color:'rgba(255,255,255,0.95)',fontWeight:500}}>→ {row.r}</span>
                   </div>
                 ))}
               </div>
@@ -435,32 +400,84 @@ export default function Home() {
             <div className="feat-big-content">
               <div className="feat-big-tag">KI Telefon</div>
               <div className="feat-big-title">KI nimmt Anrufe entgegen — automatisch</div>
-              <p className="feat-big-desc">Kein Anruf geht mehr verloren. Die KI nimmt ab, fragt nach Tisch, Uhrzeit und Personenzahl — und trägt alles direkt ein. Bei komplexen Anfragen oder auf Wunsch wird sofort ans Personal weitergeleitet.</p>
+              <p className="feat-big-desc">Kein Anruf geht mehr verloren. Die KI nimmt ab, fragt nach Tisch, Uhrzeit und Personenzahl — und trägt alles direkt ein.</p>
             </div>
           </div>
         </div>
         <div className="feat-mini-row">
           <div className="feat-mini">
-            <div className="feat-mini-icon">
-              <svg viewBox="0 0 36 36" fill="none"><rect x="5" y="8" width="26" height="22" rx="3" stroke="#FF5C35" strokeWidth="1.6"/><path d="M5 14h26" stroke="#FF5C35" strokeWidth="1.6"/><path d="M12 6v4M24 6v4" stroke="#FF5C35" strokeWidth="1.6" strokeLinecap="round"/><circle cx="12" cy="22" r="2" fill="#FF5C35"/><circle cx="18" cy="22" r="2" fill="#FF5C35"/><circle cx="24" cy="22" r="2" stroke="#FF5C35" strokeWidth="1.2"/></svg>
-            </div>
+            <div className="feat-mini-icon"><svg viewBox="0 0 36 36" fill="none"><rect x="5" y="8" width="26" height="22" rx="3" stroke="#FF5C35" strokeWidth="1.6"/><path d="M5 14h26" stroke="#FF5C35" strokeWidth="1.6"/><path d="M12 6v4M24 6v4" stroke="#FF5C35" strokeWidth="1.6" strokeLinecap="round"/><circle cx="12" cy="22" r="2" fill="#FF5C35"/><circle cx="18" cy="22" r="2" fill="#FF5C35"/><circle cx="24" cy="22" r="2" stroke="#FF5C35" strokeWidth="1.2"/></svg></div>
             <div className="feat-mini-title">Online Reservierung</div>
-            <p className="feat-mini-desc">Gäste wählen Tag, Uhrzeit und Personenzahl direkt auf deiner Website. Die Buchung erscheint sofort im Dashboard — ohne Anruf, ohne WhatsApp.</p>
+            <p className="feat-mini-desc">Gäste wählen Tag, Uhrzeit und Personenzahl direkt auf deiner Website. Die Buchung erscheint sofort im Dashboard.</p>
           </div>
           <div className="feat-mini">
-            <div className="feat-mini-icon">
-              <svg viewBox="0 0 36 36" fill="none"><rect x="3" y="3" width="30" height="30" rx="4" stroke="#FF5C35" strokeWidth="1.6"/><path d="M3 13h30" stroke="#FF5C35" strokeWidth="1.6"/><path d="M9 8h2M15 8h2M21 8h2" stroke="#FF5C35" strokeWidth="1.4" strokeLinecap="round"/><rect x="8" y="18" width="8" height="6" rx="1.5" fill="#FF5C35" fillOpacity="0.2" stroke="#FF5C35" strokeWidth="1.2"/><rect x="20" y="18" width="8" height="6" rx="1.5" stroke="#FF5C35" strokeWidth="1.2" strokeDasharray="2 1"/></svg>
-            </div>
+            <div className="feat-mini-icon"><svg viewBox="0 0 36 36" fill="none"><rect x="3" y="3" width="30" height="30" rx="4" stroke="#FF5C35" strokeWidth="1.6"/><path d="M3 13h30" stroke="#FF5C35" strokeWidth="1.6"/><path d="M9 8h2M15 8h2M21 8h2" stroke="#FF5C35" strokeWidth="1.4" strokeLinecap="round"/><rect x="8" y="18" width="8" height="6" rx="1.5" fill="#FF5C35" fillOpacity="0.2" stroke="#FF5C35" strokeWidth="1.2"/><rect x="20" y="18" width="8" height="6" rx="1.5" stroke="#FF5C35" strokeWidth="1.2" strokeDasharray="2 1"/></svg></div>
             <div className="feat-mini-title">Alles im Dashboard</div>
-            <p className="feat-mini-desc">Egal ob WhatsApp, Telefon oder Online — jede Reservierung landet automatisch im selben Dashboard. Tisch, Personenzahl, Uhrzeit, Kanal. Übersichtlich, live, vollständig.</p>
+            <p className="feat-mini-desc">Egal ob WhatsApp, Telefon oder Online — jede Reservierung landet automatisch im selben Dashboard.</p>
           </div>
           <div className="feat-mini">
-            <div className="feat-mini-icon">
-              <svg viewBox="0 0 36 36" fill="none"><path d="M18 4v4M18 4a10 10 0 0 1 10 10c0 5-2 7-2 7H10s-2-2-2-7A10 10 0 0 1 18 4Z" stroke="#FF5C35" strokeWidth="1.6" strokeLinejoin="round"/><path d="M13 25s0 5 5 5 5-5 5-5" stroke="#FF5C35" strokeWidth="1.6" strokeLinecap="round"/></svg>
-            </div>
+            <div className="feat-mini-icon"><svg viewBox="0 0 36 36" fill="none"><path d="M18 4v4M18 4a10 10 0 0 1 10 10c0 5-2 7-2 7H10s-2-2-2-7A10 10 0 0 1 18 4Z" stroke="#FF5C35" strokeWidth="1.6" strokeLinejoin="round"/><path d="M13 25s0 5 5 5 5-5 5-5" stroke="#FF5C35" strokeWidth="1.6" strokeLinecap="round"/></svg></div>
             <div className="feat-mini-title">Automatische Erinnerungen</div>
-            <p className="feat-mini-desc">Tablely erinnert jeden Gast 24h und 2h vor der Reservierung per WhatsApp oder SMS. No-Shows sinken auf nahezu null.</p>
+            <p className="feat-mini-desc">Tablely erinnert jeden Gast 24h und 2h vor der Reservierung. No-Shows sinken auf nahezu null.</p>
           </div>
+        </div>
+      </section>
+
+      {/* SCREENSHOTS */}
+      <section id="screenshots" style={{padding:'80px 24px',background:'var(--cream)',overflow:'hidden'}}>
+        <div style={{maxWidth:'1100px',margin:'0 auto'}}>
+
+          {/* Header */}
+          <div style={{textAlign:'center',marginBottom:'48px'}}>
+            <div className="section-label">So sieht Tablely aus</div>
+            <div className="section-title">Eine App die einfach funktioniert.</div>
+            <p style={{color:'var(--muted)',fontSize:'15px',fontWeight:300,maxWidth:'480px',margin:'0 auto 24px'}}>Klar, übersichtlich, schnell. Entwickelt für Menschen die keine Zeit für komplizierte Software haben.</p>
+            <div style={{display:'inline-flex',gap:'4px',background:'#F0EBE3',borderRadius:'10px',padding:'4px'}}>
+              <button onClick={() => setScreenshotDark(true)} style={{padding:'7px 18px',borderRadius:'7px',fontSize:'13px',fontWeight:500,cursor:'pointer',fontFamily:'inherit',border:'none',transition:'all 0.2s',background:screenshotDark?'#1A1A2E':'transparent',color:screenshotDark?'#fff':'var(--muted)'}}>Dunkel</button>
+              <button onClick={() => setScreenshotDark(false)} style={{padding:'7px 18px',borderRadius:'7px',fontSize:'13px',fontWeight:500,cursor:'pointer',fontFamily:'inherit',border:'none',transition:'all 0.2s',background:!screenshotDark?'#1A1A2E':'transparent',color:!screenshotDark?'#fff':'var(--muted)'}}>Hell</button>
+            </div>
+          </div>
+
+          {/* Main Dashboard Screenshot */}
+          <div style={{position:'relative',marginBottom:'20px'}}>
+            {/* Browser chrome */}
+            <div style={{background:'#E8E4DF',borderRadius:'16px 16px 0 0',padding:'10px 16px',display:'flex',alignItems:'center',gap:'6px',border:'1px solid #D8D3CE',borderBottom:'none'}}>
+              <div style={{width:'10px',height:'10px',borderRadius:'50%',background:'#FF5F57'}}/>
+              <div style={{width:'10px',height:'10px',borderRadius:'50%',background:'#FEBC2E'}}/>
+              <div style={{width:'10px',height:'10px',borderRadius:'50%',background:'#28C840'}}/>
+              <div style={{flex:1,background:'#fff',borderRadius:'6px',padding:'4px 12px',margin:'0 12px',fontSize:'11px',color:'var(--muted)',textAlign:'center',border:'1px solid #D8D3CE'}}>tablely.at/dashboard</div>
+            </div>
+            <div style={{border:'1px solid #D8D3CE',borderTop:'none',borderRadius:'0 0 16px 16px',overflow:'hidden',boxShadow:'0 24px 60px rgba(26,26,46,0.12)'}}>
+              <img src={screenshotDark?'/dashboard-dunkel.png':'/dashboard-hell.png'} alt="Tablely Dashboard" style={{width:'100%',height:'auto',display:'block',transition:'opacity 0.3s'}}/>
+            </div>
+            <div style={{textAlign:'center',marginTop:'12px'}}>
+              <span style={{fontSize:'12px',color:'var(--muted)',fontWeight:500}}>Dashboard — Alle Reservierungen auf einen Blick</span>
+            </div>
+          </div>
+
+          {/* Two screenshots side by side */}
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'20px',marginTop:'32px'}}>
+            {[
+              {src:screenshotDark?'/reservierung-dunkel.png':'/reservierung-hell.png',label:'Neue Reservierung eintragen',url:'tablely.at/dashboard/new'},
+              {src:'/bookingpage.png',label:'Online Booking Page für Gäste',url:'tablely.at/book/restaurant'},
+            ].map((s,i) => (
+              <div key={i}>
+                <div style={{background:'#E8E4DF',borderRadius:'12px 12px 0 0',padding:'8px 12px',display:'flex',alignItems:'center',gap:'5px',border:'1px solid #D8D3CE',borderBottom:'none'}}>
+                  <div style={{width:'8px',height:'8px',borderRadius:'50%',background:'#FF5F57'}}/>
+                  <div style={{width:'8px',height:'8px',borderRadius:'50%',background:'#FEBC2E'}}/>
+                  <div style={{width:'8px',height:'8px',borderRadius:'50%',background:'#28C840'}}/>
+                  <div style={{flex:1,background:'#fff',borderRadius:'5px',padding:'3px 10px',margin:'0 8px',fontSize:'10px',color:'var(--muted)',textAlign:'center',border:'1px solid #D8D3CE'}}>{s.url}</div>
+                </div>
+                <div style={{border:'1px solid #D8D3CE',borderTop:'none',borderRadius:'0 0 12px 12px',overflow:'hidden',boxShadow:'0 12px 32px rgba(26,26,46,0.08)'}}>
+                  <img src={s.src} alt={s.label} style={{width:'100%',height:'auto',display:'block',transition:'opacity 0.3s'}}/>
+                </div>
+                <div style={{textAlign:'center',marginTop:'10px'}}>
+                  <span style={{fontSize:'12px',color:'var(--muted)',fontWeight:500}}>{s.label}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
         </div>
       </section>
 
@@ -468,20 +485,11 @@ export default function Home() {
       <div className="numbers">
         <div className="numbers-inner">
           <div className="section-label" style={{color:'var(--orange)'}}>Was Tablely bewirkt</div>
-          <div className="section-title" style={{color:'#fff', marginBottom:'0'}}>Zahlen die sprechen.</div>
+          <div className="section-title" style={{color:'#fff',marginBottom:'0'}}>Zahlen die sprechen.</div>
           <div className="numbers-grid">
-            <div className="number-item">
-              <div className="number-val">–60%</div>
-              <div className="number-label">weniger No-Shows durch automatische Erinnerungen</div>
-            </div>
-            <div className="number-item">
-              <div className="number-val">2h</div>
-              <div className="number-label">täglich gespart — keine Reservierungsanrufe mehr</div>
-            </div>
-            <div className="number-item">
-              <div className="number-val">24/7</div>
-              <div className="number-label">Buchungen annehmen — auch wenn du schläfst</div>
-            </div>
+            <div className="number-item"><div className="number-val">–60%</div><div className="number-label">weniger No-Shows durch automatische Erinnerungen</div></div>
+            <div className="number-item"><div className="number-val">2h</div><div className="number-label">täglich gespart — keine Reservierungsanrufe mehr</div></div>
+            <div className="number-item"><div className="number-val">24/7</div><div className="number-label">Buchungen annehmen — auch wenn du schläfst</div></div>
           </div>
         </div>
       </div>
