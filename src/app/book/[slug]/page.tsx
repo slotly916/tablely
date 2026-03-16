@@ -189,10 +189,10 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
     return times;
   }
 
-  function isDateAvailable(dateStr: string) {
+  function isDateAvailable(dateStr: string): boolean {
     const dayOfWeek = (new Date(dateStr).getDay() + 6) % 7;
     const hour = hours.find(h => h.day_of_week === dayOfWeek);
-    return hour && !hour.is_closed;
+    return !!(hour && !hour.is_closed);
   }
 
   async function handleSubmit() {
