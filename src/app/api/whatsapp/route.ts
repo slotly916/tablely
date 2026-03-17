@@ -38,16 +38,26 @@ export async function POST(req: Request) {
 
   const from = message.from; // Telefonnummer des Gastes
   const text = message.text.body;
-  const restaurantPhone = change?.value?.metadata?.display_phone_number;
+  const phoneNumberId = change?.value?.metadata?.phone_number_id;
 
-  // Restaurant anhand der WhatsApp Nummer finden
+  // Restaurant anhand der Phone Number ID finden
   const { data: restaurant } = await supabase
     .from("restaurants")
     .select("*")
-    .eq("phone", restaurantPhone)
+    .eq("whatsapp_phone_id", phoneNumberId)
     .single();
 
-  if (!restaurant) {
+  // Fallback: erstes Restaurant nehmen wenn keine Zuordnung
+  const { data: fallbackRestaurant } = restaurant ? { data: null } : await supabase
+    .from("restaurants")
+    .select("*")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .single();
+
+  const activeRestaurant = restaurant || fallbackRestaurant;
+
+  if (!activeRestaurant) {
     await sendWhatsApp(from, "Entschuldigung, dieses Restaurant konnte nicht gefunden werden.");
     return NextResponse.json({ ok: true });
   }
@@ -56,7 +66,7 @@ export async function POST(req: Request) {
   const { data: hours } = await supabase
     .from("opening_hours")
     .select("*")
-    .eq("restaurant_id", restaurant.id);
+    .eq("restaurant_id", activeRestaurant.id);
 
   const hoursText = hours?.map(h => {
     const days = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag","Sonntag"];
@@ -74,7 +84,7 @@ export async function POST(req: Request) {
       messages: [
         {
           role: "system",
-          content: `Du bist der freundliche Reservierungsassistent von "${restaurant.name}" in Österreich.
+          content: `Du bist der freundliche Reservierungsassistent von "${activeRestaurant.name}" in Österreich.
 Heute ist ${today}.
 Öffnungszeiten: ${hoursText}
 
@@ -104,7 +114,7 @@ Deine Aufgabe:
 
       // Reservierung in Supabase speichern
       await supabase.from("reservations").insert([{
-        restaurant_id: restaurant.id,
+        restaurant_id: activeRestaurant.id,
         guest_name: resData.name,
         guest_phone: from,
         party_size: resData.party_size,
