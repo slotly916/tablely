@@ -1,6 +1,73 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+function CountdownTimer() {
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+
+  useEffect(() => {
+    const target = new Date("2026-04-30T00:00:00");
+    function update() {
+      const diff = target.getTime() - new Date().getTime();
+      if (diff <= 0) return;
+      setTimeLeft({
+        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((diff % (1000 * 60)) / 1000),
+      });
+    }
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div style={{display:"flex",gap:"12px",justifyContent:"center",marginBottom:"32px"}}>
+      {[
+        {val:timeLeft.days, label:"Tage"},
+        {val:timeLeft.hours, label:"Stunden"},
+        {val:timeLeft.minutes, label:"Minuten"},
+        {val:timeLeft.seconds, label:"Sekunden"},
+      ].map((t,i) => (
+        <div key={i} style={{textAlign:"center",background:"#1A1A2E",borderRadius:"12px",padding:"16px 20px",minWidth:"72px"}}>
+          <div style={{fontFamily:"Georgia,serif",fontSize:"32px",fontWeight:700,color:"#FF5C35",letterSpacing:"-1px",lineHeight:1}}>{String(t.val).padStart(2,"0")}</div>
+          <div style={{fontSize:"10px",color:"rgba(255,255,255,0.4)",marginTop:"4px",textTransform:"uppercase",letterSpacing:"0.5px"}}>{t.label}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function WaitlistCounter() {
+  const [count, setCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch("/api/waitlist-count")
+      .then(r => r.json())
+      .then(d => setCount(d.count))
+      .catch(() => setCount(null));
+  }, []);
+
+  if (count === null) return null;
+
+  return (
+    <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"8px",marginBottom:"20px"}}>
+      <div style={{display:"flex",gap:"-4px"}}>
+        {["MK","TH","SF","LW"].map((i,idx) => (
+          <div key={idx} style={{width:"28px",height:"28px",borderRadius:"50%",background:["#FF5C35","#1A1A2E","#FF7A5A","#2E2E42"][idx],border:"2px solid #FFFAF5",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"9px",fontWeight:600,color:"#fff",marginLeft:idx>0?"-8px":"0",zIndex:4-idx}}>
+            {i}
+          </div>
+        ))}
+      </div>
+      <span style={{fontSize:"14px",color:"#6B6B80",fontWeight:400}}>
+        <strong style={{color:"#1A1A2E"}}>{count} Restaurants</strong> bereits auf der Warteliste
+      </span>
+    </div>
+  );
+}
+
+const MAX_SPOTS = 20;
 
 function WaitlistSection() {
   const [name, setName] = useState("");
@@ -8,6 +75,22 @@ function WaitlistSection() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle"|"loading"|"success"|"error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const [waitlistCount, setWaitlistCount] = useState<number|null>(null);
+
+  useEffect(() => {
+    fetch("/api/waitlist-count")
+      .then(r => r.json())
+      .then(d => setWaitlistCount(d.count))
+      .catch(() => {});
+  }, []);
+  const [count, setCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch("/api/waitlist-count")
+      .then(r => r.json())
+      .then(d => setCount(d.count))
+      .catch(() => setCount(null));
+  }, []);
 
   async function handleSubmit() {
     if (!name || !restaurant || !email) { setErrorMsg("Bitte alle Felder ausfüllen."); return; }
@@ -15,7 +98,7 @@ function WaitlistSection() {
     try {
       const res = await fetch("/api/waitlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, restaurant, email }) });
       const data = await res.json();
-      if (data.success) { setStatus("success"); } else { setStatus("error"); setErrorMsg(data.error || "Unbekannter Fehler."); }
+      if (data.success) { setStatus("success"); if (count !== null) setCount(count + 1); } else { setStatus("error"); setErrorMsg(data.error || "Unbekannter Fehler."); }
     } catch { setStatus("error"); setErrorMsg("Verbindungsfehler. Bitte nochmal versuchen."); }
   }
 
@@ -35,25 +118,69 @@ function WaitlistSection() {
 
   return (
     <section className="waitlist" id="waitlist">
-      <div className="section-label" style={{textAlign:"center"}}>Warteliste</div>
-      <h2>Sei unter den <em>Ersten</em><br />in Österreich.</h2>
-      <p>Tablely ist bald verfügbar. Trag dich jetzt ein und erhalte exklusiven Frühzugang — inklusive persönlicher Einrichtung durch unser Team.</p>
+      <div className="section-label" style={{textAlign:"center"}}>Beta startet am 30. April 2026</div>
+      <h2>Nur <em>20 Plätze</em><br />für Restaurants.</h2>
+
+      <CountdownTimer />
+      <WaitlistCounter />
+
+      <div style={{background:"#FFF0EB",border:"1px solid rgba(255,92,53,0.2)",borderRadius:"12px",padding:"12px 20px",marginBottom:"24px",display:"inline-flex",alignItems:"center",gap:"8px"}}>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#FF5C35" strokeWidth="1.3"/><path d="M7 4v3.5L9 9" stroke="#FF5C35" strokeWidth="1.3" strokeLinecap="round"/></svg>
+        <span style={{fontSize:"13px",color:"#FF5C35",fontWeight:500}}>Nur noch wenige Plätze verfügbar</span>
+      </div>
+
+      <p style={{color:"var(--muted)",fontSize:"15px",lineHeight:1.7,fontWeight:300,marginBottom:"28px"}}>Teste Tablely 40 Tage kostenlos. Wir suchen Restaurants die uns helfen die App zu perfektionieren — danach dauerhaft vergünstigt.</p>
       <div className="waitlist-form">
         <input className="waitlist-input" type="text" placeholder="Dein Name" value={name} onChange={e => setName(e.target.value)} disabled={status === "loading"} />
         <input className="waitlist-input" type="text" placeholder="Name deines Restaurants" value={restaurant} onChange={e => setRestaurant(e.target.value)} disabled={status === "loading"} />
         <input className="waitlist-input" type="email" placeholder="deine@email.at" value={email} onChange={e => setEmail(e.target.value)} disabled={status === "loading"} onKeyDown={e => e.key === "Enter" && handleSubmit()} />
         <button className="waitlist-btn" onClick={handleSubmit} disabled={status === "loading"} style={{opacity: status === "loading" ? 0.7 : 1}}>
-          {status === "loading" ? "Wird eingetragen..." : "Jetzt eintragen →"}
+          {status === "loading" ? "Wird eingetragen..." : "Jetzt Platz sichern →"}
         </button>
       </div>
       {errorMsg && <p style={{color:"#E24B4A", fontSize:"13px", marginTop:"8px"}}>{errorMsg}</p>}
-      <p className="waitlist-note">Kein Spam. Nur eine E-Mail wenn Tablely live geht.</p>
+      {/* SOCIAL PROOF */}
+      {count !== null && count > 0 && (
+        <div style={{marginTop:"16px",display:"flex",alignItems:"center",justifyContent:"center",gap:"8px",flexWrap:"wrap"}}>
+          <div style={{display:"flex"}}>
+            {["MK","TH","SF","AW","LB"].slice(0, Math.min(count, 5)).map((initials,i) => (
+              <div key={i} style={{width:"28px",height:"28px",borderRadius:"50%",background:["#FF5C35","#6366F1","#25C281","#F59E0B","#EC4899"][i],border:"2px solid #FFFAF5",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"10px",fontWeight:600,color:"#fff",marginLeft:i>0?"-8px":"0",position:"relative",zIndex:5-i}}>
+                {initials}
+              </div>
+            ))}
+          </div>
+          <span style={{fontSize:"13px",color:"var(--muted)"}}>
+            <strong style={{color:"var(--dark)"}}>{count} Restaurant{count !== 1 ? "s" : ""}</strong> bereits auf der Warteliste
+          </span>
+        </div>
+      )}
+
+      <p className="waitlist-note" style={{marginTop:"12px"}}>Kein Spam. Nur eine E-Mail wenn Tablely live geht.</p>
     </section>
   );
 }
 
 export default function Home() {
   const [screenshotDark, setScreenshotDark] = useState(true);
+  const [countdownDays, setCountdownDays] = useState(0);
+  const [countdownHours, setCountdownHours] = useState(0);
+  const [countdownMinutes, setCountdownMinutes] = useState(0);
+  const [countdownSeconds, setCountdownSeconds] = useState(0);
+
+  useEffect(() => {
+    const target = new Date("2026-04-30T00:00:00");
+    function update() {
+      const diff = target.getTime() - new Date().getTime();
+      if (diff <= 0) return;
+      setCountdownDays(Math.floor(diff / (1000 * 60 * 60 * 24)));
+      setCountdownHours(Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)));
+      setCountdownMinutes(Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)));
+      setCountdownSeconds(Math.floor((diff % (1000 * 60)) / 1000));
+    }
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <>
@@ -292,13 +419,39 @@ export default function Home() {
         <div className="hero">
           <div>
             <div className="hero-badge">Demnächst in Österreich</div>
+            <div style={{display:"inline-flex",alignItems:"center",gap:"8px",background:"rgba(255,92,53,0.12)",border:"1px solid rgba(255,92,53,0.25)",borderRadius:"8px",padding:"8px 14px",marginBottom:"16px"}}>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v6l4 2" stroke="#FF5C35" strokeWidth="1.4" strokeLinecap="round"/><circle cx="7" cy="7" r="6" stroke="#FF5C35" strokeWidth="1.4"/></svg>
+              <span style={{fontSize:"13px",color:"#FF5C35",fontWeight:500}}>Teste Tablely 40 Tage kostenlos — wir suchen 20 Restaurants die uns helfen die App zu perfektionieren.</span>
+            </div>
             <h1>Dein Restaurant.<br />Endlich auf <em>Autopilot.</em></h1>
             <p className="hero-sub">Kein Telefon mehr, das klingelt während der Stoßzeit. Keine verpassten Reservierungen. Keine No-Shows die dich Geld kosten. Tablely übernimmt alles – automatisch, rund um die Uhr.</p>
+            {/* Countdown */}
+            <div style={{display:"flex",gap:"8px",marginBottom:"28px",flexWrap:"wrap"}}>
+              {[
+                {val:countdownDays, label:"Tage"},
+                {val:countdownHours, label:"Stunden"},
+                {val:countdownMinutes, label:"Minuten"},
+                {val:countdownSeconds, label:"Sekunden"},
+              ].map((t,i) => (
+                <div key={i} style={{textAlign:"center",minWidth:"60px"}}>
+                  <div style={{background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:"10px",padding:"10px 12px",fontFamily:"'Playfair Display',serif",fontSize:"28px",fontWeight:700,color:"#fff",lineHeight:1,marginBottom:"4px"}}>
+                    {String(t.val).padStart(2,"0")}
+                  </div>
+                  <div style={{fontSize:"10px",color:"rgba(255,255,255,0.35)",textTransform:"uppercase",letterSpacing:"0.5px"}}>{t.label}</div>
+                </div>
+              ))}
+              <div style={{display:"flex",alignItems:"flex-start",paddingTop:"8px"}}>
+                <div style={{background:"rgba(255,92,53,0.2)",border:"1px solid rgba(255,92,53,0.3)",borderRadius:"8px",padding:"6px 12px",fontSize:"11px",fontWeight:600,color:"#FF5C35",whiteSpace:"nowrap"}}>
+                  Beta — 30. April
+                </div>
+              </div>
+            </div>
+
             <div className="hero-actions">
               <button className="btn-waitlist" onClick={() => document.getElementById('waitlist')?.scrollIntoView({behavior:'smooth'})}>
                 Jetzt zur Warteliste →
               </button>
-              <span className="hero-note">Sei unter den Ersten in Österreich</span>
+              <span className="hero-note">Nur 20 Restaurants</span>
             </div>
           </div>
           <div className="hero-visual">
