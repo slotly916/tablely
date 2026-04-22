@@ -9,7 +9,7 @@ const supabase = createClient(
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN!;
 const WA_TOKEN = process.env.WHATSAPP_TOKEN!;
 const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID!;
-const OPENAI_KEY = process.env.OPENAI_API_KEY!;
+const GROQ_KEY = process.env.GROQ_API_KEY!;
 
 // GET — Webhook Verifizierung von Meta
 export async function GET(req: Request) {
@@ -76,11 +76,11 @@ export async function POST(req: Request) {
   const today = new Date().toLocaleDateString("de-AT", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
 
   // OpenAI — Nachricht verstehen und Antwort generieren
-  const aiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+  const aiResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
-    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${OPENAI_KEY}` },
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${GROQ_KEY}` },
     body: JSON.stringify({
-      model: "gpt-4o-mini",
+      model: "llama3-8b-8192",
       messages: [
         {
           role: "system",
