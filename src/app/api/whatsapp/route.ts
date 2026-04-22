@@ -24,17 +24,32 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const body = await req.json();
+  let body;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ ok: true });
+  }
+
   console.log("WA BODY:", JSON.stringify(body));
 
+  // Status updates ignorieren
   const entry = body.entry?.[0];
   const change = entry?.changes?.[0];
-  const message = change?.value?.messages?.[0];
+  const value = change?.value;
 
-  console.log("MESSAGE:", JSON.stringify(message));
+  // Nur echte eingehende Nachrichten verarbeiten
+  if (!value?.messages || value.messages.length === 0) {
+    console.log("No messages in payload, skipping");
+    return NextResponse.json({ ok: true });
+  }
 
+  const message = value.messages[0];
+  console.log("MESSAGE TYPE:", message?.type, "MESSAGE:", JSON.stringify(message));
+
+  // Nur Text-Nachrichten verarbeiten
   if (!message || message.type !== "text") {
-    console.log("No text message, skipping");
+    console.log("Not a text message, type:", message?.type);
     return NextResponse.json({ ok: true });
   }
 
