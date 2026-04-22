@@ -11,7 +11,6 @@ const WA_TOKEN = process.env.WHATSAPP_TOKEN!;
 const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID!;
 const GROQ_KEY = process.env.GROQ_API_KEY!;
 
-// GET — Webhook Verifizierung von Meta
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const mode = searchParams.get("hub.mode");
@@ -24,21 +23,26 @@ export async function GET(req: Request) {
   return new Response("Forbidden", { status: 403 });
 }
 
-// POST — Eingehende WhatsApp Nachrichten
 export async function POST(req: Request) {
   const body = await req.json();
+  console.log("WA BODY:", JSON.stringify(body));
 
   const entry = body.entry?.[0];
   const change = entry?.changes?.[0];
   const message = change?.value?.messages?.[0];
 
+  console.log("MESSAGE:", JSON.stringify(message));
+
   if (!message || message.type !== "text") {
+    console.log("No text message, skipping");
     return NextResponse.json({ ok: true });
   }
 
-  const from = message.from; // Telefonnummer des Gastes
+  const from = message.from;
   const text = message.text.body;
   const phoneNumberId = change?.value?.metadata?.phone_number_id;
+
+  console.log("FROM:", from, "TEXT:", text, "PHONE_ID:", phoneNumberId);
 
   // Restaurant anhand der Phone Number ID finden
   const { data: restaurant } = await supabase
@@ -47,15 +51,19 @@ export async function POST(req: Request) {
     .eq("whatsapp_phone_id", phoneNumberId)
     .single();
 
-  // Fallback: erstes Restaurant nehmen wenn keine Zuordnung
-  const { data: fallbackRestaurant } = restaurant ? { data: null } : await supabase
-    .from("restaurants")
-    .select("*")
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .single();
+  // Fallback: erstes Restaurant
+  let activeRestaurant = restaurant;
+  if (!activeRestaurant) {
+    const { data: fallback } = await supabase
+      .from("restaurants")
+      .select("*")
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .single();
+    activeRestaurant = fallback;
+  }
 
-  const activeRestaurant = restaurant || fallbackRestaurant;
+  console.log("RESTAURANT:", activeRestaurant?.name);
 
   if (!activeRestaurant) {
     await sendWhatsApp(from, "Entschuldigung, dieses Restaurant konnte nicht gefunden werden.");
@@ -75,7 +83,8 @@ export async function POST(req: Request) {
 
   const today = new Date().toLocaleDateString("de-AT", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
 
-  // OpenAI — Nachricht verstehen und Antwort generieren
+  console.log("Calling Groq...");
+
   const aiResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: { "Content-Type": "application/json", "Authorization": `Bearer ${GROQ_KEY}` },
@@ -103,16 +112,15 @@ Deine Aufgabe:
   });
 
   const aiData = await aiResponse.json();
+  console.log("GROQ STATUS:", aiResponse.status, "DATA:", JSON.stringify(aiData));
+
   const aiMessage = aiData.choices?.[0]?.message?.content || "Entschuldigung, ich konnte deine Anfrage nicht verstehen. Bitte versuch es nochmal.";
 
-  // Prüfen ob Reservierungsdaten im Response
   const reservationMatch = aiMessage.match(/RESERVATION_DATA:(\{[^}]+\})/);
 
   if (reservationMatch) {
     try {
       const resData = JSON.parse(reservationMatch[1]);
-
-      // Reservierung in Supabase speichern
       await supabase.from("reservations").insert([{
         restaurant_id: activeRestaurant.id,
         guest_name: resData.name,
@@ -123,8 +131,6 @@ Deine Aufgabe:
         channel: "whatsapp",
         status: "confirmed",
       }]);
-
-      // Saubere Antwort ohne JSON-Block senden
       const cleanMessage = aiMessage.replace(/RESERVATION_DATA:\{[^}]+\}/, "").trim();
       await sendWhatsApp(from, cleanMessage);
     } catch {
@@ -138,7 +144,7 @@ Deine Aufgabe:
 }
 
 async function sendWhatsApp(to: string, message: string) {
-  await fetch(`https://graph.facebook.com/v19.0/${PHONE_NUMBER_ID}/messages`, {
+  const res = await fetch(`https://graph.facebook.com/v19.0/${PHONE_NUMBER_ID}/messages`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -151,4 +157,5 @@ async function sendWhatsApp(to: string, message: string) {
       text: { body: message },
     }),
   });
+  console.log("WA SEND STATUS:", res.status);
 }
