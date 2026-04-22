@@ -131,7 +131,7 @@ Deine Aufgabe:
 
   const aiMessage = aiData.choices?.[0]?.message?.content || "Entschuldigung, ich konnte deine Anfrage nicht verstehen. Bitte versuch es nochmal.";
 
-  const reservationMatch = aiMessage.match(/RESERVATION_DATA:(\{[^}]+\})/);
+  const reservationMatch = aiMessage.match(/RESERVATION(?:_|IERUNGS_)DATA[:\s]*({[^}]+})/i);
 
   if (reservationMatch) {
     try {
