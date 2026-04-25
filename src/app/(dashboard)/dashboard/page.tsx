@@ -1,54 +1,115 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 
 type Reservation = {
   id: string;
   guest_name: string;
-  guest_phone: string;
+  guest_phone: string | null;
+  guest_email: string | null;
   party_size: number;
   date: string;
   time: string;
   status: string;
   channel: string;
-  notes: string;
+  notes: string | null;
+  table_id: string | null;
+};
+
+type Table = {
+  id: string;
+  name: string;
+  capacity: number;
+  combined_with?: string | null;
 };
 
 type Restaurant = {
   id: string;
   name: string;
+  slug: string;
+  stay_duration?: number; // in minutes, default 150
 };
+
+const CHANNELS = [
+  { key: "all", label: "Alle" },
+  { key: "online", label: "Online" },
+  { key: "whatsapp", label: "WhatsApp" },
+  { key: "phone", label: "Telefon" },
+  { key: "walkin", label: "Walk-in" },
+];
+
+const STATUS_COLORS: Record<string, { bg: string; color: string; border: string }> = {
+  confirmed:  { bg: "rgba(52,211,153,.12)",  color: "#34D399", border: "rgba(52,211,153,.25)" },
+  pending:    { bg: "rgba(251,191,36,.12)",   color: "#FCD34D", border: "rgba(251,191,36,.25)" },
+  cancelled:  { bg: "rgba(239,68,68,.12)",    color: "#F87171", border: "rgba(239,68,68,.25)" },
+  completed:  { bg: "rgba(99,102,241,.12)",   color: "#818CF8", border: "rgba(99,102,241,.25)" },
+};
+
+const CHANNEL_COLORS: Record<string, { bg: string; color: string }> = {
+  online:    { bg: "rgba(99,102,241,.15)",   color: "#818CF8" },
+  whatsapp:  { bg: "rgba(37,211,102,.15)",   color: "#25D366" },
+  phone:     { bg: "rgba(255,92,53,.15)",    color: "#FF5C35" },
+  walkin:    { bg: "rgba(251,191,36,.15)",   color: "#FCD34D" },
+};
+
+function timeToMinutes(t: string) {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function minutesToTime(m: number) {
+  return `${Math.floor(m/60).toString().padStart(2,"0")}:${(m%60).toString().padStart(2,"0")}`;
+}
 
 export default function Dashboard() {
   const router = useRouter();
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [tables, setTables] = useState<Table[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"today"|"upcoming"|"all">("today");
   const [dark, setDark] = useState(true);
+  const [view, setView] = useState<"list"|"tables">("list");
+  const [filterChannel, setFilterChannel] = useState("all");
+  const [filterDate, setFilterDate] = useState(new Date().toISOString().split("T")[0]);
+  const [showWalkin, setShowWalkin] = useState(false);
+  const [walkinParty, setWalkinParty] = useState("2");
+  const [walkinDate, setWalkinDate] = useState(new Date().toISOString().split("T")[0]);
+  const [walkinTime, setWalkinTime] = useState("19:00");
+  const [suggestedTable, setSuggestedTable] = useState<Table | null>(null);
+  const [walkinName, setWalkinName] = useState("");
+  const [savingWalkin, setSavingWalkin] = useState(false);
+
+  const stayDuration = restaurant?.stay_duration || 150; // default 2.5h
 
   const bg = dark ? "#0F0F14" : "#F5F0EB";
-  const surface = dark ? "rgba(255,255,255,0.04)" : "#fff";
-  const border = dark ? "rgba(255,255,255,0.08)" : "#EDE8E3";
+  const surface = dark ? "rgba(255,255,255,.04)" : "#fff";
+  const border = dark ? "rgba(255,255,255,.08)" : "#EDE8E3";
   const text = dark ? "#FFFAF5" : "#1A1A2E";
-  const muted = dark ? "rgba(255,255,255,0.3)" : "#6B6B80";
-  const subtle = dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)";
+  const muted = dark ? "rgba(255,255,255,.3)" : "#6B6B80";
+  const sidebarBg = dark ? "#0A0A0F" : "#1A1A2E";
 
-  useEffect(() => { loadData(); }, []);
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.push("/login"); return; }
+
     const { data: rest } = await supabase.from("restaurants").select("*").eq("email", user.email).single();
     if (!rest) { router.push("/onboarding"); return; }
     setRestaurant(rest);
-    const { data: res } = await supabase.from("reservations").select("*").eq("restaurant_id", rest.id).order("date", { ascending: true }).order("time", { ascending: true });
+
+    const { data: res } = await supabase.from("reservations").select("*")
+      .eq("restaurant_id", rest.id).order("date").order("time");
     setReservations(res || []);
+
+    const { data: tbls } = await supabase.from("tables").select("*").eq("restaurant_id", rest.id).order("name");
+    setTables(tbls || []);
+
     setLoading(false);
-  }
+  }, [router]);
+
+  useEffect(() => { loadData(); }, [loadData]);
 
   async function handleLogout() {
     const supabase = createClient();
@@ -62,258 +123,270 @@ export default function Dashboard() {
     setReservations(prev => prev.map(r => r.id === id ? { ...r, status } : r));
   }
 
+  function suggestTable() {
+    const party = parseInt(walkinParty);
+    const resOnDay = reservations.filter(r => r.date === walkinDate && r.status !== "cancelled");
+    const walkinMins = timeToMinutes(walkinTime);
+
+    // Find tables that are free at requested time
+    const freeTables = tables.filter(t => {
+      if (t.capacity < party) return false;
+      const isOccupied = resOnDay.some(r => {
+        if (r.table_id !== t.id) return false;
+        const start = timeToMinutes(r.time);
+        const end = start + stayDuration;
+        return walkinMins < end && walkinMins + stayDuration > start;
+      });
+      return !isOccupied;
+    }).sort((a, b) => a.capacity - b.capacity);
+
+    setSuggestedTable(freeTables[0] || null);
+  }
+
+  async function saveWalkin(tableId?: string) {
+    if (!walkinName || !restaurant) return;
+    setSavingWalkin(true);
+    const supabase = createClient();
+    await supabase.from("reservations").insert([{
+      restaurant_id: restaurant.id,
+      guest_name: walkinName,
+      party_size: parseInt(walkinParty),
+      date: walkinDate,
+      time: walkinTime,
+      table_id: tableId || suggestedTable?.id || null,
+      channel: "walkin",
+      status: "confirmed",
+    }]);
+    await loadData();
+    setShowWalkin(false);
+    setSuggestedTable(null);
+    setWalkinName("");
+    setSavingWalkin(false);
+  }
+
   const today = new Date().toISOString().split("T")[0];
-  const filtered = reservations.filter(r => {
-    if (filter === "today") return r.date === today;
-    if (filter === "upcoming") return r.date >= today;
-    return true;
+  const todayRes = reservations.filter(r => r.date === today);
+  const filteredRes = reservations.filter(r => {
+    const matchDate = r.date === filterDate;
+    const matchChannel = filterChannel === "all" || r.channel === filterChannel;
+    return matchDate && matchChannel;
   });
+
+  // Stats
   const stats = {
-    today: reservations.filter(r => r.date === today).length,
-    upcoming: reservations.filter(r => r.date > today).length,
-    total: reservations.length,
+    today: todayRes.length,
+    online: todayRes.filter(r => r.channel === "online").length,
+    whatsapp: todayRes.filter(r => r.channel === "whatsapp").length,
+    phone: todayRes.filter(r => r.channel === "phone").length,
+    walkin: todayRes.filter(r => r.channel === "walkin").length,
+    pending: reservations.filter(r => r.status === "pending").length,
   };
 
+  // Table timeline data
+  function getTableReservations(tableId: string) {
+    return filteredRes.filter(r => r.table_id === tableId);
+  }
+
   if (loading) return (
-    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:bg,fontFamily:"'DM Sans',sans-serif",flexDirection:"column",gap:"16px"}}>
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#0F0F14",fontFamily:"'DM Sans',sans-serif",flexDirection:"column",gap:"12px"}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      <div style={{width:"24px",height:"24px",borderRadius:"50%",border:"2px solid rgba(255,255,255,0.1)",borderTopColor:"#FF5C35",animation:"spin 0.7s linear infinite"}}/>
-      <div style={{color:"rgba(255,255,255,0.3)",fontSize:"13px",letterSpacing:"0.5px"}}>Wird geladen</div>
+      <div style={{width:"24px",height:"24px",borderRadius:"50%",border:"2px solid rgba(255,255,255,.1)",borderTopColor:"#FF5C35",animation:"spin 0.7s linear infinite"}}/>
+      <div style={{color:"rgba(255,255,255,.3)",fontSize:"13px"}}>Wird geladen...</div>
     </div>
   );
 
   return (
-    <div style={{minHeight:"100vh",background:bg,fontFamily:"'DM Sans',sans-serif",display:"flex",transition:"background 0.3s"}}>
+    <div style={{minHeight:"100vh",background:bg,fontFamily:"'DM Sans',sans-serif",display:"flex",transition:"background .3s"}}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
-        .nav-item { transition: all 0.15s; }
-        .nav-item:hover { background: rgba(255,255,255,0.06) !important; color: rgba(255,255,255,0.8) !important; }
-        .nav-item.active { background: rgba(255,92,53,0.12) !important; color: #FF5C35 !important; border: 1px solid rgba(255,92,53,0.2) !important; }
-        .res-card:hover { background: rgba(255,255,255,0.04) !important; }
-        .stat-card { animation: fadeIn 0.4s ease both; }
-        .stat-card:nth-child(1) { animation-delay: 0s; }
-        .stat-card:nth-child(2) { animation-delay: 0.08s; }
-        .stat-card:nth-child(3) { animation-delay: 0.16s; }
-        .add-btn:hover { background: #FF7A5A !important; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(255,92,53,0.35) !important; }
-        .filter-pill:hover { background: rgba(255,255,255,0.06) !important; }
-        select { appearance: none; -webkit-appearance: none; }
-        ::-webkit-scrollbar { width: 4px; } 
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500&display=swap');
+        *{box-sizing:border-box;margin:0;padding:0;}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        .nav-btn:hover{background:rgba(255,255,255,.08)!important;}
+        .res-row:hover{background:${dark?"rgba(255,255,255,.03)":"#FAFAF8"}!important;}
+        select{appearance:none;-webkit-appearance:none;}
+        input[type=date]{color-scheme:${dark?"dark":"light"};}
+        input[type=time]{color-scheme:${dark?"dark":"light"};}
+        ::-webkit-scrollbar{width:4px;}
+        ::-webkit-scrollbar-track{background:transparent;}
+        ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px;}
       `}</style>
 
-      {/* ── SIDEBAR ── */}
-      <aside style={{width:"64px",background:dark?"#0A0A0F":"#1A1A2E",borderRight:`1px solid ${border}`,display:"flex",flexDirection:"column",alignItems:"center",padding:"20px 0",position:"fixed",top:0,bottom:0,left:0,zIndex:50}}>
-        {/* Logo mark */}
-        <div style={{width:"36px",height:"36px",borderRadius:"10px",background:"#FF5C35",display:"flex",alignItems:"center",justifyContent:"center",marginBottom:"32px",flexShrink:0}}>
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 5h12M3 9h8M3 13h5" stroke="white" strokeWidth="1.8" strokeLinecap="round"/></svg>
+      {/* SIDEBAR */}
+      <aside style={{width:"220px",background:sidebarBg,display:"flex",flexDirection:"column",padding:"20px 12px",position:"fixed",top:0,bottom:0,left:0,zIndex:50,borderRight:`1px solid ${border}`}}>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:"20px",fontWeight:700,color:"#FFFAF5",marginBottom:"32px",paddingLeft:"8px"}}>
+          table<span style={{color:"#FF5C35"}}>ly</span>
         </div>
 
-        {/* Nav icons */}
         {[
-          {path:"/dashboard", tip:"Dashboard", active:true, icon:<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="1" y="1" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.4"/><rect x="10" y="1" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.4"/><rect x="1" y="10" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.4"/><rect x="10" y="10" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.4"/></svg>},
-          {path:"/dashboard/new", tip:"Neue Reservierung", active:false, icon:<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 3v12M3 9h12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>},
-          {path:"/dashboard/settings", tip:"Einstellungen", active:false, icon:<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.4"/><path d="M9 1.5V4M9 14v2.5M1.5 9H4M14 9h2.5M3.7 3.7l1.6 1.6M12.7 12.7l1.6 1.6M3.7 14.3l1.6-1.6M12.7 5.3l1.6-1.6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>},
+          {label:"Dashboard",path:"/dashboard",active:true,icon:<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.3"/><rect x="9" y="1" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.3"/><rect x="1" y="9" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.3"/><rect x="9" y="9" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.3"/></svg>},
+          {label:"Neue Reservierung",path:"/dashboard/new",active:false,icon:<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>},
+          {label:"Einstellungen",path:"/dashboard/settings",active:false,icon:<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.2" stroke="currentColor" strokeWidth="1.3"/><path d="M8 1.5V4M8 12v2.5M1.5 8H4M12 8h2.5M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>},
         ].map((item,i) => (
-          <button key={i} className={`nav-item${item.active?" active":""}`} onClick={() => router.push(item.path)} title={item.tip} style={{
-            width:"40px",height:"40px",borderRadius:"10px",display:"flex",alignItems:"center",justifyContent:"center",
-            background:"transparent",border:"1px solid transparent",cursor:"pointer",marginBottom:"4px",
-            color: item.active ? "#FF5C35" : "rgba(255,255,255,0.3)",
+          <button key={i} className="nav-btn" onClick={() => router.push(item.path)} style={{
+            display:"flex",alignItems:"center",gap:"10px",padding:"9px 10px",borderRadius:"8px",
+            background: item.active ? "rgba(255,92,53,.15)" : "transparent",
+            border: item.active ? "1px solid rgba(255,92,53,.2)" : "1px solid transparent",
+            color: item.active ? "#FF5C35" : "rgba(255,255,255,.45)",
+            fontSize:"13px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
+            marginBottom:"2px",textAlign:"left",transition:"all .15s",width:"100%",
           }}>
-            {item.icon}
+            {item.icon}{item.label}
           </button>
         ))}
 
-        <div style={{marginTop:"auto"}}>
-          <button className="nav-item" onClick={handleLogout} title="Abmelden" style={{
-            width:"40px",height:"40px",borderRadius:"10px",display:"flex",alignItems:"center",justifyContent:"center",
-            background:"transparent",border:"1px solid transparent",cursor:"pointer",
-            color:"rgba(255,255,255,0.25)",
+        <div style={{marginTop:"auto",display:"flex",flexDirection:"column",gap:"8px"}}>
+          {restaurant && (
+            <div style={{background:"rgba(255,255,255,.05)",borderRadius:"8px",padding:"10px 12px"}}>
+              <div style={{fontSize:"10px",color:"rgba(255,255,255,.3)",textTransform:"uppercase",letterSpacing:".5px",marginBottom:"3px"}}>Restaurant</div>
+              <div style={{fontSize:"13px",color:"#FFFAF5",fontWeight:500}}>{restaurant.name}</div>
+              <a href={`/book/${restaurant.slug}`} target="_blank" style={{fontSize:"10px",color:"#FF5C35",textDecoration:"none",display:"block",marginTop:"3px"}}>Booking Link →</a>
+            </div>
+          )}
+          <button className="nav-btn" onClick={handleLogout} style={{
+            display:"flex",alignItems:"center",gap:"8px",padding:"9px 10px",borderRadius:"8px",
+            background:"transparent",border:"1px solid rgba(255,255,255,.08)",
+            color:"rgba(255,255,255,.3)",fontSize:"13px",cursor:"pointer",fontFamily:"inherit",transition:"all .15s",
           }}>
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M7 3H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M12 12l3-3-3-3M15 9H7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M11 11l3-3-3-3M14 8H6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            Abmelden
           </button>
         </div>
       </aside>
 
-      {/* ── MAIN ── */}
-      <main style={{marginLeft:"64px",flex:1,display:"flex",flexDirection:"column",minHeight:"100vh"}}>
+      {/* MAIN */}
+      <main style={{marginLeft:"220px",flex:1,display:"flex",flexDirection:"column",minHeight:"100vh"}}>
 
-        {/* TOP BAR */}
-        <header style={{height:"60px",borderBottom:`1px solid ${border}`,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 32px",background:dark?"rgba(15,15,20,0.95)":"rgba(245,240,235,0.95)",backdropFilter:"blur(12px)",position:"sticky",top:0,zIndex:40}}>
-          <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
+        {/* TOPBAR */}
+        <header style={{height:"56px",borderBottom:`1px solid ${border}`,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 24px",background:dark?"rgba(15,15,20,.95)":"rgba(245,240,235,.95)",backdropFilter:"blur(12px)",position:"sticky",top:0,zIndex:40}}>
+          <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
             <span style={{fontSize:"13px",color:muted}}>tablely</span>
-            <span style={{color:muted}}>›</span>
+            <span style={{color:muted,fontSize:"12px"}}>›</span>
             <span style={{fontSize:"13px",color:text,fontWeight:500}}>Dashboard</span>
-            {restaurant && (
-              <>
-                <span style={{color:"rgba(255,255,255,0.15)"}}>›</span>
-                <span style={{fontSize:"13px",color:"rgba(255,255,255,0.4)"}}>{restaurant.name}</span>
-              </>
-            )}
+            {restaurant && <><span style={{color:muted,fontSize:"12px"}}>›</span><span style={{fontSize:"13px",color:muted}}>{restaurant.name}</span></>}
           </div>
           <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-          <button onClick={handleLogout} style={{
-            background:"transparent",border:`1px solid ${border}`,color:muted,
-            padding:"7px 14px",borderRadius:"8px",fontSize:"13px",fontWeight:500,
-            cursor:"pointer",fontFamily:"inherit",transition:"all 0.2s",display:"flex",alignItems:"center",gap:"6px"
-          }}>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 2H3a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h2M9 10l3-3-3-3M12 7H5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            Abmelden
-          </button>
-          <button onClick={() => setDark(!dark)} title={dark?"Hell":"Dunkel"} style={{
-            width:"36px",height:"36px",borderRadius:"8px",display:"flex",alignItems:"center",justifyContent:"center",
-            background:surface,border:`1px solid ${border}`,cursor:"pointer",color:muted,transition:"all 0.2s"
-          }}>
-            {dark ? (
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" strokeWidth="1.4"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M2.93 2.93l1.41 1.41M11.66 11.66l1.41 1.41M2.93 13.07l1.41-1.41M11.66 4.34l1.41-1.41" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
-            ) : (
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.5 10A6 6 0 0 1 6 2.5a6 6 0 1 0 7.5 7.5z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            )}
-          </button>
-          <button className="add-btn" onClick={() => router.push("/dashboard/new")} style={{
-            background:"#FF5C35",color:"#fff",border:"none",padding:"8px 16px",borderRadius:"8px",
-            fontSize:"13px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
-            display:"flex",alignItems:"center",gap:"6px",transition:"all 0.2s",
-          }}>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="white" strokeWidth="1.8" strokeLinecap="round"/></svg>
-            Reservierung
-          </button>
+            <button onClick={() => setShowWalkin(true)} style={{
+              display:"flex",alignItems:"center",gap:"6px",padding:"7px 14px",borderRadius:"7px",
+              background:"rgba(251,191,36,.15)",border:"1px solid rgba(251,191,36,.25)",
+              color:"#FCD34D",fontSize:"12px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
+            }}>
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v11M1 6.5h11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+              Walk-in
+            </button>
+            <button onClick={() => router.push("/dashboard/new")} style={{
+              display:"flex",alignItems:"center",gap:"6px",padding:"7px 14px",borderRadius:"7px",
+              background:"#FF5C35",border:"none",color:"#fff",fontSize:"12px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
+            }}>
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v11M1 6.5h11" stroke="white" strokeWidth="1.5" strokeLinecap="round"/></svg>
+              Reservierung
+            </button>
+            <button onClick={() => setDark(!dark)} style={{
+              width:"32px",height:"32px",borderRadius:"7px",display:"flex",alignItems:"center",justifyContent:"center",
+              background:surface,border:`1px solid ${border}`,cursor:"pointer",color:muted,
+            }}>
+              {dark ? <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="2.5" stroke="currentColor" strokeWidth="1.3"/><path d="M7 1v1.5M7 11.5V13M1 7h1.5M11.5 7H13M2.6 2.6l1 1M10.4 10.4l1 1M2.6 11.4l1-1M10.4 3.6l1-1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
+              : <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M12 9A5.5 5.5 0 0 1 5 2a5.5 5.5 0 1 0 7 7z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>}
+            </button>
           </div>
         </header>
 
-        <div style={{padding:"32px",flex:1}}>
+        <div style={{padding:"24px",flex:1}}>
 
-          {/* PAGE TITLE */}
-          <div style={{marginBottom:"28px"}}>
-            <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"32px",fontWeight:700,color:text,letterSpacing:"-1px",marginBottom:"6px"}}>
-              Guten {new Date().getHours() < 12 ? "Morgen" : new Date().getHours() < 18 ? "Tag" : "Abend"}{restaurant ? `, ${restaurant.name}` : ""}
-            </h1>
-            <p style={{fontSize:"13px",color:muted,fontWeight:300}}>
-              {new Date().toLocaleDateString("de-AT",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}
-            </p>
+          {/* GREETING + DATE */}
+          <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:"24px",flexWrap:"wrap",gap:"12px"}}>
+            <div>
+              <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"26px",fontWeight:700,color:text,letterSpacing:"-.5px",marginBottom:"4px"}}>
+                {new Date().getHours() < 12 ? "Guten Morgen" : new Date().getHours() < 18 ? "Guten Tag" : "Guten Abend"}{restaurant ? `, ${restaurant.name}` : ""}
+              </h1>
+              <p style={{fontSize:"13px",color:muted,fontWeight:300}}>
+                {new Date().toLocaleDateString("de-AT",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}
+              </p>
+            </div>
+            <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
+              <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
+                style={{padding:"7px 12px",borderRadius:"8px",border:`1px solid ${border}`,background:surface,color:text,fontSize:"13px",fontFamily:"inherit",outline:"none",cursor:"pointer"}}
+              />
+            </div>
           </div>
 
           {/* STATS */}
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"16px",marginBottom:"32px"}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:"10px",marginBottom:"24px"}}>
             {[
-              {label:"Reservierungen heute", val:stats.today, change:"+2 vs. gestern", positive:true,
-                icon:<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="4" width="16" height="14" rx="2" stroke="#FF5C35" strokeWidth="1.4"/><path d="M2 9h16M6 2v3M14 2v3" stroke="#FF5C35" strokeWidth="1.4" strokeLinecap="round"/></svg>},
-              {label:"Kommende Reservierungen", val:stats.upcoming, change:"nächste 7 Tage", positive:true,
-                icon:<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="#A78BFA" strokeWidth="1.4"/><path d="M10 6v4l3 2" stroke="#A78BFA" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>},
-              {label:"Gesamt", val:stats.total, change:"alle Reservierungen", positive:true,
-                icon:<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="8" cy="7" r="3" stroke="#34D399" strokeWidth="1.4"/><path d="M2 17c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="#34D399" strokeWidth="1.4" strokeLinecap="round"/><path d="M14 5a3 3 0 0 1 0 6M18 17c0-2.8-1.8-5.1-4.3-5.8" stroke="#34D399" strokeWidth="1.4" strokeLinecap="round"/></svg>},
+              {label:"Heute",val:stats.today,color:"#FF5C35",bg:"rgba(255,92,53,.1)"},
+              {label:"Online",val:stats.online,color:"#818CF8",bg:"rgba(99,102,241,.1)"},
+              {label:"WhatsApp",val:stats.whatsapp,color:"#25D366",bg:"rgba(37,211,102,.1)"},
+              {label:"Telefon",val:stats.phone,color:"#FF5C35",bg:"rgba(255,92,53,.08)"},
+              {label:"Walk-in",val:stats.walkin,color:"#FCD34D",bg:"rgba(251,191,36,.1)"},
+              {label:"Ausstehend",val:stats.pending,color:"#FCD34D",bg:"rgba(251,191,36,.08)"},
             ].map((s,i) => (
-              <div key={i} className="stat-card" style={{
-                background:surface,border:`1px solid ${border}`,
-                borderRadius:"16px",padding:"20px 24px",transition:"background 0.3s"
-              }}>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"16px"}}>
-                  <span style={{fontSize:"12px",color:muted,fontWeight:400,letterSpacing:"0.2px"}}>{s.label}</span>
-                  <div style={{width:"36px",height:"36px",borderRadius:"10px",background:subtle,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                    {s.icon}
-                  </div>
-                </div>
-                <div style={{fontFamily:"'Playfair Display',serif",fontSize:"40px",fontWeight:700,color:text,letterSpacing:"-2px",lineHeight:1,marginBottom:"8px"}}>{s.val}</div>
-                <div style={{fontSize:"11px",color:muted}}>{s.change}</div>
+              <div key={i} style={{background:surface,border:`1px solid ${border}`,borderRadius:"12px",padding:"14px 12px",textAlign:"center"}}>
+                <div style={{fontFamily:"'Playfair Display',serif",fontSize:"24px",fontWeight:700,color:s.color,letterSpacing:"-1px",marginBottom:"4px"}}>{s.val}</div>
+                <div style={{fontSize:"11px",color:muted,fontWeight:400}}>{s.label}</div>
               </div>
             ))}
           </div>
 
-          {/* SECTION HEADER */}
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"16px"}}>
-            <div style={{display:"flex",gap:"4px",background:surface,border:`1px solid ${border}`,borderRadius:"10px",padding:"4px"}}>
-              {([
-                {key:"today",label:"Heute"},
-                {key:"upcoming",label:"Kommend"},
-                {key:"all",label:"Alle"},
-              ] as const).map(f => (
-                <button key={f.key} className="filter-pill" onClick={() => setFilter(f.key)} style={{
-                  padding:"7px 16px",borderRadius:"7px",fontSize:"13px",fontWeight:500,
-                  cursor:"pointer",fontFamily:"inherit",border:"none",transition:"all 0.15s",
-                  background: filter === f.key ? (dark?"rgba(255,255,255,0.1)":"#1A1A2E") : "transparent",
-                  color: filter === f.key ? (dark?"#FFFAF5":"#fff") : muted,
-                }}>
-                  {f.label}
-                  <span style={{marginLeft:"6px",fontSize:"11px",background: filter===f.key ? "rgba(255,92,53,0.3)" : "rgba(255,255,255,0.08)",color: filter===f.key ? "#FF5C35" : "rgba(255,255,255,0.3)",padding:"1px 6px",borderRadius:"10px"}}>
-                    {f.key==="today" ? stats.today : f.key==="upcoming" ? stats.upcoming : stats.total}
-                  </span>
-                </button>
+          {/* VIEW TOGGLE + CHANNEL FILTER */}
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"16px",flexWrap:"wrap",gap:"10px"}}>
+            <div style={{display:"flex",gap:"4px",background:surface,border:`1px solid ${border}`,borderRadius:"9px",padding:"3px"}}>
+              {[{k:"list",l:"Liste"},{k:"tables",l:"Tischkarte"}].map(v => (
+                <button key={v.k} onClick={() => setView(v.k as "list"|"tables")} style={{
+                  padding:"6px 16px",borderRadius:"7px",fontSize:"12px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",border:"none",transition:"all .15s",
+                  background: view===v.k ? (dark?"rgba(255,255,255,.12)":"#1A1A2E") : "transparent",
+                  color: view===v.k ? (dark?"#FFFAF5":"#fff") : muted,
+                }}>{v.l}</button>
               ))}
             </div>
-            <span style={{fontSize:"12px",color:muted}}>{filtered.length} Einträge</span>
+            <div style={{display:"flex",gap:"4px",flexWrap:"wrap"}}>
+              {CHANNELS.map(c => (
+                <button key={c.key} onClick={() => setFilterChannel(c.key)} style={{
+                  padding:"5px 12px",borderRadius:"6px",fontSize:"12px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",border:`1px solid ${border}`,transition:"all .15s",
+                  background: filterChannel===c.key ? "#FF5C35" : "transparent",
+                  color: filterChannel===c.key ? "#fff" : muted,
+                  borderColor: filterChannel===c.key ? "#FF5C35" : border,
+                }}>{c.label}</button>
+              ))}
+            </div>
           </div>
 
-          {/* TABLE */}
-          {filtered.length === 0 ? (
-            <div style={{background:surface,border:`1px solid ${border}`,borderRadius:"16px",padding:"64px 32px",textAlign:"center"}}>
-              <div style={{width:"52px",height:"52px",borderRadius:"14px",background:"rgba(255,92,53,0.1)",border:"1px solid rgba(255,92,53,0.2)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
-                <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="2" y="3" width="18" height="16" rx="2.5" stroke="#FF5C35" strokeWidth="1.4"/><path d="M2 8h18M7 2v2M15 2v2" stroke="#FF5C35" strokeWidth="1.4" strokeLinecap="round"/></svg>
-              </div>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:"20px",fontWeight:700,color:text,marginBottom:"8px"}}>Keine Reservierungen</div>
-              <div style={{fontSize:"13px",color:muted,marginBottom:"24px",fontWeight:300}}>
-                {filter === "today" ? "Heute noch keine Reservierungen." : "Keine Reservierungen für diesen Zeitraum."}
-              </div>
-              <button className="add-btn" onClick={() => router.push("/dashboard/new")} style={{
-                background:"#FF5C35",color:"#fff",border:"none",padding:"10px 20px",borderRadius:"8px",
-                fontSize:"13px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
-                display:"inline-flex",alignItems:"center",gap:"6px",transition:"all 0.2s"
-              }}>
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="white" strokeWidth="1.8" strokeLinecap="round"/></svg>
-                Reservierung hinzufügen
-              </button>
-            </div>
-          ) : (
-            <div style={{background:surface,border:`1px solid ${border}`,borderRadius:"16px",overflow:"hidden"}}>
-              {/* Header */}
-              <div style={{display:"grid",gridTemplateColumns:"1fr 80px 110px 80px 110px 160px",gap:"12px",padding:"12px 20px",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
-                {["Gast","Personen","Datum","Uhrzeit","Kanal","Status"].map((h,i) => (
-                  <div key={i} style={{fontSize:"10px",fontWeight:600,color:"rgba(255,255,255,0.25)",textTransform:"uppercase",letterSpacing:"0.8px"}}>{h}</div>
+          {/* LIST VIEW */}
+          {view === "list" && (
+            <div style={{background:surface,border:`1px solid ${border}`,borderRadius:"14px",overflow:"hidden"}}>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 80px 100px 80px 110px 160px",gap:"12px",padding:"10px 18px",borderBottom:`1px solid ${border}`,background:dark?"rgba(255,255,255,.02)":"rgba(0,0,0,.02)"}}>
+                {["Gast","Personen","Datum","Uhrzeit","Kanal","Status"].map((h,i)=>(
+                  <div key={i} style={{fontSize:"10px",fontWeight:600,color:muted,textTransform:"uppercase",letterSpacing:".7px"}}>{h}</div>
                 ))}
               </div>
-
-              {filtered.map((r,i) => (
-                <div key={r.id} className="res-card" style={{
-                  display:"grid",gridTemplateColumns:"1fr 80px 110px 80px 110px 160px",gap:"12px",
-                  padding:"14px 20px",borderBottom: i < filtered.length-1 ? `1px solid ${border}` : "none",
-                  alignItems:"center",background:"transparent",transition:"background 0.15s"
+              {filteredRes.length === 0 ? (
+                <div style={{padding:"48px",textAlign:"center",color:muted,fontSize:"14px",fontWeight:300}}>
+                  Keine Reservierungen für diesen Tag / Filter.
+                </div>
+              ) : filteredRes.map((r,i) => (
+                <div key={r.id} className="res-row" style={{
+                  display:"grid",gridTemplateColumns:"1fr 80px 100px 80px 110px 160px",gap:"12px",
+                  padding:"12px 18px",borderBottom:i<filteredRes.length-1?`1px solid ${border}`:"none",
+                  alignItems:"center",transition:"background .12s",
                 }}>
-                  {/* Gast */}
-                  <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-                    <div style={{width:"32px",height:"32px",borderRadius:"50%",background:"rgba(255,92,53,0.15)",border:"1px solid rgba(255,92,53,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"12px",fontWeight:600,color:"#FF5C35",flexShrink:0}}>
+                  <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+                    <div style={{width:"30px",height:"30px",borderRadius:"50%",background:"rgba(255,92,53,.15)",border:"1px solid rgba(255,92,53,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"12px",fontWeight:600,color:"#FF5C35",flexShrink:0}}>
                       {r.guest_name.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <div style={{fontSize:"13px",fontWeight:500,color:"#FFFAF5"}}>{r.guest_name}</div>
-                      {r.guest_phone && <div style={{fontSize:"11px",color:"rgba(255,255,255,0.3)"}}>{r.guest_phone}</div>}
+                      <div style={{fontSize:"13px",fontWeight:500,color:text}}>{r.guest_name}</div>
+                      {r.guest_phone && <div style={{fontSize:"11px",color:muted}}>{r.guest_phone}</div>}
+                      {r.notes && <div style={{fontSize:"10px",color:muted,fontStyle:"italic"}}>„{r.notes}"</div>}
                     </div>
                   </div>
-
-                  <div style={{fontSize:"13px",color:muted,fontWeight:400}}>{r.party_size} Pers.</div>
-
-                  <div style={{fontSize:"13px",color:muted}}>
-                    {new Date(r.date).toLocaleDateString("de-AT",{day:"numeric",month:"short"})}
-                  </div>
-
+                  <div style={{fontSize:"13px",color:muted}}>{r.party_size} Pers.</div>
+                  <div style={{fontSize:"12px",color:muted}}>{new Date(r.date).toLocaleDateString("de-AT",{day:"numeric",month:"short"})}</div>
                   <div style={{fontSize:"13px",fontWeight:500,color:text}}>{r.time.slice(0,5)}</div>
-
-                  <div style={{
-                    fontSize:"11px",fontWeight:600,padding:"3px 8px",borderRadius:"6px",width:"fit-content",letterSpacing:"0.2px",
-                    background: r.channel==="whatsapp" ? "rgba(37,211,102,0.1)" : r.channel==="phone" ? "rgba(255,92,53,0.1)" : "rgba(99,102,241,0.1)",
-                    color: r.channel==="whatsapp" ? "#25D366" : r.channel==="phone" ? "#FF5C35" : "#818CF8",
-                    border: `1px solid ${r.channel==="whatsapp" ? "rgba(37,211,102,0.2)" : r.channel==="phone" ? "rgba(255,92,53,0.2)" : "rgba(99,102,241,0.2)"}`,
-                  }}>
-                    {r.channel==="whatsapp" ? "WhatsApp" : r.channel==="phone" ? "Telefon" : "Online"}
+                  <div style={{...CHANNEL_COLORS[r.channel]||{bg:"rgba(255,255,255,.1)",color:muted},fontSize:"11px",fontWeight:600,padding:"3px 8px",borderRadius:"5px",width:"fit-content"}}>
+                    {r.channel==="online"?"Online":r.channel==="whatsapp"?"WhatsApp":r.channel==="phone"?"Telefon":"Walk-in"}
                   </div>
-
-                  <select value={r.status} onChange={e => updateStatus(r.id, e.target.value)} style={{
-                    fontSize:"11px",fontWeight:600,padding:"5px 10px",borderRadius:"7px",cursor:"pointer",
-                    fontFamily:"inherit",letterSpacing:"0.2px",outline:"none",
-                    background: r.status==="confirmed" ? "rgba(52,211,153,0.1)" : r.status==="cancelled" ? "rgba(239,68,68,0.1)" : r.status==="completed" ? "rgba(99,102,241,0.1)" : "rgba(251,191,36,0.1)",
-                    color: r.status==="confirmed" ? "#34D399" : r.status==="cancelled" ? "#F87171" : r.status==="completed" ? "#818CF8" : "#FCD34D",
-                    border: `1px solid ${r.status==="confirmed" ? "rgba(52,211,153,0.25)" : r.status==="cancelled" ? "rgba(239,68,68,0.25)" : r.status==="completed" ? "rgba(99,102,241,0.25)" : "rgba(251,191,36,0.25)"}`,
+                  <select value={r.status} onChange={e=>updateStatus(r.id,e.target.value)} style={{
+                    fontSize:"11px",fontWeight:600,padding:"4px 8px",borderRadius:"6px",cursor:"pointer",fontFamily:"inherit",
+                    outline:"none",...STATUS_COLORS[r.status],border:`1px solid ${STATUS_COLORS[r.status]?.border||border}`,
                   }}>
                     <option value="confirmed">✓ Bestätigt</option>
                     <option value="pending">◐ Ausstehend</option>
@@ -324,8 +397,158 @@ export default function Dashboard() {
               ))}
             </div>
           )}
+
+          {/* TABLE VIEW */}
+          {view === "tables" && (
+            <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
+              {tables.length === 0 ? (
+                <div style={{background:surface,border:`1px solid ${border}`,borderRadius:"14px",padding:"48px",textAlign:"center",color:muted,fontSize:"14px"}}>
+                  Noch keine Tische konfiguriert. Geh zu Einstellungen → Tische.
+                </div>
+              ) : tables.map(table => {
+                const tableRes = getTableReservations(table.id);
+                const slots = ["12:00","13:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00","21:00","22:00"];
+
+                return (
+                  <div key={table.id} style={{background:surface,border:`1px solid ${border}`,borderRadius:"12px",padding:"14px 16px"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"10px"}}>
+                      <div style={{fontSize:"13px",fontWeight:600,color:text}}>{table.name}</div>
+                      <div style={{fontSize:"11px",color:muted,background:dark?"rgba(255,255,255,.05)":"rgba(0,0,0,.05)",padding:"2px 8px",borderRadius:"5px"}}>
+                        {table.capacity} Pers.
+                      </div>
+                      {tableRes.length === 0 && (
+                        <div style={{fontSize:"11px",color:"#34D399",background:"rgba(52,211,153,.1)",padding:"2px 8px",borderRadius:"5px",border:"1px solid rgba(52,211,153,.2)"}}>
+                          Frei
+                        </div>
+                      )}
+                    </div>
+                    {/* Timeline */}
+                    <div style={{position:"relative",height:"40px",background:dark?"rgba(255,255,255,.03)":"rgba(0,0,0,.04)",borderRadius:"8px",overflow:"hidden"}}>
+                      {/* Hour markers */}
+                      {slots.map((s,i) => (
+                        <div key={i} style={{position:"absolute",left:`${(i/10)*100}%`,top:0,bottom:0,borderLeft:`1px solid ${dark?"rgba(255,255,255,.06)":"rgba(0,0,0,.08)"}`,display:"flex",alignItems:"flex-end",paddingBottom:"3px"}}>
+                          <span style={{fontSize:"8px",color:muted,paddingLeft:"2px",whiteSpace:"nowrap"}}>{s}</span>
+                        </div>
+                      ))}
+                      {/* Reservation blocks */}
+                      {tableRes.map(r => {
+                        const startMins = timeToMinutes(r.time) - 12*60;
+                        const totalMins = 10*60;
+                        const left = Math.max(0,(startMins/totalMins)*100);
+                        const width = Math.min((stayDuration/totalMins)*100, 100-left);
+                        const colors = STATUS_COLORS[r.status] || STATUS_COLORS.confirmed;
+                        return (
+                          <div key={r.id} title={`${r.guest_name} · ${r.party_size} Pers. · ${r.time.slice(0,5)}`} style={{
+                            position:"absolute",left:`${left}%`,width:`${width}%`,top:"4px",bottom:"4px",
+                            background:colors.color,borderRadius:"5px",opacity:.85,
+                            display:"flex",alignItems:"center",padding:"0 6px",overflow:"hidden",cursor:"default",
+                          }}>
+                            <span style={{fontSize:"10px",fontWeight:600,color:"#fff",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                              {r.guest_name} ({r.party_size})
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {tableRes.length > 0 && (
+                      <div style={{marginTop:"8px",display:"flex",gap:"8px",flexWrap:"wrap"}}>
+                        {tableRes.map(r => (
+                          <div key={r.id} style={{fontSize:"11px",color:muted}}>
+                            {r.time.slice(0,5)} – {minutesToTime(timeToMinutes(r.time)+stayDuration)} · {r.guest_name} · {r.party_size} Pers.
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </main>
+
+      {/* WALK-IN MODAL */}
+      {showWalkin && (
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:"24px"}} onClick={e=>{if(e.target===e.currentTarget){setShowWalkin(false);setSuggestedTable(null);}}}>
+          <div style={{background:dark?"#1A1A2E":"#fff",borderRadius:"16px",padding:"28px",width:"100%",maxWidth:"440px",border:`1px solid ${border}`}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"20px"}}>
+              <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:"20px",fontWeight:700,color:text}}>Walk-in</h3>
+              <button onClick={()=>{setShowWalkin(false);setSuggestedTable(null);}} style={{background:"transparent",border:"none",color:muted,cursor:"pointer",fontSize:"18px",lineHeight:1}}>✕</button>
+            </div>
+
+            <div style={{display:"flex",flexDirection:"column",gap:"12px",marginBottom:"16px"}}>
+              <div>
+                <label style={{fontSize:"11px",fontWeight:600,color:muted,textTransform:"uppercase",letterSpacing:".5px",display:"block",marginBottom:"5px"}}>Name des Gastes</label>
+                <input value={walkinName} onChange={e=>setWalkinName(e.target.value)} placeholder="Max Mustermann"
+                  style={{width:"100%",padding:"9px 12px",borderRadius:"8px",border:`1px solid ${border}`,background:dark?"rgba(255,255,255,.05)":"#f9f9f9",color:text,fontSize:"14px",fontFamily:"inherit",outline:"none"}}/>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}}>
+                <div>
+                  <label style={{fontSize:"11px",fontWeight:600,color:muted,textTransform:"uppercase",letterSpacing:".5px",display:"block",marginBottom:"5px"}}>Personen</label>
+                  <select value={walkinParty} onChange={e=>setWalkinParty(e.target.value)}
+                    style={{width:"100%",padding:"9px 12px",borderRadius:"8px",border:`1px solid ${border}`,background:dark?"rgba(255,255,255,.05)":"#f9f9f9",color:text,fontSize:"14px",fontFamily:"inherit",outline:"none"}}>
+                    {[1,2,3,4,5,6,7,8,10,12,15,20].map(n=><option key={n} value={n}>{n}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{fontSize:"11px",fontWeight:600,color:muted,textTransform:"uppercase",letterSpacing:".5px",display:"block",marginBottom:"5px"}}>Datum</label>
+                  <input type="date" value={walkinDate} onChange={e=>setWalkinDate(e.target.value)}
+                    style={{width:"100%",padding:"9px 8px",borderRadius:"8px",border:`1px solid ${border}`,background:dark?"rgba(255,255,255,.05)":"#f9f9f9",color:text,fontSize:"13px",fontFamily:"inherit",outline:"none"}}/>
+                </div>
+                <div>
+                  <label style={{fontSize:"11px",fontWeight:600,color:muted,textTransform:"uppercase",letterSpacing:".5px",display:"block",marginBottom:"5px"}}>Uhrzeit</label>
+                  <input type="time" value={walkinTime} onChange={e=>setWalkinTime(e.target.value)}
+                    style={{width:"100%",padding:"9px 8px",borderRadius:"8px",border:`1px solid ${border}`,background:dark?"rgba(255,255,255,.05)":"#f9f9f9",color:text,fontSize:"13px",fontFamily:"inherit",outline:"none"}}/>
+                </div>
+              </div>
+
+              <button onClick={suggestTable} style={{
+                padding:"10px",borderRadius:"8px",background:"rgba(255,92,53,.15)",border:"1px solid rgba(255,92,53,.25)",
+                color:"#FF5C35",fontSize:"13px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
+              }}>
+                KI: Tisch vorschlagen →
+              </button>
+
+              {suggestedTable !== undefined && (
+                <div style={{background:suggestedTable?"rgba(52,211,153,.1)":"rgba(239,68,68,.1)",border:`1px solid ${suggestedTable?"rgba(52,211,153,.25)":"rgba(239,68,68,.25)"}`,borderRadius:"10px",padding:"12px 14px"}}>
+                  {suggestedTable ? (
+                    <>
+                      <div style={{fontSize:"12px",fontWeight:600,color:"#34D399",marginBottom:"4px"}}>✓ Tisch verfügbar</div>
+                      <div style={{fontSize:"14px",color:text,fontWeight:500}}>{suggestedTable.name} — {suggestedTable.capacity} Personen</div>
+                      <div style={{fontSize:"11px",color:muted,marginTop:"2px"}}>{walkinTime} – {minutesToTime(timeToMinutes(walkinTime)+stayDuration)} Uhr</div>
+                    </>
+                  ) : (
+                    <>
+                      <div style={{fontSize:"12px",fontWeight:600,color:"#F87171",marginBottom:"4px"}}>✗ Kein freier Tisch</div>
+                      <div style={{fontSize:"13px",color:muted}}>Kein passender Tisch für {walkinParty} Personen zu dieser Zeit.</div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div style={{display:"flex",gap:"8px"}}>
+              <button onClick={()=>{setShowWalkin(false);setSuggestedTable(null);}} style={{
+                flex:1,padding:"10px",borderRadius:"8px",background:"transparent",border:`1px solid ${border}`,
+                color:muted,fontSize:"13px",cursor:"pointer",fontFamily:"inherit",
+              }}>Abbrechen</button>
+              {suggestedTable && (
+                <button onClick={()=>saveWalkin(suggestedTable.id)} disabled={!walkinName||savingWalkin} style={{
+                  flex:2,padding:"10px",borderRadius:"8px",background:"#FF5C35",border:"none",
+                  color:"#fff",fontSize:"13px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
+                  opacity:!walkinName||savingWalkin?0.6:1,
+                }}>
+                  {savingWalkin?"Wird gespeichert...":"✓ Bestätigen & eintragen"}
+                </button>
+              )}
+              <button onClick={()=>router.push("/dashboard/new")} style={{
+                flex:1,padding:"10px",borderRadius:"8px",background:surface,border:`1px solid ${border}`,
+                color:text,fontSize:"13px",cursor:"pointer",fontFamily:"inherit",
+              }}>Manuell</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
