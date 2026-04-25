@@ -115,10 +115,10 @@ export default function Dashboard() {
 
   // Realtime — neue Reservierungen
   useEffect(() => {
-    if (!restaurant) return;
+    if (!restaurant?.id) return;
     const supabase = createClient();
     const channel = supabase
-      .channel("dashboard-realtime")
+      .channel(`dashboard-${restaurant.id}`)
       .on("postgres_changes", {
         event: "INSERT", schema: "public", table: "reservations",
         filter: `restaurant_id=eq.${restaurant.id}`,
@@ -130,9 +130,11 @@ export default function Dashboard() {
           setNewPendingRes(newRes);
         }
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log("Realtime status:", status);
+      });
     return () => { supabase.removeChannel(channel); };
-  }, [restaurant]);
+  }, [restaurant?.id]);
 
   async function handleLogout() {
     const supabase = createClient();
