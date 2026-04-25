@@ -69,7 +69,7 @@ export default function Dashboard() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [tables, setTables] = useState<Table[]>([]);
   const [loading, setLoading] = useState(true);
-  const [dark, setDark] = useState(true);
+  const dark = false;
   const [view, setView] = useState<"list"|"tables">("list");
   const [filterChannel, setFilterChannel] = useState("all");
   const [filterDate, setFilterDate] = useState(new Date().toISOString().split("T")[0]);
@@ -274,20 +274,8 @@ export default function Dashboard() {
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v11M1 6.5h11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
               Walk-in
             </button>
-            <button onClick={() => router.push("/dashboard/new")} style={{
-              display:"flex",alignItems:"center",gap:"6px",padding:"7px 14px",borderRadius:"7px",
-              background:"#FF5C35",border:"none",color:"#fff",fontSize:"12px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
-            }}>
-              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v11M1 6.5h11" stroke="white" strokeWidth="1.5" strokeLinecap="round"/></svg>
-              Reservierung
-            </button>
-            <button onClick={() => setDark(!dark)} style={{
-              width:"32px",height:"32px",borderRadius:"7px",display:"flex",alignItems:"center",justifyContent:"center",
-              background:surface,border:`1px solid ${border}`,cursor:"pointer",color:muted,
-            }}>
-              {dark ? <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="2.5" stroke="currentColor" strokeWidth="1.3"/><path d="M7 1v1.5M7 11.5V13M1 7h1.5M11.5 7H13M2.6 2.6l1 1M10.4 10.4l1 1M2.6 11.4l1-1M10.4 3.6l1-1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
-              : <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M12 9A5.5 5.5 0 0 1 5 2a5.5 5.5 0 1 0 7 7z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>}
-            </button>
+
+
           </div>
         </header>
 
