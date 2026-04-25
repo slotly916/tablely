@@ -80,6 +80,8 @@ export default function Dashboard() {
   const [suggestedTable, setSuggestedTable] = useState<Table | null>(null);
   const [walkinName, setWalkinName] = useState("");
   const [savingWalkin, setSavingWalkin] = useState(false);
+  const [newPendingRes, setNewPendingRes] = useState<Reservation | null>(null);
+  const [confirmingRes, setConfirmingRes] = useState(false);
 
   const stayDuration = restaurant?.stay_duration || 150; // default 2.5h
 
@@ -111,10 +113,79 @@ export default function Dashboard() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  // Realtime — neue Reservierungen
+  useEffect(() => {
+    if (!restaurant) return;
+    const supabase = createClient();
+    const channel = supabase
+      .channel("dashboard-realtime")
+      .on("postgres_changes", {
+        event: "INSERT", schema: "public", table: "reservations",
+        filter: `restaurant_id=eq.${restaurant.id}`,
+      }, (payload) => {
+        const newRes = payload.new as Reservation;
+        setReservations(prev => [...prev, newRes]);
+        // Popup nur für Großgruppen (15+ Personen)
+        if (newRes.party_size >= 15) {
+          setNewPendingRes(newRes);
+        }
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [restaurant]);
+
   async function handleLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/login");
+  }
+
+  async function confirmReservation(res: Reservation) {
+    setConfirmingRes(true);
+    const supabase = createClient();
+    await supabase.from("reservations").update({ status: "confirmed" }).eq("id", res.id);
+    setReservations(prev => prev.map(r => r.id === res.id ? { ...r, status: "confirmed" } : r));
+    // WhatsApp Bestätigung senden
+    if (res.guest_phone && res.channel === "whatsapp") {
+      await fetch("/api/whatsapp-notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: res.guest_phone,
+          message: `✅ Deine Reservierung bei ${restaurant?.name} wurde bestätigt!
+
+📅 ${new Date(res.date).toLocaleDateString("de-AT", {weekday:"long",day:"numeric",month:"long"})}
+🕐 ${res.time.slice(0,5)} Uhr
+👥 ${res.party_size} ${res.party_size===1?"Person":"Personen"}
+
+Wir freuen uns auf dich!`,
+        }),
+      });
+    }
+    setNewPendingRes(null);
+    setConfirmingRes(false);
+  }
+
+  async function cancelReservation(res: Reservation) {
+    setConfirmingRes(true);
+    const supabase = createClient();
+    await supabase.from("reservations").update({ status: "cancelled" }).eq("id", res.id);
+    setReservations(prev => prev.map(r => r.id === res.id ? { ...r, status: "cancelled" } : r));
+    // WhatsApp Stornierung senden
+    if (res.guest_phone && res.channel === "whatsapp") {
+      await fetch("/api/whatsapp-notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: res.guest_phone,
+          message: `❌ Deine Reservierungsanfrage bei ${restaurant?.name} für den ${new Date(res.date).toLocaleDateString("de-AT", {weekday:"long",day:"numeric",month:"long"})} um ${res.time.slice(0,5)} Uhr konnte leider nicht bestätigt werden.
+
+Bitte kontaktiere uns direkt für einen alternativen Termin.`,
+        }),
+      });
+    }
+    setNewPendingRes(null);
+    setConfirmingRes(false);
   }
 
   async function updateStatus(id: string, status: string) {
@@ -454,6 +525,58 @@ export default function Dashboard() {
           )}
         </div>
       </main>
+
+      {/* NEUE RESERVIERUNG POPUP */}
+      {newPendingRes && (
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.6)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:"24px"}}>
+          <div style={{background:"#fff",borderRadius:"20px",padding:"32px",width:"100%",maxWidth:"460px",boxShadow:"0 40px 80px rgba(0,0,0,.3)",animation:"slideIn .3s ease"}}>
+            <div style={{textAlign:"center",marginBottom:"24px"}}>
+              <div style={{width:"56px",height:"56px",borderRadius:"50%",background:"rgba(251,191,36,.15)",border:"2px solid rgba(251,191,36,.3)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 11c-.55 0-1-.45-1-1V8c0-.55.45-1 1-1s1 .45 1 1v4c0 .55-.45 1-1 1zm1 4h-2v-2h2v2z" fill="#FCD34D"/></svg>
+              </div>
+              <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:"22px",fontWeight:700,color:"#1A1A2E",marginBottom:"6px"}}>
+                Neue Reservierung
+              </h3>
+              <p style={{fontSize:"13px",color:"#6B6B80",fontWeight:300}}>
+                {newPendingRes.party_size >= 15 ? "Großgruppe — manuelle Bestätigung erforderlich" : "Neue Anfrage eingegangen"}
+              </p>
+            </div>
+
+            <div style={{background:"#F5F0EB",borderRadius:"12px",padding:"16px 20px",marginBottom:"24px"}}>
+              {[
+                {l:"Name", v:newPendingRes.guest_name},
+                {l:"Datum", v:new Date(newPendingRes.date).toLocaleDateString("de-AT",{weekday:"long",day:"numeric",month:"long",year:"numeric"})},
+                {l:"Uhrzeit", v:`${newPendingRes.time.slice(0,5)} Uhr`},
+                {l:"Personen", v:`${newPendingRes.party_size} ${newPendingRes.party_size===1?"Person":"Personen"}`},
+                ...(newPendingRes.guest_phone ? [{l:"Telefon", v:newPendingRes.guest_phone}] : []),
+                {l:"Kanal", v:newPendingRes.channel==="whatsapp"?"WhatsApp":newPendingRes.channel==="online"?"Online":"Telefon"},
+              ].map((r,i,arr)=>(
+                <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:i<arr.length-1?"1px solid #EDE8E3":"none",fontSize:"14px"}}>
+                  <span style={{color:"#6B6B80"}}>{r.l}</span>
+                  <span style={{fontWeight:500,color:"#1A1A2E"}}>{r.v}</span>
+                </div>
+              ))}
+            </div>
+
+            <div style={{display:"flex",gap:"10px"}}>
+              <button onClick={()=>cancelReservation(newPendingRes)} disabled={confirmingRes} style={{
+                flex:1,padding:"12px",borderRadius:"10px",background:"rgba(239,68,68,.1)",border:"1px solid rgba(239,68,68,.2)",
+                color:"#F87171",fontSize:"14px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
+                opacity:confirmingRes?0.6:1,
+              }}>
+                ✕ Stornieren
+              </button>
+              <button onClick={()=>confirmReservation(newPendingRes)} disabled={confirmingRes} style={{
+                flex:2,padding:"12px",borderRadius:"10px",background:"#FF5C35",border:"none",
+                color:"#fff",fontSize:"14px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
+                opacity:confirmingRes?0.6:1,
+              }}>
+                {confirmingRes?"Wird gespeichert...":"✓ Bestätigen & Gast benachrichtigen"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* WALK-IN MODAL */}
       {showWalkin && (
