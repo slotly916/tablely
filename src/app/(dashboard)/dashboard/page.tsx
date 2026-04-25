@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase";
 
 type Reservation = {
   id: string;
+  restaurant_id: string;
   guest_name: string;
   guest_phone: string | null;
   guest_email: string | null;
@@ -123,6 +124,8 @@ export default function Dashboard() {
         event: "INSERT", schema: "public", table: "reservations",
       }, (payload) => {
         const newRes = payload.new as Reservation;
+        // Nur Reservierungen dieses Restaurants
+        if (newRes.restaurant_id !== restaurant?.id) return;
         setReservations(prev => [...prev, newRes]);
         // Popup nur für Großgruppen (15+ Personen)
         if (newRes.party_size >= 15) {
