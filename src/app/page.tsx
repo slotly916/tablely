@@ -170,7 +170,7 @@ export default function Home() {
       <nav style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 20px",position:"sticky",top:0,background:"rgba(255,250,245,0.97)",backdropFilter:"blur(16px)",zIndex:100,borderBottom:"1px solid var(--border)"}}>
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:"20px",fontWeight:700,color:"var(--dark)"}}>table<span style={{color:"var(--orange)"}}>ly</span></div>
         <div style={{display:"flex",alignItems:"center",gap:"16px"}}>
-          <div className="nav-links" style={{display:"flex",gap:"20px",listStyle:"none"}}>
+          <div className="nav-links" style={{gap:"20px",listStyle:"none"}}>
             {[["#features","Funktionen"],["#screenshots","App"],["#waitlist","Warteliste"]].map(([h,l])=>(
               <a key={h} href={h} style={{textDecoration:"none",color:"var(--muted)",fontSize:"14px"}}>{l}</a>
             ))}
@@ -314,6 +314,24 @@ export default function Home() {
                 <p style={{fontSize:"13px",color:"var(--muted)",lineHeight:1.6,fontWeight:300}}>{f.d}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* PRODUKT BILD */}
+      <section style={{background:"#F5F0EB",padding:"80px 20px 0",overflow:"hidden"}}>
+        <div style={{maxWidth:"1100px",margin:"0 auto"}}>
+          <div style={{textAlign:"center",marginBottom:"40px"}}>
+            <div style={{fontSize:"11px",fontWeight:600,textTransform:"uppercase",letterSpacing:"1px",color:"#FF5C35",marginBottom:"12px"}}>Das Produkt</div>
+            <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(26px,5vw,40px)",fontWeight:700,letterSpacing:"-1px",color:"#1A1A2E",marginBottom:"12px"}}>
+              Vom Gast direkt ins Dashboard.
+            </h2>
+            <p style={{color:"#6B6B80",fontSize:"16px",fontWeight:300,maxWidth:"480px",margin:"0 auto",lineHeight:1.7}}>
+              Gäste buchen auf dem iPhone — du verwaltest alles auf dem Mac. Einfach, übersichtlich, automatisch.
+            </p>
+          </div>
+          <div style={{borderRadius:"20px 20px 0 0",overflow:"hidden",boxShadow:"0 -8px 60px rgba(26,26,46,.15)"}}>
+            <img src="/mac_iohon.png" alt="Tablely — iPhone Booking und Mac Dashboard" style={{width:"100%",height:"auto",display:"block"}}/>
           </div>
         </div>
       </section>
