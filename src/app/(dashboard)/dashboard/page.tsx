@@ -121,7 +121,6 @@ export default function Dashboard() {
       .channel(`dashboard-${restaurant.id}`)
       .on("postgres_changes", {
         event: "INSERT", schema: "public", table: "reservations",
-        filter: `restaurant_id=eq.${restaurant.id}`,
       }, (payload) => {
         const newRes = payload.new as Reservation;
         setReservations(prev => [...prev, newRes]);
