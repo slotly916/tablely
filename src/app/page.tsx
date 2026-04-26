@@ -49,7 +49,7 @@ function WaitlistSection() {
           </span>
         </div>
         <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(28px,7vw,36px)",fontWeight:700,color:"#FFFAF5",letterSpacing:"-1px",lineHeight:1.1,marginBottom:"16px"}}>
-          40 Tage kostenlos.<br/><span style={{color:"#FF5C35",fontStyle:"italic"}}>Danach vergünstigt.</span>
+          30 Tage kostenlos.<br/><span style={{color:"#FF5C35",fontStyle:"italic"}}>Danach vergünstigt.</span>
         </h2>
         <p style={{color:"rgba(255,255,255,0.45)",fontSize:"15px",lineHeight:1.75,fontWeight:300,marginBottom:"32px"}}>
           Wir suchen Restaurants die uns helfen Tablely zu perfektionieren. Du testest kostenlos, gibst uns Feedback — und bekommst dafür dauerhaft bessere Konditionen als alle nach dir.
@@ -93,7 +93,7 @@ export default function Home() {
   const [secs, setSecs] = useState(0);
 
   useEffect(() => {
-    const target = new Date("2026-04-30T00:00:00");
+    const target = new Date("2026-05-27T00:00:00");
     function tick() {
       const d = target.getTime() - Date.now();
       if (d <= 0) return;
