@@ -424,8 +424,8 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
           {/* LIST VIEW */}
           {view === "list" && (
             <div style={{background:surface,border:`1px solid ${border}`,borderRadius:"14px",overflow:"hidden"}}>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 80px 100px 80px 110px 160px",gap:"12px",padding:"10px 18px",borderBottom:`1px solid ${border}`,background:dark?"rgba(255,255,255,.02)":"rgba(0,0,0,.02)"}}>
-                {["Gast","Personen","Datum","Uhrzeit","Kanal","Status"].map((h,i)=>(
+              <div style={{display:"grid",gridTemplateColumns:"1fr 70px 90px 70px 90px 100px 150px",gap:"10px",padding:"10px 18px",borderBottom:`1px solid ${border}`,background:dark?"rgba(255,255,255,.02)":"rgba(0,0,0,.02)"}}>
+                {["Gast","Personen","Datum","Uhrzeit","Tisch","Kanal","Status"].map((h,i)=>(
                   <div key={i} style={{fontSize:"10px",fontWeight:600,color:muted,textTransform:"uppercase",letterSpacing:".7px"}}>{h}</div>
                 ))}
               </div>
@@ -435,7 +435,7 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
                 </div>
               ) : filteredRes.map((r,i) => (
                 <div key={r.id} className="res-row" style={{
-                  display:"grid",gridTemplateColumns:"1fr 80px 100px 80px 110px 160px",gap:"12px",
+                  display:"grid",gridTemplateColumns:"1fr 70px 90px 70px 90px 100px 150px",gap:"10px",
                   padding:"12px 18px",borderBottom:i<filteredRes.length-1?`1px solid ${border}`:"none",
                   alignItems:"center",transition:"background .12s",
                 }}>
@@ -452,6 +452,9 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
                   <div style={{fontSize:"13px",color:muted}}>{r.party_size} Pers.</div>
                   <div style={{fontSize:"12px",color:muted}}>{new Date(r.date).toLocaleDateString("de-AT",{day:"numeric",month:"short"})}</div>
                   <div style={{fontSize:"13px",fontWeight:500,color:text}}>{r.time.slice(0,5)}</div>
+                  <div style={{fontSize:"12px",color:muted}}>
+                    {tables.find(t=>t.id===r.table_id)?.name || <span style={{color:dark?"rgba(255,255,255,.2)":"#D1D5DB",fontSize:"11px"}}>—</span>}
+                  </div>
                   <div style={{...CHANNEL_COLORS[r.channel]||{bg:"rgba(255,255,255,.1)",color:muted},fontSize:"11px",fontWeight:600,padding:"3px 8px",borderRadius:"5px",width:"fit-content"}}>
                     {r.channel==="online"?"Online":r.channel==="whatsapp"?"WhatsApp":r.channel==="phone"?"Telefon":"Walk-in"}
                   </div>
