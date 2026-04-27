@@ -30,7 +30,8 @@ type Restaurant = {
   id: string;
   name: string;
   slug: string;
-  stay_duration?: number; // in minutes, default 150
+  stay_duration?: number;
+  large_group_threshold?: number;
 };
 
 const CHANNELS = [
@@ -81,6 +82,29 @@ export default function Dashboard() {
   const [suggestedTable, setSuggestedTable] = useState<Table | null>(null);
   const [walkinName, setWalkinName] = useState("");
   const [savingWalkin, setSavingWalkin] = useState(false);
+  const [selectedRes, setSelectedRes] = useState<Reservation | null>(null);
+
+  // Auto-complete reservations whose time has passed
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const now = new Date();
+      const todayStr = now.toISOString().split("T")[0];
+      const nowMins = now.getHours() * 60 + now.getMinutes();
+      const supabase = createClient();
+      
+      reservations.forEach(async (r) => {
+        if (r.status !== "confirmed") return;
+        if (r.date !== todayStr) return;
+        const resMins = timeToMinutes(r.time);
+        const endMins = resMins + (restaurant?.stay_duration || 150);
+        if (nowMins >= endMins) {
+          await supabase.from("reservations").update({ status: "completed" }).eq("id", r.id);
+          setReservations(prev => prev.map(x => x.id === r.id ? {...x, status: "completed"} : x));
+        }
+      });
+    }, 60000); // check every minute
+    return () => clearInterval(interval);
+  }, [reservations, restaurant]);
   const [newPendingRes, setNewPendingRes] = useState<Reservation | null>(null);
   const [confirmingRes, setConfirmingRes] = useState(false);
 
@@ -136,7 +160,7 @@ export default function Dashboard() {
         if (newRes.restaurant_id !== restaurant?.id) return;
         setReservations(prev => [...prev, newRes]);
         // Popup nur für Großgruppen (15+ Personen)
-        if (newRes.party_size >= 15) {
+        if (newRes.party_size >= (restaurant?.large_group_threshold || 15)) {
           setNewPendingRes(newRes);
         }
       })
@@ -434,10 +458,10 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
                   Keine Reservierungen für diesen Tag / Filter.
                 </div>
               ) : filteredRes.map((r,i) => (
-                <div key={r.id} className="res-row" style={{
+                <div key={r.id} className="res-row" onClick={() => setSelectedRes(r)} style={{
                   display:"grid",gridTemplateColumns:"1fr 70px 90px 70px 90px 100px 150px",gap:"10px",
                   padding:"12px 18px",borderBottom:i<filteredRes.length-1?`1px solid ${border}`:"none",
-                  alignItems:"center",transition:"background .12s",
+                  alignItems:"center",transition:"background .12s",cursor:"pointer",
                 }}>
                   <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
                     <div style={{width:"30px",height:"30px",borderRadius:"50%",background:"rgba(255,92,53,.15)",border:"1px solid rgba(255,92,53,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"12px",fontWeight:600,color:"#FF5C35",flexShrink:0}}>
@@ -587,6 +611,54 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
                 opacity:confirmingRes?0.6:1,
               }}>
                 {confirmingRes?"Wird gespeichert...":"✓ Bestätigen & Gast benachrichtigen"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* RESERVIERUNG DETAIL MODAL */}
+      {selectedRes && (
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.6)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:"24px"}}
+          onClick={e=>{if(e.target===e.currentTarget)setSelectedRes(null);}}>
+          <div style={{background:"#fff",borderRadius:"20px",padding:"32px",width:"100%",maxWidth:"480px",boxShadow:"0 40px 80px rgba(0,0,0,.2)"}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"24px"}}>
+              <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:"22px",fontWeight:700,color:"#1A1A2E"}}>Reservierungsdetails</h3>
+              <button onClick={()=>setSelectedRes(null)} style={{background:"transparent",border:"none",color:"#6B6B80",cursor:"pointer",fontSize:"20px",lineHeight:1}}>✕</button>
+            </div>
+            <div style={{background:"#F5F0EB",borderRadius:"12px",padding:"20px",marginBottom:"20px"}}>
+              {[
+                {l:"Gast", v:selectedRes.guest_name},
+                {l:"Telefon", v:selectedRes.guest_phone||"—"},
+                {l:"E-Mail", v:selectedRes.guest_email||"—"},
+                {l:"Datum", v:new Date(selectedRes.date).toLocaleDateString("de-AT",{weekday:"long",day:"numeric",month:"long",year:"numeric"})},
+                {l:"Uhrzeit", v:`${selectedRes.time.slice(0,5)} – ${minutesToTime(timeToMinutes(selectedRes.time)+(restaurant?.stay_duration||150))} Uhr`},
+                {l:"Personen", v:`${selectedRes.party_size} ${selectedRes.party_size===1?"Person":"Personen"}`},
+                {l:"Tisch", v:tables.find(t=>t.id===selectedRes.table_id)?.name||"Nicht zugewiesen"},
+                {l:"Kanal", v:selectedRes.channel==="whatsapp"?"WhatsApp":selectedRes.channel==="online"?"Online":selectedRes.channel==="phone"?"Telefon":"Walk-in"},
+                ...(selectedRes.notes ? [{l:"Notizen", v:selectedRes.notes}] : []),
+              ].map((row,i,arr)=>(
+                <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:i<arr.length-1?"1px solid #EDE8E3":"none",fontSize:"14px",gap:"16px"}}>
+                  <span style={{color:"#6B6B80",flexShrink:0}}>{row.l}</span>
+                  <span style={{fontWeight:500,color:"#1A1A2E",textAlign:"right"}}>{row.v}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{display:"flex",gap:"8px"}}>
+              <select value={selectedRes.status} onChange={async e=>{
+                await updateStatus(selectedRes.id, e.target.value);
+                setSelectedRes({...selectedRes, status: e.target.value});
+              }} style={{
+                flex:1,padding:"10px 12px",borderRadius:"8px",border:"1px solid #EDE8E3",
+                background:"#fff",color:"#1A1A2E",fontSize:"13px",fontFamily:"inherit",cursor:"pointer",outline:"none",
+              }}>
+                <option value="confirmed">✓ Bestätigt</option>
+                <option value="pending">◐ Ausstehend</option>
+                <option value="cancelled">✕ Storniert</option>
+                <option value="completed">● Abgeschlossen</option>
+              </select>
+              <button onClick={()=>setSelectedRes(null)} style={{flex:1,padding:"10px",borderRadius:"8px",background:"#FF5C35",border:"none",color:"#fff",fontSize:"13px",fontWeight:500,cursor:"pointer",fontFamily:"inherit"}}>
+                Schließen
               </button>
             </div>
           </div>

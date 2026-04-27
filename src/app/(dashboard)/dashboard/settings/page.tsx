@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 
-type Table = { id: string; name: string; capacity: number; };
+type Table = { id: string; name: string; capacity: number; combinable_with?: string[]; };
 type Hour = { id: string; day_of_week: number; open_time: string; close_time: string; is_closed: boolean; };
 
 const DAYS = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag","Sonntag"];
@@ -24,6 +24,7 @@ export default function Settings() {
   const [slug, setSlug] = useState("");
   const [stayDuration, setStayDuration] = useState(150);
   const [allowCombine, setAllowCombine] = useState(false);
+  const [largeGroupThreshold, setLargeGroupThreshold] = useState(15);
 
   // Tables
   const [tables, setTables] = useState<Table[]>([]);
@@ -56,8 +57,16 @@ export default function Settings() {
     setSlug(rest.slug || "");
     setStayDuration(rest.stay_duration || 150);
     setAllowCombine(rest.allow_combine || false);
+    setLargeGroupThreshold(rest.large_group_threshold || 15);
 
     const { data: tbls } = await supabase.from("tables").select("*").eq("restaurant_id", rest.id).order("name");
+    if (tbls) {
+      tbls.sort((a: {name: string}, b: {name: string}) => {
+        const numA = parseInt(a.name.replace(/[^0-9]/g, "")) || 0;
+        const numB = parseInt(b.name.replace(/[^0-9]/g, "")) || 0;
+        return numA - numB || a.name.localeCompare(b.name);
+      });
+    }
     setTables(tbls || []);
 
     const { data: hrs } = await supabase.from("opening_hours").select("*").eq("restaurant_id", rest.id).order("day_of_week");
@@ -71,7 +80,7 @@ export default function Settings() {
   async function saveRestaurant() {
     setSaving(true);
     const supabase = createClient();
-    await supabase.from("restaurants").update({ name, phone, address, stay_duration: stayDuration, allow_combine: allowCombine }).eq("id", restaurantId);
+    await supabase.from("restaurants").update({ name, phone, address, stay_duration: stayDuration, allow_combine: allowCombine, large_group_threshold: largeGroupThreshold }).eq("id", restaurantId);
     setSaving(false);
     showSaved();
   }
@@ -237,6 +246,19 @@ export default function Settings() {
                 </div>
               </div>
 
+              {/* Großgruppen Schwelle */}
+              <div>
+                <label style={labelStyle}>Großgruppen-Meldung ab</label>
+                <select style={inputStyle} value={largeGroupThreshold} onChange={e => setLargeGroupThreshold(parseInt(e.target.value))}>
+                  {[5,8,10,12,15,20,25,30].map(n => (
+                    <option key={n} value={n}>Ab {n} Personen</option>
+                  ))}
+                </select>
+                <div style={{fontSize:"11px",color:muted,marginTop:"4px"}}>
+                  Ab dieser Personenzahl erscheint eine Benachrichtigung im Dashboard zur manuellen Prüfung.
+                </div>
+              </div>
+
               {/* Tische zusammenschieben */}
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0",borderTop:`1px solid ${border}`}}>
                 <div>
@@ -287,26 +309,58 @@ export default function Settings() {
           {tab === "tables" && (
             <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
               {tables.map((t,i) => (
-                <div key={t.id} style={{background:surface,border:`1px solid ${border}`,borderRadius:"12px",padding:"16px 20px",display:"flex",alignItems:"center",gap:"12px"}}>
-                  <input
-                    style={{...inputStyle,flex:1}}
-                    type="text" value={t.name}
-                    onChange={e => setTables(tables.map((tb,j) => j===i ? {...tb,name:e.target.value} : tb))}
-                    onBlur={() => saveTable(t)}
-                  />
-                  <select
-                    style={{...inputStyle,width:"120px"}}
-                    value={t.capacity}
-                    onChange={e => { const updated = tables.map((tb,j) => j===i ? {...tb,capacity:parseInt(e.target.value)} : tb); setTables(updated); saveTable(updated[i]); }}
-                  >
-                    {[1,2,3,4,5,6,7,8,10,12].map(n => <option key={n} value={n}>{n} Pers.</option>)}
-                  </select>
-                  <button className="del-btn" onClick={() => deleteTable(t.id)} style={{
-                    width:"36px",height:"36px",borderRadius:"8px",display:"flex",alignItems:"center",justifyContent:"center",
-                    background:"transparent",border:`1px solid ${border}`,cursor:"pointer",color:muted,flexShrink:0,transition:"all 0.15s"
-                  }}>
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 3h10M5 3V2h4v1M3 3l1 9h6l1-9" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  </button>
+                <div key={t.id} style={{background:surface,border:`1px solid ${border}`,borderRadius:"12px",padding:"16px 20px",display:"flex",flexDirection:"column",gap:"12px"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
+                    <input
+                      style={{...inputStyle,flex:1}}
+                      type="text" value={t.name}
+                      onChange={e => setTables(tables.map((tb,j) => j===i ? {...tb,name:e.target.value} : tb))}
+                      onBlur={() => saveTable(t)}
+                    />
+                    <select
+                      style={{...inputStyle,width:"120px"}}
+                      value={t.capacity}
+                      onChange={e => { const updated = tables.map((tb,j) => j===i ? {...tb,capacity:parseInt(e.target.value)} : tb); setTables(updated); saveTable(updated[i]); }}
+                    >
+                      {[1,2,3,4,5,6,7,8,10,12,15,20].map(n => <option key={n} value={n}>{n} Pers.</option>)}
+                    </select>
+                    <button className="del-btn" onClick={() => deleteTable(t.id)} style={{
+                      width:"36px",height:"36px",borderRadius:"8px",display:"flex",alignItems:"center",justifyContent:"center",
+                      background:"transparent",border:`1px solid ${border}`,cursor:"pointer",color:muted,flexShrink:0,transition:"all 0.15s"
+                    }}>
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 3h10M5 3V2h4v1M3 3l1 9h6l1-9" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </button>
+                  </div>
+                  {/* Kombinierbar mit */}
+                  <div>
+                    <div style={{fontSize:"11px",fontWeight:500,color:muted,marginBottom:"8px",textTransform:"uppercase",letterSpacing:".5px"}}>Zusammenschieben mit:</div>
+                    <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
+                      {tables.filter(other => other.id !== t.id).map(other => {
+                        const isCombined = (t.combinable_with || []).includes(other.id);
+                        return (
+                          <button key={other.id} onClick={async () => {
+                            const newCombine = isCombined
+                              ? (t.combinable_with || []).filter((id: string) => id !== other.id)
+                              : [...(t.combinable_with || []), other.id];
+                            const updated = tables.map((tb,j) => j===i ? {...tb, combinable_with: newCombine} : tb);
+                            setTables(updated);
+                            const supabase = createClient();
+                            await supabase.from("tables").update({ combinable_with: newCombine }).eq("id", t.id);
+                          }} style={{
+                            padding:"5px 12px",borderRadius:"6px",fontSize:"12px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",border:"1px solid",transition:"all .15s",
+                            background: isCombined ? "#FF5C35" : "transparent",
+                            color: isCombined ? "#fff" : muted,
+                            borderColor: isCombined ? "#FF5C35" : border,
+                          }}>
+                            {other.name}
+                          </button>
+                        );
+                      })}
+                      {tables.filter(other => other.id !== t.id).length === 0 && (
+                        <span style={{fontSize:"12px",color:muted,fontStyle:"italic"}}>Noch keine anderen Tische</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               ))}
               <button onClick={addTable} style={{
