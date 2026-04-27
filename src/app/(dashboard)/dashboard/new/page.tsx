@@ -15,7 +15,7 @@ export default function NewReservation() {
   const [restaurantId, setRestaurantId] = useState("");
   const [tables, setTables] = useState<Table[]>([]);
   const [loading, setLoading] = useState(false);
-  const [dark, setDark] = useState(true);
+  const dark = false;
 
   const [guestName, setGuestName] = useState("");
   const [guestPhone, setGuestPhone] = useState("");
@@ -157,16 +157,7 @@ export default function NewReservation() {
             <span style={{color:muted}}>›</span>
             <span style={{fontSize:"13px",color:text,fontWeight:500}}>Neue Reservierung</span>
           </div>
-          <button onClick={() => setDark(!dark)} style={{
-            width:"36px",height:"36px",borderRadius:"8px",display:"flex",alignItems:"center",justifyContent:"center",
-            background:surface,border:`1px solid ${border}`,cursor:"pointer",color:muted,transition:"all 0.2s"
-          }}>
-            {dark ? (
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" strokeWidth="1.4"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M2.93 2.93l1.41 1.41M11.66 11.66l1.41 1.41M2.93 13.07l1.41-1.41M11.66 4.34l1.41-1.41" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
-            ) : (
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.5 10A6 6 0 0 1 6 2.5a6 6 0 1 0 7.5 7.5z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            )}
-          </button>
+
         </header>
 
         <div style={{padding:"32px",maxWidth:"680px"}}>

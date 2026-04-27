@@ -107,6 +107,14 @@ export default function Dashboard() {
     setReservations(res || []);
 
     const { data: tbls } = await supabase.from("tables").select("*").eq("restaurant_id", rest.id).order("name");
+    // Sort numerically: Tisch 1, 2, 3... not 1, 10, 2
+    if (tbls) {
+      tbls.sort((a: {name: string}, b: {name: string}) => {
+        const numA = parseInt(a.name.replace(/[^0-9]/g, "")) || 0;
+        const numB = parseInt(b.name.replace(/[^0-9]/g, "")) || 0;
+        return numA - numB || a.name.localeCompare(b.name);
+      });
+    }
     setTables(tbls || []);
 
     setLoading(false);
@@ -122,8 +130,8 @@ export default function Dashboard() {
       .channel(`dashboard-${restaurant.id}`)
       .on("postgres_changes", {
         event: "INSERT", schema: "public", table: "reservations",
-      }, (payload) => {
-        const newRes = payload.new as Reservation;
+      }, (payload: {new: Reservation}) => {
+        const newRes = payload.new;
         // Nur Reservierungen dieses Restaurants
         if (newRes.restaurant_id !== restaurant?.id) return;
         setReservations(prev => [...prev, newRes]);
@@ -132,7 +140,7 @@ export default function Dashboard() {
           setNewPendingRes(newRes);
         }
       })
-      .subscribe((status) => {
+      .subscribe((status: string) => {
         console.log("Realtime status:", status);
       });
     return () => { supabase.removeChannel(channel); };
@@ -192,7 +200,7 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
     setConfirmingRes(false);
   }
 
-  async function updateStatus(id: string, status: string) {
+  async function updateStatus(id: string, status: string): Promise<void> {
     const supabase = createClient();
     await supabase.from("reservations").update({ status }).eq("id", id);
     setReservations(prev => prev.map(r => r.id === id ? { ...r, status } : r));
@@ -447,7 +455,7 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
                   <div style={{...CHANNEL_COLORS[r.channel]||{bg:"rgba(255,255,255,.1)",color:muted},fontSize:"11px",fontWeight:600,padding:"3px 8px",borderRadius:"5px",width:"fit-content"}}>
                     {r.channel==="online"?"Online":r.channel==="whatsapp"?"WhatsApp":r.channel==="phone"?"Telefon":"Walk-in"}
                   </div>
-                  <select value={r.status} onChange={e=>updateStatus(r.id,e.target.value)} style={{
+                  <select value={r.status} onChange={(e: React.ChangeEvent<HTMLSelectElement>)=>updateStatus(r.id,e.target.value)} style={{
                     fontSize:"11px",fontWeight:600,padding:"4px 8px",borderRadius:"6px",cursor:"pointer",fontFamily:"inherit",
                     outline:"none",...STATUS_COLORS[r.status],border:`1px solid ${STATUS_COLORS[r.status]?.border||border}`,
                   }}>

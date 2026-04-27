@@ -202,18 +202,47 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
 
     const supabase = createClient();
 
-    // Find best table
-    const suitable = tables
-      .filter(t => t.capacity >= parseInt(partySize))
-      .sort((a, b) => a.capacity - b.capacity);
+    // Aufenthaltsdauer laden
+    const stayDuration = (restaurant as any)?.stay_duration || 150;
+
+    // Freien Tisch finden — mit Konfliktprüfung
+    const { data: existingRes } = await supabase
+      .from("reservations")
+      .select("table_id, time")
+      .eq("restaurant_id", restaurant!.id)
+      .eq("date", date)
+      .neq("status", "cancelled");
+
+    const party = parseInt(partySize);
+    const reqStart = parseInt(time.split(":")[0]) * 60 + parseInt(time.split(":")[1]);
+    const reqEnd = reqStart + stayDuration;
+
+    const suitableTable = tables
+      .filter(t => t.capacity >= party)
+      .sort((a, b) => a.capacity - b.capacity)
+      .find(t => {
+        const conflict = (existingRes || []).some((r: {table_id: string; time: string}) => {
+          if (r.table_id !== t.id) return false;
+          const rStart = parseInt(r.time.split(":")[0]) * 60 + parseInt(r.time.split(":")[1]);
+          const rEnd = rStart + stayDuration;
+          return reqStart < rEnd && reqEnd > rStart;
+        });
+        return !conflict;
+      });
+
+    if (!suitableTable) {
+      setError("Leider ist zu dieser Zeit kein passender Tisch verfügbar. Bitte wähle eine andere Uhrzeit.");
+      setSubmitting(false);
+      return;
+    }
 
     const { error: err } = await supabase.from("reservations").insert([{
       restaurant_id: restaurant!.id,
-      table_id: suitable[0]?.id || null,
+      table_id: suitableTable.id,
       guest_name: guestName,
       guest_phone: guestPhone || null,
       guest_email: guestEmail || null,
-      party_size: parseInt(partySize),
+      party_size: party,
       date,
       time,
       channel: "online",

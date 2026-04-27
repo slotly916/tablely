@@ -1,4 +1,4 @@
-"use client";
+#"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -11,7 +11,7 @@ const DAYS = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag","S
 
 export default function Settings() {
   const router = useRouter();
-  const [dark, setDark] = useState(true);
+  const dark = false;
   const [tab, setTab] = useState<"restaurant"|"tables"|"hours">("restaurant");
   const [restaurantId, setRestaurantId] = useState("");
   const [saving, setSaving] = useState(false);
@@ -22,6 +22,8 @@ export default function Settings() {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [slug, setSlug] = useState("");
+  const [stayDuration, setStayDuration] = useState(150);
+  const [allowCombine, setAllowCombine] = useState(false);
 
   // Tables
   const [tables, setTables] = useState<Table[]>([]);
@@ -52,6 +54,8 @@ export default function Settings() {
     setPhone(rest.phone || "");
     setAddress(rest.address || "");
     setSlug(rest.slug || "");
+    setStayDuration(rest.stay_duration || 150);
+    setAllowCombine(rest.allow_combine || false);
 
     const { data: tbls } = await supabase.from("tables").select("*").eq("restaurant_id", rest.id).order("name");
     setTables(tbls || []);
@@ -67,7 +71,7 @@ export default function Settings() {
   async function saveRestaurant() {
     setSaving(true);
     const supabase = createClient();
-    await supabase.from("restaurants").update({ name, phone, address }).eq("id", restaurantId);
+    await supabase.from("restaurants").update({ name, phone, address, stay_duration: stayDuration, allow_combine: allowCombine }).eq("id", restaurantId);
     setSaving(false);
     showSaved();
   }
@@ -173,10 +177,7 @@ export default function Settings() {
                 Gespeichert
               </div>
             )}
-            <button onClick={() => setDark(!dark)} style={{width:"36px",height:"36px",borderRadius:"8px",display:"flex",alignItems:"center",justifyContent:"center",background:surface,border:`1px solid ${border}`,cursor:"pointer",color:muted,transition:"all 0.2s"}}>
-              {dark ? <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" strokeWidth="1.4"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M2.93 2.93l1.41 1.41M11.66 11.66l1.41 1.41M2.93 13.07l1.41-1.41M11.66 4.34l1.41-1.41" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
-              : <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.5 10A6 6 0 0 1 6 2.5a6 6 0 1 0 7.5 7.5z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-            </button>
+  
           </div>
         </header>
 
@@ -218,6 +219,40 @@ export default function Settings() {
               <div>
                 <label style={labelStyle}>Adresse</label>
                 <input style={inputStyle} type="text" value={address} onChange={e => setAddress(e.target.value)} />
+              </div>
+
+              {/* Aufenthaltsdauer */}
+              <div>
+                <label style={labelStyle}>Aufenthaltsdauer pro Reservierung</label>
+                <select style={inputStyle} value={stayDuration} onChange={e => setStayDuration(parseInt(e.target.value))}>
+                  <option value={60}>1 Stunde</option>
+                  <option value={90}>1,5 Stunden</option>
+                  <option value={120}>2 Stunden</option>
+                  <option value={150}>2,5 Stunden (Standard)</option>
+                  <option value={180}>3 Stunden</option>
+                  <option value={240}>4 Stunden</option>
+                </select>
+                <div style={{fontSize:"11px",color:muted,marginTop:"4px"}}>
+                  Tische werden für diese Dauer blockiert. Nach {Math.floor(stayDuration/60)}:{String(stayDuration%60).padStart(2,"0")}h ist der Tisch wieder frei.
+                </div>
+              </div>
+
+              {/* Tische zusammenschieben */}
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0",borderTop:`1px solid ${border}`}}>
+                <div>
+                  <div style={{fontSize:"14px",fontWeight:500,color:text,marginBottom:"2px"}}>Tische zusammenschieben</div>
+                  <div style={{fontSize:"12px",color:muted}}>Erlaubt das Kombinieren von Tischen für größere Gruppen</div>
+                </div>
+                <div onClick={() => setAllowCombine(!allowCombine)} style={{
+                  width:"44px",height:"24px",borderRadius:"12px",cursor:"pointer",transition:"all .2s",position:"relative",flexShrink:0,
+                  background:allowCombine?"#FF5C35":"#D1D5DB",
+                }}>
+                  <div style={{
+                    position:"absolute",top:"2px",left:allowCombine?"22px":"2px",
+                    width:"20px",height:"20px",borderRadius:"50%",background:"#fff",transition:"left .2s",
+                    boxShadow:"0 1px 3px rgba(0,0,0,.2)",
+                  }}/>
+                </div>
               </div>
 
               {slug && (
