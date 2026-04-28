@@ -51,6 +51,13 @@ export default function NewReservation() {
 
     const { data: tbls } = await supabase
       .from("tables").select("*").eq("restaurant_id", rest.id).order("name");
+    if (tbls) {
+      tbls.sort((a: {name: string}, b: {name: string}) => {
+        const numA = parseInt(a.name.replace(/[^0-9]/g, "")) || 0;
+        const numB = parseInt(b.name.replace(/[^0-9]/g, "")) || 0;
+        return numA - numB || a.name.localeCompare(b.name);
+      });
+    }
     setTables(tbls || []);
     
   }
