@@ -217,7 +217,6 @@ export default function NewReservation() {
                 <div style={{display:"flex",flexWrap:"wrap",gap:"8px",marginTop:"4px"}}>
                   {tables.map(t => {
                     const selected = tableIds.includes(t.id);
-                    const totalCap = tables.filter(x => tableIds.includes(x.id)).reduce((s,x) => s+x.capacity, 0);
                     return (
                       <button key={t.id} type="button" onClick={() => {
                         setTableIds(prev => prev.includes(t.id) ? prev.filter(id => id !== t.id) : [...prev, t.id]);
