@@ -23,7 +23,7 @@ export default function NewReservation() {
   const [partySize, setPartySize] = useState("2");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [time, setTime] = useState("19:00");
-  const [tableId, setTableId] = useState("");
+  const [tableIds, setTableIds] = useState<string[]>([]);
   const [channel, setChannel] = useState("online");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
@@ -52,7 +52,7 @@ export default function NewReservation() {
     const { data: tbls } = await supabase
       .from("tables").select("*").eq("restaurant_id", rest.id).order("name");
     setTables(tbls || []);
-    if (tbls && tbls.length > 0) setTableId(tbls[0].id);
+    
   }
 
   async function handleSubmit() {
@@ -66,7 +66,8 @@ export default function NewReservation() {
     const supabase = createClient();
     const { error: err } = await supabase.from("reservations").insert([{
       restaurant_id: restaurantId,
-      table_id: tableId || null,
+      table_id: tableIds[0] || null,
+      table_ids: tableIds,
       guest_name: guestName,
       guest_phone: guestPhone || null,
       guest_email: guestEmail || null,
@@ -212,13 +213,32 @@ export default function NewReservation() {
             {/* Tisch + Kanal */}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"16px"}}>
               <div>
-                <label style={labelStyle}>Tisch</label>
-                <select style={inputStyle} value={tableId} onChange={e => setTableId(e.target.value)}>
-                  <option value="">Automatisch zuweisen</option>
-                  {tables.map(t => (
-                    <option key={t.id} value={t.id}>{t.name} ({t.capacity} Pers.)</option>
-                  ))}
-                </select>
+                <label style={labelStyle}>Tische</label>
+                <div style={{display:"flex",flexWrap:"wrap",gap:"8px",marginTop:"4px"}}>
+                  {tables.map(t => {
+                    const selected = tableIds.includes(t.id);
+                    const totalCap = tables.filter(x => tableIds.includes(x.id)).reduce((s,x) => s+x.capacity, 0);
+                    return (
+                      <button key={t.id} type="button" onClick={() => {
+                        setTableIds(prev => prev.includes(t.id) ? prev.filter(id => id !== t.id) : [...prev, t.id]);
+                      }} style={{
+                        padding:"8px 14px",borderRadius:"8px",fontSize:"13px",fontWeight:500,
+                        cursor:"pointer",fontFamily:"inherit",border:"1.5px solid",transition:"all .15s",
+                        background: selected ? "#FF5C35" : inputBg,
+                        color: selected ? "#fff" : text,
+                        borderColor: selected ? "#FF5C35" : inputBorder,
+                      }}>
+                        {t.name} <span style={{opacity:.7,fontSize:"11px"}}>({t.capacity}P)</span>
+                      </button>
+                    );
+                  })}
+                  {tables.length === 0 && <span style={{fontSize:"13px",color:muted}}>Keine Tische — erst in Einstellungen anlegen</span>}
+                </div>
+                {tableIds.length > 0 && (
+                  <div style={{fontSize:"12px",color:muted,marginTop:"6px"}}>
+                    {tableIds.length} Tisch/Tische · {tables.filter(t=>tableIds.includes(t.id)).reduce((s,t)=>s+t.capacity,0)} Personen Kapazität
+                  </div>
+                )}
               </div>
               <div>
                 <label style={labelStyle}>Kanal</label>

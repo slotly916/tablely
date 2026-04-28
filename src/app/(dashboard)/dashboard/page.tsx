@@ -17,6 +17,7 @@ type Reservation = {
   channel: string;
   notes: string | null;
   table_id: string | null;
+  table_ids?: string[];
 };
 
 type Table = {
@@ -477,7 +478,11 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
                   <div style={{fontSize:"12px",color:muted}}>{new Date(r.date).toLocaleDateString("de-AT",{day:"numeric",month:"short"})}</div>
                   <div style={{fontSize:"13px",fontWeight:500,color:text}}>{r.time.slice(0,5)}</div>
                   <div style={{fontSize:"12px",color:muted}}>
-                    {tables.find(t=>t.id===r.table_id)?.name || <span style={{color:dark?"rgba(255,255,255,.2)":"#D1D5DB",fontSize:"11px"}}>—</span>}
+                    {(() => {
+                      const ids = r.table_ids?.length ? r.table_ids : r.table_id ? [r.table_id] : [];
+                      if (!ids.length) return <span style={{color:dark?"rgba(255,255,255,.2)":"#D1D5DB",fontSize:"11px"}}>—</span>;
+                      return ids.map(id => tables.find(t=>t.id===id)?.name).filter(Boolean).join(" + ");
+                    })()}
                   </div>
                   <div style={{...CHANNEL_COLORS[r.channel]||{bg:"rgba(255,255,255,.1)",color:muted},fontSize:"11px",fontWeight:600,padding:"3px 8px",borderRadius:"5px",width:"fit-content"}}>
                     {r.channel==="online"?"Online":r.channel==="whatsapp"?"WhatsApp":r.channel==="phone"?"Telefon":"Walk-in"}
@@ -634,7 +639,11 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
                 {l:"Datum", v:new Date(selectedRes.date).toLocaleDateString("de-AT",{weekday:"long",day:"numeric",month:"long",year:"numeric"})},
                 {l:"Uhrzeit", v:`${selectedRes.time.slice(0,5)} – ${minutesToTime(timeToMinutes(selectedRes.time)+(restaurant?.stay_duration||150))} Uhr`},
                 {l:"Personen", v:`${selectedRes.party_size} ${selectedRes.party_size===1?"Person":"Personen"}`},
-                {l:"Tisch", v:tables.find(t=>t.id===selectedRes.table_id)?.name||"Nicht zugewiesen"},
+                {l:"Tisch", v:(() => {
+                  const ids = selectedRes.table_ids?.length ? selectedRes.table_ids : selectedRes.table_id ? [selectedRes.table_id] : [];
+                  if (!ids.length) return "Nicht zugewiesen";
+                  return ids.map((id: string) => tables.find(t=>t.id===id)?.name).filter(Boolean).join(" + ");
+                })()},
                 {l:"Kanal", v:selectedRes.channel==="whatsapp"?"WhatsApp":selectedRes.channel==="online"?"Online":selectedRes.channel==="phone"?"Telefon":"Walk-in"},
                 ...(selectedRes.notes ? [{l:"Notizen", v:selectedRes.notes}] : []),
               ].map((row,i,arr)=>(
