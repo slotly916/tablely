@@ -275,6 +275,7 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
   const today = new Date().toISOString().split("T")[0];
   const todayRes = reservations.filter(r => r.date === today);
   const filteredRes = reservations.filter(r => {
+    if (filterChannel === "pending") return r.status === "pending";
     const matchDate = r.date === filterDate;
     const matchChannel = filterChannel === "all" || r.channel === filterChannel;
     return matchDate && matchChannel;
@@ -423,6 +424,21 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
             ))}
           </div>
 
+          {/* PENDING ALERT */}
+          {stats.pending > 0 && (
+            <div onClick={() => { setFilterChannel("all"); setFilterDate(today); }}
+              style={{
+                display:"flex",alignItems:"center",gap:"10px",padding:"10px 16px",
+                background:"rgba(251,191,36,.1)",border:"1px solid rgba(251,191,36,.25)",
+                borderRadius:"10px",marginBottom:"16px",cursor:"pointer",
+              }}>
+              <div style={{width:"8px",height:"8px",borderRadius:"50%",background:"#FCD34D",flexShrink:0}}/>
+              <span style={{fontSize:"13px",color:"#D97706",fontWeight:500}}>
+                {stats.pending} ausstehende Reservierung{stats.pending>1?"en":""} — Klicken zum Anzeigen
+              </span>
+            </div>
+          )}
+
           {/* VIEW TOGGLE + CHANNEL FILTER */}
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"16px",flexWrap:"wrap",gap:"10px"}}>
             <div style={{display:"flex",gap:"4px",background:surface,border:`1px solid ${border}`,borderRadius:"9px",padding:"3px"}}>
@@ -435,6 +451,12 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
               ))}
             </div>
             <div style={{display:"flex",gap:"4px",flexWrap:"wrap"}}>
+              <button onClick={() => setFilterChannel("pending")} style={{
+                padding:"5px 12px",borderRadius:"6px",fontSize:"12px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",border:"1px solid",transition:"all .15s",
+                background: filterChannel==="pending" ? "#FCD34D" : "transparent",
+                color: filterChannel==="pending" ? "#1A1A2E" : muted,
+                borderColor: filterChannel==="pending" ? "#FCD34D" : border,
+              }}>◐ Ausstehend {stats.pending > 0 && `(${stats.pending})`}</button>
               {CHANNELS.map(c => (
                 <button key={c.key} onClick={() => setFilterChannel(c.key)} style={{
                   padding:"5px 12px",borderRadius:"6px",fontSize:"12px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",border:`1px solid ${border}`,transition:"all .15s",
@@ -602,20 +624,26 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
               ))}
             </div>
 
-            <div style={{display:"flex",gap:"10px"}}>
+            <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
               <button onClick={()=>cancelReservation(newPendingRes)} disabled={confirmingRes} style={{
                 flex:1,padding:"12px",borderRadius:"10px",background:"rgba(239,68,68,.1)",border:"1px solid rgba(239,68,68,.2)",
-                color:"#F87171",fontSize:"14px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
-                opacity:confirmingRes?0.6:1,
+                color:"#F87171",fontSize:"13px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
+                opacity:confirmingRes?0.6:1,minWidth:"100px",
               }}>
                 ✕ Stornieren
               </button>
+              <button onClick={()=>setNewPendingRes(null)} style={{
+                flex:1,padding:"12px",borderRadius:"10px",background:"rgba(251,191,36,.1)",border:"1px solid rgba(251,191,36,.2)",
+                color:"#D97706",fontSize:"13px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",minWidth:"100px",
+              }}>
+                ⏸ Aufschieben
+              </button>
               <button onClick={()=>confirmReservation(newPendingRes)} disabled={confirmingRes} style={{
                 flex:2,padding:"12px",borderRadius:"10px",background:"#FF5C35",border:"none",
-                color:"#fff",fontSize:"14px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
-                opacity:confirmingRes?0.6:1,
+                color:"#fff",fontSize:"13px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
+                opacity:confirmingRes?0.6:1,minWidth:"140px",
               }}>
-                {confirmingRes?"Wird gespeichert...":"✓ Bestätigen & Gast benachrichtigen"}
+                {confirmingRes?"Wird gespeichert...":"✓ Bestätigen"}
               </button>
             </div>
           </div>

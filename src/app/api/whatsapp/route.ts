@@ -161,9 +161,10 @@ WICHTIGE REGELN:
         status: "pending",
         notes: "Großgruppe — manuelle Prüfung erforderlich",
       }]);
-      await sendWhatsApp(from, aiMessage.replace(/LARGE_GROUP:\s*\{[^}]+\}/i, "").trim());
+      // Feste Nachricht — KI bestätigt NICHT, Team meldet sich
+      await sendWhatsApp(from, `Vielen Dank für deine Anfrage, ${resData.name}! 🙏\n\nFür Gruppen ab ${resData.party_size} Personen meldet sich unser Team persönlich bei dir — wir prüfen die Verfügbarkeit und bestätigen deinen Wunschtermin so schnell wie möglich.\n\nWir freuen uns auf euch! 🍽️`);
     } catch {
-      await sendWhatsApp(from, aiMessage.replace(/LARGE_GROUP:\s*\{[^}]+\}/i, "").trim());
+      await sendWhatsApp(from, "Vielen Dank für deine Anfrage! Für Großgruppen meldet sich unser Team persönlich bei dir.");
     }
     return NextResponse.json({ ok: true });
   }
