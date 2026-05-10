@@ -33,6 +33,10 @@ type Restaurant = {
   slug: string;
   stay_duration?: number;
   large_group_threshold?: number;
+  trial_start?: string;
+  trial_days?: number;
+  plan?: string;
+  is_blocked?: boolean;
 };
 
 const CHANNELS = [
@@ -406,6 +410,39 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
               />
             </div>
           </div>
+
+          {/* TRIAL BANNER */}
+          {restaurant && restaurant.plan === "trial" && (() => {
+            const trialStart = restaurant.trial_start ? new Date(restaurant.trial_start) : new Date();
+            const trialDays = restaurant.trial_days || 30;
+            const daysLeft = Math.max(0, trialDays - Math.floor((Date.now() - trialStart.getTime()) / 86400000));
+            const pct = Math.min(100, ((trialDays - daysLeft) / trialDays) * 100);
+            if (daysLeft > trialDays) return null;
+            return (
+              <div style={{
+                background: daysLeft <= 5 ? "rgba(239,68,68,.08)" : "rgba(255,92,53,.06)",
+                border: `1px solid ${daysLeft <= 5 ? "rgba(239,68,68,.2)" : "rgba(255,92,53,.15)"}`,
+                borderRadius:"10px",padding:"12px 16px",marginBottom:"20px",
+                display:"flex",alignItems:"center",justifyContent:"space-between",gap:"16px",flexWrap:"wrap",
+              }}>
+                <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+                  <div style={{width:"8px",height:"8px",borderRadius:"50%",background:daysLeft<=5?"#F87171":"#FF5C35",flexShrink:0}}/>
+                  <div>
+                    <span style={{fontSize:"13px",fontWeight:600,color:daysLeft<=5?"#F87171":"#FF5C35"}}>
+                      {daysLeft === 0 ? "Testphase abgelaufen" : `Testphase: noch ${daysLeft} ${daysLeft===1?"Tag":"Tage"}`}
+                    </span>
+                    <div style={{width:"160px",height:"4px",background:"rgba(0,0,0,.08)",borderRadius:"2px",marginTop:"4px",overflow:"hidden"}}>
+                      <div style={{width:`${pct}%`,height:"100%",background:daysLeft<=5?"#F87171":"#FF5C35",borderRadius:"2px",transition:"width .5s"}}/>
+                    </div>
+                  </div>
+                </div>
+                <a href="mailto:michael@tablely.at?subject=Tablely Paket" style={{
+                  fontSize:"12px",fontWeight:500,color:"#fff",background:"#FF5C35",
+                  padding:"6px 14px",borderRadius:"6px",textDecoration:"none",whiteSpace:"nowrap",
+                }}>Paket wählen →</a>
+              </div>
+            );
+          })()}
 
           {/* STATS */}
           <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:"10px",marginBottom:"24px"}}>

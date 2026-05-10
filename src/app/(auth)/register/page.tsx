@@ -39,6 +39,15 @@ export default function Register() {
       return;
     }
 
+    // Willkommensmail senden
+    try {
+      await fetch("/api/welcome-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, name, restaurantName: name + "s Restaurant" }),
+      });
+    } catch {}
+
     setStatus("success");
   }
 
