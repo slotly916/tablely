@@ -365,7 +365,7 @@ export default function Home() {
 
             {/* WhatsApp */}
             <div style={{display:"flex",flexDirection:"column",alignItems:"center",textAlign:"center"}}>
-              <div style={{background:"#1A1A2E",borderRadius:"40px",padding:"10px",boxShadow:"0 40px 60px rgba(0,0,0,.25)",marginBottom:"28px",width:"200px"}}>
+              <div style={{background:"#1A1A2E",borderRadius:"40px",padding:"10px",boxShadow:"0 40px 60px rgba(0,0,0,.25)",marginBottom:"28px",width:"280px"}}>
                 <img src="/iphone_whatsapp.png" alt="WhatsApp KI" style={{width:"100%",borderRadius:"32px",display:"block"}}/>
               </div>
               <div style={{display:"inline-flex",alignItems:"center",gap:"6px",background:"rgba(37,211,102,.1)",border:"1px solid rgba(37,211,102,.2)",borderRadius:"20px",padding:"4px 12px",marginBottom:"12px"}}>
@@ -378,7 +378,7 @@ export default function Home() {
 
             {/* Online Booking */}
             <div style={{display:"flex",flexDirection:"column",alignItems:"center",textAlign:"center"}}>
-              <div style={{background:"#1A1A2E",borderRadius:"40px",padding:"10px",boxShadow:"0 40px 60px rgba(0,0,0,.25)",marginBottom:"28px",width:"200px"}}>
+              <div style={{background:"#1A1A2E",borderRadius:"40px",padding:"10px",boxShadow:"0 40px 60px rgba(0,0,0,.25)",marginBottom:"28px",width:"280px"}}>
                 <img src="/iphone_bookingpage.png" alt="Online Buchung" style={{width:"100%",borderRadius:"32px",display:"block"}}/>
               </div>
               <div style={{display:"inline-flex",alignItems:"center",gap:"6px",background:"rgba(99,102,241,.1)",border:"1px solid rgba(99,102,241,.2)",borderRadius:"20px",padding:"4px 12px",marginBottom:"12px"}}>
@@ -391,8 +391,8 @@ export default function Home() {
 
             {/* Telefon KI */}
             <div style={{display:"flex",flexDirection:"column",alignItems:"center",textAlign:"center",position:"relative"}}>
-              <div style={{position:"relative",marginBottom:"28px",width:"200px"}}>
-                <div style={{background:"#1A1A2E",borderRadius:"40px",padding:"10px",boxShadow:"0 40px 60px rgba(0,0,0,.25)"}}>
+              <div style={{position:"relative",marginBottom:"28px",width:"280px"}}>
+                <div style={{background:"#1A1A2E",borderRadius:"40px",padding:"10px",boxShadow:"0 40px 60px rgba(0,0,0,.25)",width:"280px"}}>
                   <img src="/iphone_tel.png" alt="KI Telefon" style={{width:"100%",borderRadius:"32px",display:"block",filter:"brightness(.6)"}}/>
                 </div>
                 <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:"40px"}}>
