@@ -125,6 +125,19 @@ export default function Home() {
         .stress-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
         .stress-item:last-child{border:none;padding-bottom:0;}
         .demo-btn:hover{background:#FF7A5A!important;transform:translateY(-2px);}
+        @media(max-width:768px){
+          .hero-grid{grid-template-columns:1fr!important;gap:32px!important;padding:40px 20px 0!important;}
+          .hero-mockup{display:none!important;}
+          .pain-grid{grid-template-columns:1fr!important;gap:32px!important;}
+          .feat-big-grid{grid-template-columns:1fr!important;}
+          .feat-mini-grid{grid-template-columns:1fr 1fr!important;}
+          .numbers-grid{grid-template-columns:1fr!important;}
+          .number-item{border-right:none!important;border-bottom:1px solid rgba(255,255,255,.07)!important;}
+          .wa-section-grid{grid-template-columns:1fr!important;gap:40px!important;}
+          .wa-mockup{display:none!important;}
+          .booking-grid{grid-template-columns:1fr!important;gap:32px!important;}
+          .iphone-col{width:200px!important;}
+        }
       `}</style>
 
       {/* NAV */}
@@ -145,7 +158,7 @@ export default function Home() {
       {/* HERO */}
       <div style={{background:"var(--dark)",overflow:"hidden",position:"relative"}}>
         <div style={{position:"absolute",top:"-200px",right:"-100px",width:"500px",height:"500px",background:"radial-gradient(circle,rgba(255,92,53,.15) 0%,transparent 70%)",pointerEvents:"none"}}/>
-        <div style={{maxWidth:"1200px",margin:"0 auto",padding:"80px 32px 80px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"80px",alignItems:"center"}}>
+        <div className="hero-grid" style={{maxWidth:"1200px",margin:"0 auto",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"80px",alignItems:"center"}}>
           <div>
             <div style={{display:"inline-flex",alignItems:"center",gap:"8px",background:"rgba(255,92,53,.15)",border:"1px solid rgba(255,92,53,.25)",borderRadius:"20px",padding:"6px 14px",marginBottom:"20px"}}>
               <div style={{width:"6px",height:"6px",borderRadius:"50%",background:"#FF5C35",animation:"pulse 2s infinite",flexShrink:0}}/>
@@ -164,7 +177,7 @@ export default function Home() {
               <span style={{fontSize:"13px",color:"rgba(255,255,255,.3)"}}>Keine Kreditkarte</span>
             </div>
           </div>
-          <div style={{animation:"float3d 6s ease-in-out infinite"}}>
+          <div className="hero-mockup" style={{animation:"float3d 6s ease-in-out infinite"}}>
             <div style={{background:"#1E1E2E",borderRadius:"14px",overflow:"hidden",boxShadow:"0 40px 80px rgba(0,0,0,.6)",border:"1px solid rgba(255,255,255,.08)"}}>
               <div style={{background:"#2A2A3E",padding:"10px 14px",display:"flex",alignItems:"center",gap:"8px",borderBottom:"1px solid rgba(255,255,255,.06)"}}>
                 <div style={{display:"flex",gap:"5px"}}>
@@ -180,7 +193,7 @@ export default function Home() {
 
       {/* PAIN */}
       <section style={{background:"var(--cream)",padding:"100px 32px"}}>
-        <div style={{maxWidth:"1100px",margin:"0 auto",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"80px",alignItems:"center"}}>
+        <div className="pain-grid" style={{maxWidth:"1100px",margin:"0 auto",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"80px",alignItems:"center"}}>
           <div style={{background:"#fff",borderRadius:"20px",padding:"28px",border:"1.5px solid var(--border)",boxShadow:"0 8px 32px rgba(26,26,46,.06)"}}>
             <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"20px"}}>
               <div style={{width:"28px",height:"28px",borderRadius:"50%",background:"#FEE8E8",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
@@ -222,7 +235,7 @@ export default function Home() {
             <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(26px,4vw,40px)",fontWeight:700,letterSpacing:"-1px",marginBottom:"16px"}}>Drei Wege zu buchen.<br/>Ein Dashboard für alles.</h2>
             <p style={{color:"var(--muted)",fontSize:"16px",fontWeight:300,maxWidth:"480px",margin:"0 auto"}}>WhatsApp, Telefon oder online — deine Gäste wählen wie sie buchen.</p>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"20px",marginBottom:"20px"}}>
+          <div className="feat-big-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"20px",marginBottom:"20px"}}>
             <div className="feat-card" style={{background:"var(--dark)",borderRadius:"20px",padding:"32px",transition:"all .25s"}}>
               <div style={{background:"rgba(255,92,53,.15)",border:"1px solid rgba(255,92,53,.2)",borderRadius:"8px",padding:"3px 10px",fontSize:"10px",fontWeight:600,textTransform:"uppercase",letterSpacing:".8px",color:"#FF5C35",display:"inline-block",marginBottom:"20px"}}>WhatsApp KI</div>
               <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:"22px",fontWeight:700,color:"#FFFAF5",marginBottom:"12px"}}>Gäste schreiben — KI antwortet & bucht</h3>
@@ -246,7 +259,7 @@ export default function Home() {
               </div>
             </div>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"16px"}}>
+          <div className="feat-mini-grid" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"16px"}}>
             {[
               {icon:<svg viewBox="0 0 28 28" fill="none" width="28" height="28"><rect x="3" y="5" width="22" height="18" rx="3" stroke="#FF5C35" strokeWidth="1.4"/><path d="M3 11h22M9 4v3M19 4v3" stroke="#FF5C35" strokeWidth="1.4" strokeLinecap="round"/></svg>,t:"Online Buchung",d:"Eigene Booking Page — Gäste buchen direkt rund um die Uhr."},
               {icon:<svg viewBox="0 0 28 28" fill="none" width="28" height="28"><rect x="2" y="2" width="24" height="24" rx="4" stroke="#FF5C35" strokeWidth="1.4"/><path d="M2 11h24" stroke="#FF5C35" strokeWidth="1.4"/><rect x="6" y="15" width="7" height="5" rx="1.5" fill="#FF5C35" fillOpacity=".2" stroke="#FF5C35" strokeWidth="1.2"/></svg>,t:"Alles im Dashboard",d:"WhatsApp, Telefon, Online — alles an einem Ort."},
@@ -265,7 +278,7 @@ export default function Home() {
 
       {/* WHATSAPP NUMMER SEKTION */}
       <section style={{background:"var(--dark)",padding:"100px 32px"}}>
-        <div style={{maxWidth:"1100px",margin:"0 auto",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"80px",alignItems:"center"}}>
+        <div className="wa-section-grid" style={{maxWidth:"1100px",margin:"0 auto",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"80px",alignItems:"center"}}>
           <div>
             <div style={{fontSize:"11px",fontWeight:600,textTransform:"uppercase",letterSpacing:"1px",color:"#25D366",marginBottom:"12px"}}>Inklusive</div>
             <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(26px,4vw,40px)",fontWeight:700,color:"#FFFAF5",letterSpacing:"-1px",lineHeight:1.1,marginBottom:"20px"}}>
@@ -300,7 +313,7 @@ export default function Home() {
           {/* Right — WhatsApp Chat Mockup */}
           <div style={{position:"relative"}}>
             <div style={{position:"absolute",inset:"-30px",background:"radial-gradient(ellipse,rgba(37,211,102,.15) 0%,transparent 70%)",filter:"blur(20px)",zIndex:0}}/>
-            <div className="card-3d" style={{position:"relative",zIndex:1,background:"#111B21",borderRadius:"16px",overflow:"hidden",boxShadow:"0 40px 80px rgba(0,0,0,.6)",border:"1px solid rgba(255,255,255,.06)"}}>
+            <div className="card-3d wa-mockup" style={{position:"relative",zIndex:1,background:"#111B21",borderRadius:"16px",overflow:"hidden",boxShadow:"0 40px 80px rgba(0,0,0,.6)",border:"1px solid rgba(255,255,255,.06)"}}>
               {/* WhatsApp Header */}
               <div style={{background:"#202C33",padding:"12px 16px",display:"flex",alignItems:"center",gap:"10px",borderBottom:"1px solid rgba(255,255,255,.06)"}}>
                 <div style={{width:"36px",height:"36px",borderRadius:"50%",background:"#25D366",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
@@ -361,7 +374,7 @@ export default function Home() {
           </div>
 
           {/* 3 Buchungswege */}
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"32px",alignItems:"start"}}>
+          <div className="booking-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"32px",alignItems:"start"}}>
 
             {/* WhatsApp */}
             <div style={{display:"flex",flexDirection:"column",alignItems:"center",textAlign:"center"}}>
@@ -445,13 +458,13 @@ export default function Home() {
         <div style={{maxWidth:"1100px",margin:"0 auto"}}>
           <div style={{fontSize:"11px",fontWeight:600,textTransform:"uppercase",letterSpacing:"1px",color:"var(--orange)",marginBottom:"12px"}}>Was Tablely bewirkt</div>
           <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(26px,4vw,40px)",fontWeight:700,color:"#FFFAF5",letterSpacing:"-1px",marginBottom:"40px"}}>Zahlen die sprechen.</h2>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",border:"1px solid rgba(255,255,255,.07)",borderRadius:"16px",overflow:"hidden"}}>
+          <div className="numbers-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",border:"1px solid rgba(255,255,255,.07)",borderRadius:"16px",overflow:"hidden"}}>
             {[
               {v:"–60%",l:"weniger No-Shows durch automatische Erinnerungen"},
               {v:"2h",l:"täglich gespart — keine Reservierungsanrufe mehr"},
               {v:"24/7",l:"Buchungen annehmen — auch wenn du schläfst"},
             ].map((n,i)=>(
-              <div key={i} style={{padding:"40px 32px",textAlign:"center",borderRight:i<2?"1px solid rgba(255,255,255,.07)":"none"}}>
+              <div key={i} className="number-item" style={{padding:"40px 32px",textAlign:"center",borderRight:i<2?"1px solid rgba(255,255,255,.07)":"none"}}>
                 <div style={{fontFamily:"'Playfair Display',serif",fontSize:"48px",fontWeight:700,color:"var(--orange)",letterSpacing:"-2px",marginBottom:"10px"}}>{n.v}</div>
                 <div style={{fontSize:"14px",color:"rgba(255,255,255,.4)",fontWeight:300,lineHeight:1.5}}>{n.l}</div>
               </div>
