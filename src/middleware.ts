@@ -1,6 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+const ADMIN_EMAIL = "michael@tablely.at";
+
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -38,6 +40,18 @@ export async function middleware(request: NextRequest) {
     path.startsWith("/dashboard") ||
     path.startsWith("/onboarding");
 
+  const isAdminRoute = path.startsWith("/admin");
+
+  // Admin Route — nur michael@tablely.at
+  if (isAdminRoute) {
+    if (!user) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+    if (user.email !== ADMIN_EMAIL) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+  }
+
   if (!user && isDashboardRoute) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
@@ -53,6 +67,7 @@ export const config = {
   matcher: [
     "/dashboard/:path*",
     "/onboarding/:path*",
+    "/admin/:path*",
     "/login",
     "/register",
     "/forgot-password",
