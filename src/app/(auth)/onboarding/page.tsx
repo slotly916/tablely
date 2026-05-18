@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 
-const STEPS = ["Restaurant", "Tische", "Öffnungszeiten", "Einstellungen", "WhatsApp"];
+const STEPS = ["Restaurant", "Tische", "Öffnungszeiten", "Einstellungen", "WhatsApp", "App"];
 const DAYS = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"];
 
 export default function Onboarding() {
@@ -304,6 +304,37 @@ export default function Onboarding() {
                 <input type="checkbox" checked={skipWa} onChange={e=>setSkipWa(e.target.checked)}/>
                 Später einrichten — ich möchte zuerst das Dashboard kennenlernen
               </label>
+            </div>
+          </>
+        )}
+
+        {/* STEP 6 — App installieren */}
+        {step === 5 && (
+          <>
+            <h1 style={title}>App installieren</h1>
+            <p style={sub}>Tablely kann wie eine App installiert werden. So hast du das Dashboard immer griffbereit.</p>
+            <div style={{display:"flex",flexDirection:"column",gap:"14px"}}>
+              <div style={{background:"#F5F0EB",borderRadius:"14px",padding:"18px",border:"1px solid #F0EBE3"}}>
+                <div style={{fontSize:"13px",fontWeight:600,color:"#1A1A2E",marginBottom:"10px"}}>iPhone / iPad</div>
+                <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
+                  <div style={{fontSize:"13px",color:"#6B6B80"}}>1. Safari oeffnen und tablely.at/dashboard aufrufen</div>
+                  <div style={{fontSize:"13px",color:"#6B6B80"}}>2. Teilen-Symbol antippen (Pfeil nach oben)</div>
+                  <div style={{fontSize:"13px",color:"#6B6B80"}}>3. Zum Home-Bildschirm hinzufuegen</div>
+                  <div style={{fontSize:"13px",color:"#6B6B80"}}>4. Hinzufuegen bestaetigen</div>
+                </div>
+              </div>
+              <div style={{background:"#F5F0EB",borderRadius:"14px",padding:"18px",border:"1px solid #F0EBE3"}}>
+                <div style={{fontSize:"13px",fontWeight:600,color:"#1A1A2E",marginBottom:"10px"}}>Android / Chrome</div>
+                <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
+                  <div style={{fontSize:"13px",color:"#6B6B80"}}>1. Chrome oeffnen und tablely.at/dashboard aufrufen</div>
+                  <div style={{fontSize:"13px",color:"#6B6B80"}}>2. Drei Punkte oben rechts antippen</div>
+                  <div style={{fontSize:"13px",color:"#6B6B80"}}>3. Zum Startbildschirm hinzufuegen</div>
+                  <div style={{fontSize:"13px",color:"#6B6B80"}}>4. Bestaetigen</div>
+                </div>
+              </div>
+              <div style={{background:"rgba(255,92,53,.08)",border:"1px solid rgba(255,92,53,.15)",borderRadius:"10px",padding:"12px 16px",fontSize:"12px",color:"#FF5C35",lineHeight:1.6}}>
+                Tipp: Auf dem iPad im Querformat sieht das Dashboard am besten aus.
+              </div>
             </div>
           </>
         )}

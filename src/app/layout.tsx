@@ -62,6 +62,16 @@ export const metadata: Metadata = {
       follow: true,
     },
   },
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Tablely",
+  },
+  icons: {
+    icon: "/icon-192.png",
+    apple: "/icon-192.png",
+  },
 };
 
 export default function RootLayout({
@@ -74,8 +84,12 @@ export default function RootLayout({
       <head>
         <meta name="google-site-verification" content="-XaSjn6X11sApCYbt0TT03zvh7MhqFR93FECzOfM8jg" />
         <link rel="icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" href="/favicon.png" />
-        <meta name="theme-color" content="#FF5C35" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
+        <meta name="theme-color" content="#1A1A2E" />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Tablely" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
