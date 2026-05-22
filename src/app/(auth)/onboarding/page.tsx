@@ -19,9 +19,9 @@ export default function Onboarding() {
   const [address, setAddress] = useState("");
 
   // Step 2 — Tische
-  const [tables, setTables] = useState([
-    { name: "Tisch 1", capacity: 2 },
-    { name: "Tisch 2", capacity: 4 },
+  const [tables, setTables] = useState<Array<{name: string; capacity: number; combinable_with: string[]}>>([
+    { name: "Tisch 1", capacity: 2, combinable_with: [] },
+    { name: "Tisch 2", capacity: 4, combinable_with: [] },
   ]);
 
   // Step 3 — Öffnungszeiten
@@ -38,12 +38,12 @@ export default function Onboarding() {
   const [skipWa, setSkipWa] = useState(false);
 
   function addTable() {
-    setTables([...tables, { name: `Tisch ${tables.length + 1}`, capacity: 2 }]);
+    setTables([...tables, { name: `Tisch ${tables.length + 1}`, capacity: 2, combinable_with: [] }]);
   }
   function removeTable(i: number) {
     setTables(tables.filter((_, idx) => idx !== i));
   }
-  function updateTable(i: number, field: string, value: string | number) {
+  function updateTable(i: number, field: string, value: string | number | string[]) {
     setTables(tables.map((t, idx) => idx === i ? { ...t, [field]: value } : t));
   }
   function updateHours(i: number, field: string, value: string | boolean) {
@@ -87,9 +87,33 @@ export default function Onboarding() {
           const nb = parseInt(b.name.replace(/[^0-9]/g, "")) || 0;
           return na - nb;
         });
-        const { error: tErr } = await supabase.from("tables")
-          .insert(sorted.map(t => ({ ...t, restaurant_id: restaurant.id })));
+        // Insert tables first, then update with table IDs for combinable_with
+        const { data: insertedTables, error: tErr } = await supabase.from("tables")
+          .insert(sorted.map(t => ({ 
+            name: t.name, 
+            capacity: t.capacity, 
+            restaurant_id: restaurant.id,
+            combinable_with: []
+          })))
+          .select();
         if (tErr) throw tErr;
+        
+        // Now update combinable_with with actual table IDs
+        if (insertedTables) {
+          for (const t of sorted) {
+            if (t.combinable_with && t.combinable_with.length > 0) {
+              const myTable = insertedTables.find(it => it.name === t.name);
+              const combinableIds = t.combinable_with
+                .map(name => insertedTables.find(it => it.name === name)?.id)
+                .filter(Boolean);
+              if (myTable && combinableIds.length > 0) {
+                await supabase.from("tables")
+                  .update({ combinable_with: combinableIds })
+                  .eq("id", myTable.id);
+              }
+            }
+          }
+        }
       }
 
       const { error: hErr } = await supabase.from("opening_hours")
@@ -171,23 +195,49 @@ export default function Onboarding() {
         {step === 1 && (
           <>
             <h1 style={title}>Deine Tische</h1>
-            <p style={sub}>Definiere deine Tische einmalig. Tablely weist Reservierungen automatisch zu.</p>
-            <div style={{display:"flex",flexDirection:"column",gap:"10px",marginBottom:"16px"}}>
+            <p style={sub}>Definiere deine Tische und welche zusammen geschoben werden können.</p>
+            <div style={{display:"flex",flexDirection:"column",gap:"12px",marginBottom:"16px"}}>
               {tables.map((t, i) => (
-                <div key={i} style={{display:"flex",gap:"10px",alignItems:"center"}}>
-                  <input style={{...input,flex:1}} type="text" placeholder="Tischname" value={t.name} onChange={e=>updateTable(i,"name",e.target.value)}/>
-                  <select style={{...input,width:"110px"}} value={t.capacity} onChange={e=>updateTable(i,"capacity",parseInt(e.target.value))}>
-                    {[1,2,3,4,5,6,7,8,10,12,15,20].map(n=>(
-                      <option key={n} value={n}>{n} Pers.</option>
-                    ))}
-                  </select>
+                <div key={i} style={{background:"#FFFFFF",borderRadius:"10px",padding:"12px",border:"1px solid #F0EBE3"}}>
+                  <div style={{display:"flex",gap:"10px",alignItems:"center",marginBottom:"8px"}}>
+                    <input style={{...input,flex:1}} type="text" placeholder="Tischname" value={t.name} onChange={e=>updateTable(i,"name",e.target.value)}/>
+                    <select style={{...input,width:"110px"}} value={t.capacity} onChange={e=>updateTable(i,"capacity",parseInt(e.target.value))}>
+                      {[1,2,3,4,5,6,7,8,10,12,15,20].map(n=>(
+                        <option key={n} value={n}>{n} Pers.</option>
+                      ))}
+                    </select>
+                    {tables.length > 1 && (
+                      <button onClick={()=>removeTable(i)} style={{background:"none",border:"none",cursor:"pointer",color:"#E24B4A",fontSize:"20px",lineHeight:1,flexShrink:0}}>×</button>
+                    )}
+                  </div>
                   {tables.length > 1 && (
-                    <button onClick={()=>removeTable(i)} style={{background:"none",border:"none",cursor:"pointer",color:"#E24B4A",fontSize:"20px",lineHeight:1,flexShrink:0}}>×</button>
+                    <div>
+                      <div style={{fontSize:"11px",color:"#6B6B80",marginBottom:"6px"}}>Kombinierbar mit:</div>
+                      <div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>
+                        {tables.map((other, j) => j !== i && (
+                          <button key={j} onClick={()=>{
+                            const isSelected = t.combinable_with.includes(other.name);
+                            const newCombinable = isSelected 
+                              ? t.combinable_with.filter(n => n !== other.name)
+                              : [...t.combinable_with, other.name];
+                            updateTable(i, "combinable_with", newCombinable);
+                          }} style={{
+                            padding:"4px 10px",borderRadius:"14px",fontSize:"11px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",border:"1px solid",
+                            background: t.combinable_with.includes(other.name) ? "#FF5C35" : "transparent",
+                            color: t.combinable_with.includes(other.name) ? "#fff" : "#6B6B80",
+                            borderColor: t.combinable_with.includes(other.name) ? "#FF5C35" : "#F0EBE3",
+                          }}>{other.name}</button>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </div>
               ))}
             </div>
             <button onClick={addTable} style={outlineBtn}>+ Tisch hinzufügen</button>
+            <div style={{background:"rgba(255,92,53,.08)",border:"1px solid rgba(255,92,53,.15)",borderRadius:"10px",padding:"12px 16px",fontSize:"12px",color:"#FF5C35",lineHeight:1.6,marginTop:"12px"}}>
+              💡 Tipp: Wähle bei jedem Tisch aus welche Tische daneben stehen und zusammengeschoben werden können. Tablely nutzt das automatisch für Gruppen.
+            </div>
           </>
         )}
 
