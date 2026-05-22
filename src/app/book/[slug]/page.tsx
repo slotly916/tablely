@@ -247,6 +247,27 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
         table_ids: [],
       }]);
       if (err) { setError("Fehler beim Speichern."); setSubmitting(false); return; }
+      
+      // Bestätigungsmail an Gast
+      if (guestEmail) {
+        try {
+          await fetch("/api/booking-email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: guestEmail,
+              guestName,
+              restaurantName: restaurant!.name,
+              restaurantAddress: restaurant!.address,
+              restaurantPhone: restaurant!.phone,
+              date, time, partySize: party,
+              isLargeGroup: true,
+              notes,
+            }),
+          });
+        } catch {}
+      }
+      
       setIsLargeGroup(true);
       setSuccess(true);
       return;
@@ -275,6 +296,27 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
     }]);
 
     if (err) { setError("Fehler beim Speichern. Bitte nochmal versuchen."); setSubmitting(false); return; }
+
+    // Bestätigungsmail an Gast
+    if (guestEmail) {
+      try {
+        await fetch("/api/booking-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: guestEmail,
+            guestName,
+            restaurantName: restaurant!.name,
+            restaurantAddress: restaurant!.address,
+            restaurantPhone: restaurant!.phone,
+            date, time, partySize: party,
+            isLargeGroup: false,
+            notes,
+          }),
+        });
+      } catch {}
+    }
+
     setSuccess(true);
   }
 
