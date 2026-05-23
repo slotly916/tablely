@@ -12,33 +12,32 @@ const DAYS = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag","S
 export default function Settings() {
   const router = useRouter();
   const dark = false;
-  const [tab, setTab] = useState<"restaurant"|"tables"|"hours">("restaurant");
+  const [tab, setTab] = useState<"restaurant"|"tables"|"groups"|"hours">("restaurant");
   const [restaurantId, setRestaurantId] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  // Restaurant
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [slug, setSlug] = useState("");
   const [stayDuration, setStayDuration] = useState(150);
-  const [allowCombine, setAllowCombine] = useState(false);
   const [largeGroupThreshold, setLargeGroupThreshold] = useState(15);
 
-  // Tables
   const [tables, setTables] = useState<Table[]>([]);
-
-  // Hours
   const [hours, setHours] = useState<Hour[]>([]);
 
-  const bg = dark ? "#0F0F14" : "#F5F0EB";
-  const surface = dark ? "rgba(255,255,255,0.04)" : "#fff";
-  const border = dark ? "rgba(255,255,255,0.08)" : "#EDE8E3";
-  const text = dark ? "#FFFAF5" : "#1A1A2E";
-  const muted = dark ? "rgba(255,255,255,0.3)" : "#6B6B80";
-  const inputBg = dark ? "rgba(255,255,255,0.05)" : "#fff";
-  const inputBorder = dark ? "rgba(255,255,255,0.1)" : "#EDE8E3";
+  // Group creation
+  const [showNewGroup, setShowNewGroup] = useState(false);
+  const [groupSelection, setGroupSelection] = useState<string[]>([]);
+
+  const bg = "#F5F0EB";
+  const surface = "#fff";
+  const border = "#EDE8E3";
+  const text = "#1A1A2E";
+  const muted = "#6B6B80";
+  const inputBg = "#fff";
+  const inputBorder = "#EDE8E3";
 
   useEffect(() => { loadData(); }, []);
 
@@ -46,17 +45,14 @@ export default function Settings() {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.push("/login"); return; }
-
     const { data: rest } = await supabase.from("restaurants").select("*").eq("email", user.email).single();
     if (!rest) { router.push("/onboarding"); return; }
-
     setRestaurantId(rest.id);
     setName(rest.name || "");
     setPhone(rest.phone || "");
     setAddress(rest.address || "");
     setSlug(rest.slug || "");
     setStayDuration(rest.stay_duration || 150);
-    setAllowCombine(rest.allow_combine || false);
     setLargeGroupThreshold(rest.large_group_threshold || 15);
 
     const { data: tbls } = await supabase.from("tables").select("*").eq("restaurant_id", rest.id).order("name");
@@ -70,17 +66,14 @@ export default function Settings() {
     setTables(tbls || []);
 
     const { data: hrs } = await supabase.from("opening_hours").select("*").eq("restaurant_id", rest.id).order("day_of_week");
-    if (hrs && hrs.length > 0) {
-      setHours(hrs);
-    } else {
-      setHours(DAYS.map((_,i) => ({ id: "", day_of_week: i, open_time: "11:00", close_time: "22:00", is_closed: i === 6 })));
-    }
+    if (hrs && hrs.length > 0) setHours(hrs);
+    else setHours(DAYS.map((_,i) => ({ id: "", day_of_week: i, open_time: "11:00", close_time: "22:00", is_closed: i === 6 })));
   }
 
   async function saveRestaurant() {
     setSaving(true);
     const supabase = createClient();
-    await supabase.from("restaurants").update({ name, phone, address, stay_duration: stayDuration, allow_combine: allowCombine, large_group_threshold: largeGroupThreshold }).eq("id", restaurantId);
+    await supabase.from("restaurants").update({ name, phone, address, stay_duration: stayDuration, large_group_threshold: largeGroupThreshold }).eq("id", restaurantId);
     setSaving(false);
     showSaved();
   }
@@ -93,14 +86,21 @@ export default function Settings() {
 
   async function addTable() {
     const supabase = createClient();
-    const { data } = await supabase.from("tables").insert([{ restaurant_id: restaurantId, name: `Tisch ${tables.length + 1}`, capacity: 2 }]).select().single();
+    const { data } = await supabase.from("tables").insert([{ restaurant_id: restaurantId, name: `Tisch ${tables.length + 1}`, capacity: 2, combinable_with: [] }]).select().single();
     if (data) setTables([...tables, data]);
   }
 
   async function deleteTable(id: string) {
     const supabase = createClient();
     await supabase.from("tables").delete().eq("id", id);
-    setTables(tables.filter(t => t.id !== id));
+    // Remove from other tables' combinable_with too
+    for (const t of tables) {
+      if (t.combinable_with?.includes(id)) {
+        const newCombine = t.combinable_with.filter(x => x !== id);
+        await supabase.from("tables").update({ combinable_with: newCombine }).eq("id", t.id);
+      }
+    }
+    setTables(tables.filter(t => t.id !== id).map(t => ({...t, combinable_with: (t.combinable_with || []).filter(x => x !== id)})));
   }
 
   async function saveHours() {
@@ -117,6 +117,77 @@ export default function Settings() {
     showSaved();
   }
 
+  // GROUP LOGIC - Find existing groups by analyzing combinable_with
+  function getGroups(): {tables: Table[], totalCapacity: number}[] {
+    const groups: {tables: Table[], totalCapacity: number}[] = [];
+    const processed = new Set<string>();
+
+    for (const t of tables) {
+      if (processed.has(t.id)) continue;
+      if (!t.combinable_with || t.combinable_with.length === 0) continue;
+
+      // Build group: this table + all its combinable_with
+      const groupTables = [t];
+      processed.add(t.id);
+
+      for (const otherId of t.combinable_with) {
+        const other = tables.find(tab => tab.id === otherId);
+        if (other && !processed.has(other.id)) {
+          groupTables.push(other);
+          processed.add(other.id);
+        }
+      }
+
+      if (groupTables.length > 1) {
+        groups.push({
+          tables: groupTables,
+          totalCapacity: groupTables.reduce((sum, x) => sum + x.capacity, 0),
+        });
+      }
+    }
+    return groups;
+  }
+
+  async function saveNewGroup() {
+    if (groupSelection.length < 2) return;
+    const supabase = createClient();
+    // For each selected table, set combinable_with to ALL other selected tables
+    for (const tableId of groupSelection) {
+      const others = groupSelection.filter(id => id !== tableId);
+      await supabase.from("tables").update({ combinable_with: others }).eq("id", tableId);
+    }
+    // Reload tables
+    const { data: tbls } = await supabase.from("tables").select("*").eq("restaurant_id", restaurantId).order("name");
+    if (tbls) {
+      tbls.sort((a: {name: string}, b: {name: string}) => {
+        const numA = parseInt(a.name.replace(/[^0-9]/g, "")) || 0;
+        const numB = parseInt(b.name.replace(/[^0-9]/g, "")) || 0;
+        return numA - numB || a.name.localeCompare(b.name);
+      });
+    }
+    setTables(tbls || []);
+    setShowNewGroup(false);
+    setGroupSelection([]);
+    showSaved();
+  }
+
+  async function deleteGroup(groupTables: Table[]) {
+    const supabase = createClient();
+    for (const t of groupTables) {
+      await supabase.from("tables").update({ combinable_with: [] }).eq("id", t.id);
+    }
+    const { data: tbls } = await supabase.from("tables").select("*").eq("restaurant_id", restaurantId).order("name");
+    if (tbls) {
+      tbls.sort((a: {name: string}, b: {name: string}) => {
+        const numA = parseInt(a.name.replace(/[^0-9]/g, "")) || 0;
+        const numB = parseInt(b.name.replace(/[^0-9]/g, "")) || 0;
+        return numA - numB || a.name.localeCompare(b.name);
+      });
+    }
+    setTables(tbls || []);
+    showSaved();
+  }
+
   function showSaved() {
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
@@ -124,70 +195,59 @@ export default function Settings() {
 
   const inputStyle: React.CSSProperties = {
     width: "100%", padding: "11px 14px", background: inputBg, border: `1px solid ${inputBorder}`,
-    borderRadius: "10px", fontSize: "14px", fontFamily: "inherit", color: text, outline: "none", transition: "border-color 0.2s",
+    borderRadius: "10px", fontSize: "14px", fontFamily: "inherit", color: text, outline: "none",
   };
   const labelStyle: React.CSSProperties = {
     fontSize: "12px", fontWeight: 500, color: muted, marginBottom: "6px", display: "block", textTransform: "uppercase", letterSpacing: "0.5px",
   };
 
+  // Tables that are already in a group
+  const tablesInGroups = new Set<string>();
+  getGroups().forEach(g => g.tables.forEach(t => tablesInGroups.add(t.id)));
+
   return (
-    <div style={{minHeight:"100vh",background:bg,fontFamily:"'DM Sans',sans-serif",display:"flex",transition:"background 0.3s"}}>
+    <div style={{minHeight:"100vh",background:bg,fontFamily:"'DM Sans',sans-serif",display:"flex"}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500&display=swap');
         * { box-sizing: border-box; }
         input:focus, select:focus { border-color: #FF5C35 !important; }
         select { appearance: none; -webkit-appearance: none; }
-        .tab-btn:hover { color: ${text} !important; }
-        .save-btn:hover { background: #FF7A5A !important; transform: translateY(-1px); }
+        .save-btn:hover { background: #FF7A5A !important; }
         .del-btn:hover { color: #F87171 !important; border-color: rgba(239,68,68,0.3) !important; }
       `}</style>
 
-      {/* SIDEBAR */}
-      <aside style={{width:"64px",background:dark?"#0A0A0F":"#1A1A2E",borderRight:`1px solid ${border}`,display:"flex",flexDirection:"column",alignItems:"center",padding:"20px 0",position:"fixed",top:0,bottom:0,left:0,zIndex:50}}>
+      <aside style={{width:"64px",background:"#1A1A2E",display:"flex",flexDirection:"column",alignItems:"center",padding:"20px 0",position:"fixed",top:0,bottom:0,left:0,zIndex:50}}>
         <div style={{width:"36px",height:"36px",borderRadius:"10px",background:"#FF5C35",display:"flex",alignItems:"center",justifyContent:"center",marginBottom:"32px"}}>
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 5h12M3 9h8M3 13h5" stroke="white" strokeWidth="1.8" strokeLinecap="round"/></svg>
         </div>
         {[
           {path:"/dashboard",active:false,icon:<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="1" y="1" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.4"/><rect x="10" y="1" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.4"/><rect x="1" y="10" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.4"/><rect x="10" y="10" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.4"/></svg>},
           {path:"/dashboard/new",active:false,icon:<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 3v12M3 9h12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>},
-          {path:"/dashboard/settings",active:true,icon:<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.4"/><path d="M9 1.5V4M9 14v2.5M1.5 9H4M14 9h2.5M3.7 3.7l1.6 1.6M12.7 12.7l1.6 1.6M3.7 14.3l1.6-1.6M12.7 5.3l1.6-1.6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>},
+          {path:"/dashboard/settings",active:true,icon:<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.4"/><path d="M9 1.5V4M9 14v2.5M1.5 9H4M14 9h2.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>},
         ].map((item,i) => (
           <button key={i} onClick={() => router.push(item.path)} style={{
             width:"40px",height:"40px",borderRadius:"10px",display:"flex",alignItems:"center",justifyContent:"center",
             background: item.active ? "rgba(255,92,53,0.15)" : "transparent",
             border: item.active ? "1px solid rgba(255,92,53,0.2)" : "1px solid transparent",
             color: item.active ? "#FF5C35" : "rgba(255,255,255,0.3)",
-            cursor:"pointer",marginBottom:"4px",transition:"all 0.15s"
+            cursor:"pointer",marginBottom:"4px",
           }}>{item.icon}</button>
         ))}
-        <div style={{marginTop:"auto"}}>
-          <button onClick={async () => { const s = createClient(); await s.auth.signOut(); router.push("/login"); }} style={{
-            width:"40px",height:"40px",borderRadius:"10px",display:"flex",alignItems:"center",justifyContent:"center",
-            background:"transparent",border:"1px solid transparent",color:"rgba(255,255,255,0.25)",cursor:"pointer",
-          }}>
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M7 3H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M12 12l3-3-3-3M15 9H7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
-          </button>
-        </div>
       </aside>
 
-      {/* MAIN */}
       <main style={{marginLeft:"64px",flex:1}}>
-        {/* HEADER */}
-        <header style={{height:"60px",borderBottom:`1px solid ${border}`,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 32px",background:dark?"rgba(15,15,20,0.95)":"rgba(245,240,235,0.95)",backdropFilter:"blur(12px)",position:"sticky",top:0,zIndex:40}}>
+        <header style={{height:"60px",borderBottom:`1px solid ${border}`,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 32px",background:"rgba(245,240,235,0.95)",backdropFilter:"blur(12px)",position:"sticky",top:0,zIndex:40}}>
           <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
             <span style={{fontSize:"13px",color:muted}}>tablely</span>
             <span style={{color:muted}}>›</span>
             <span style={{fontSize:"13px",color:text,fontWeight:500}}>Einstellungen</span>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-            {saved && (
-              <div style={{fontSize:"12px",color:"#34D399",display:"flex",alignItems:"center",gap:"4px",background:"rgba(52,211,153,0.1)",padding:"4px 10px",borderRadius:"6px",border:"1px solid rgba(52,211,153,0.2)"}}>
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#34D399" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                Gespeichert
-              </div>
-            )}
-  
-          </div>
+          {saved && (
+            <div style={{fontSize:"12px",color:"#34D399",display:"flex",alignItems:"center",gap:"4px",background:"rgba(52,211,153,0.1)",padding:"4px 10px",borderRadius:"6px",border:"1px solid rgba(52,211,153,0.2)"}}>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#34D399" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              Gespeichert
+            </div>
+          )}
         </header>
 
         <div style={{padding:"32px",maxWidth:"720px"}}>
@@ -196,18 +256,18 @@ export default function Settings() {
             <p style={{fontSize:"13px",color:muted,fontWeight:300}}>Restaurant, Tische und Öffnungszeiten verwalten.</p>
           </div>
 
-          {/* TABS */}
           <div style={{display:"flex",gap:"0",background:surface,border:`1px solid ${border}`,borderRadius:"10px",padding:"4px",marginBottom:"24px",width:"fit-content"}}>
             {([
               {key:"restaurant",label:"Restaurant"},
               {key:"tables",label:"Tische"},
+              {key:"groups",label:"Tisch-Gruppen"},
               {key:"hours",label:"Öffnungszeiten"},
             ] as const).map(t => (
-              <button key={t.key} className="tab-btn" onClick={() => setTab(t.key)} style={{
-                padding:"8px 20px",borderRadius:"7px",fontSize:"13px",fontWeight:500,cursor:"pointer",
-                fontFamily:"inherit",border:"none",transition:"all 0.15s",
-                background: tab===t.key ? (dark?"rgba(255,255,255,0.1)":"#1A1A2E") : "transparent",
-                color: tab===t.key ? (dark?"#FFFAF5":"#fff") : muted,
+              <button key={t.key} onClick={() => setTab(t.key)} style={{
+                padding:"8px 18px",borderRadius:"7px",fontSize:"13px",fontWeight:500,cursor:"pointer",
+                fontFamily:"inherit",border:"none",
+                background: tab===t.key ? "#1A1A2E" : "transparent",
+                color: tab===t.key ? "#fff" : muted,
               }}>{t.label}</button>
             ))}
           </div>
@@ -229,8 +289,6 @@ export default function Settings() {
                 <label style={labelStyle}>Adresse</label>
                 <input style={inputStyle} type="text" value={address} onChange={e => setAddress(e.target.value)} />
               </div>
-
-              {/* Aufenthaltsdauer */}
               <div>
                 <label style={labelStyle}>Aufenthaltsdauer pro Reservierung</label>
                 <select style={inputStyle} value={stayDuration} onChange={e => setStayDuration(parseInt(e.target.value))}>
@@ -242,63 +300,37 @@ export default function Settings() {
                   <option value={240}>4 Stunden</option>
                 </select>
                 <div style={{fontSize:"11px",color:muted,marginTop:"4px"}}>
-                  Tische werden für diese Dauer blockiert. Nach {Math.floor(stayDuration/60)}:{String(stayDuration%60).padStart(2,"0")}h ist der Tisch wieder frei.
+                  Tische werden für diese Dauer blockiert.
                 </div>
               </div>
-
-              {/* Großgruppen Schwelle */}
               <div>
                 <label style={labelStyle}>Großgruppen-Meldung ab</label>
                 <select style={inputStyle} value={largeGroupThreshold} onChange={e => setLargeGroupThreshold(parseInt(e.target.value))}>
-                  {[5,8,10,12,15,20,25,30].map(n => (
-                    <option key={n} value={n}>Ab {n} Personen</option>
-                  ))}
+                  {[5,8,10,12,15,20,25,30].map(n => <option key={n} value={n}>Ab {n} Personen</option>)}
                 </select>
                 <div style={{fontSize:"11px",color:muted,marginTop:"4px"}}>
-                  Ab dieser Personenzahl erscheint eine Benachrichtigung im Dashboard zur manuellen Prüfung.
-                </div>
-              </div>
-
-              {/* Tische zusammenschieben */}
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0",borderTop:`1px solid ${border}`}}>
-                <div>
-                  <div style={{fontSize:"14px",fontWeight:500,color:text,marginBottom:"2px"}}>Tische zusammenschieben</div>
-                  <div style={{fontSize:"12px",color:muted}}>Erlaubt das Kombinieren von Tischen für größere Gruppen</div>
-                </div>
-                <div onClick={() => setAllowCombine(!allowCombine)} style={{
-                  width:"44px",height:"24px",borderRadius:"12px",cursor:"pointer",transition:"all .2s",position:"relative",flexShrink:0,
-                  background:allowCombine?"#FF5C35":"#D1D5DB",
-                }}>
-                  <div style={{
-                    position:"absolute",top:"2px",left:allowCombine?"22px":"2px",
-                    width:"20px",height:"20px",borderRadius:"50%",background:"#fff",transition:"left .2s",
-                    boxShadow:"0 1px 3px rgba(0,0,0,.2)",
-                  }}/>
+                  Ab dieser Personenzahl muss die Reservierung manuell bestätigt werden.
                 </div>
               </div>
 
               {slug && (
-                <div style={{background:dark?"rgba(255,92,53,0.08)":"#FFF0EB",border:`1px solid rgba(255,92,53,0.2)`,borderRadius:"12px",padding:"16px"}}>
+                <div style={{background:"#FFF0EB",border:`1px solid rgba(255,92,53,0.2)`,borderRadius:"12px",padding:"16px"}}>
                   <div style={{fontSize:"11px",fontWeight:600,color:"#FF5C35",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:"10px"}}>Dein Booking Link</div>
                   <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
                     <div style={{flex:1,padding:"10px 14px",background:inputBg,border:`1px solid ${inputBorder}`,borderRadius:"8px",fontSize:"13px",color:text,fontFamily:"monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                       {`${typeof window !== "undefined" ? window.location.origin : "https://tablely.at"}/book/${slug}`}
                     </div>
-                    <button onClick={() => {
-                      navigator.clipboard.writeText(`${window.location.origin}/book/${slug}`);
-                      showSaved();
-                    }} style={{flexShrink:0,padding:"10px 14px",background:"#FF5C35",color:"#fff",border:"none",borderRadius:"8px",fontSize:"13px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",transition:"all 0.2s"}}>
+                    <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/book/${slug}`); showSaved(); }} style={{flexShrink:0,padding:"10px 14px",background:"#FF5C35",color:"#fff",border:"none",borderRadius:"8px",fontSize:"13px",fontWeight:500,cursor:"pointer",fontFamily:"inherit"}}>
                       Kopieren
                     </button>
                   </div>
-                  <div style={{fontSize:"12px",color:muted,marginTop:"8px"}}>Teile diesen Link mit deinen Gästen — sie können direkt online reservieren.</div>
                 </div>
               )}
 
               <button className="save-btn" onClick={saveRestaurant} disabled={saving} style={{
                 background:"#FF5C35",color:"#fff",border:"none",padding:"12px 24px",borderRadius:"10px",
                 fontSize:"14px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
-                opacity:saving?0.7:1,transition:"all 0.2s",alignSelf:"flex-start"
+                opacity:saving?0.7:1,alignSelf:"flex-start"
               }}>
                 {saving ? "Wird gespeichert..." : "Änderungen speichern"}
               </button>
@@ -309,68 +341,132 @@ export default function Settings() {
           {tab === "tables" && (
             <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
               {tables.map((t,i) => (
-                <div key={t.id} style={{background:surface,border:`1px solid ${border}`,borderRadius:"12px",padding:"16px 20px",display:"flex",flexDirection:"column",gap:"12px"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
-                    <input
-                      style={{...inputStyle,flex:1}}
-                      type="text" value={t.name}
-                      onChange={e => setTables(tables.map((tb,j) => j===i ? {...tb,name:e.target.value} : tb))}
-                      onBlur={() => saveTable(t)}
-                    />
-                    <select
-                      style={{...inputStyle,width:"120px"}}
-                      value={t.capacity}
-                      onChange={e => { const updated = tables.map((tb,j) => j===i ? {...tb,capacity:parseInt(e.target.value)} : tb); setTables(updated); saveTable(updated[i]); }}
-                    >
-                      {[1,2,3,4,5,6,7,8,10,12,15,20].map(n => <option key={n} value={n}>{n} Pers.</option>)}
-                    </select>
-                    <button className="del-btn" onClick={() => deleteTable(t.id)} style={{
-                      width:"36px",height:"36px",borderRadius:"8px",display:"flex",alignItems:"center",justifyContent:"center",
-                      background:"transparent",border:`1px solid ${border}`,cursor:"pointer",color:muted,flexShrink:0,transition:"all 0.15s"
-                    }}>
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 3h10M5 3V2h4v1M3 3l1 9h6l1-9" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                    </button>
-                  </div>
-                  {/* Kombinierbar mit */}
-                  <div>
-                    <div style={{fontSize:"11px",fontWeight:500,color:muted,marginBottom:"8px",textTransform:"uppercase",letterSpacing:".5px"}}>Zusammenschieben mit:</div>
-                    <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
-                      {tables.filter(other => other.id !== t.id).map(other => {
-                        const isCombined = (t.combinable_with || []).includes(other.id);
-                        return (
-                          <button key={other.id} onClick={async () => {
-                            const newCombine = isCombined
-                              ? (t.combinable_with || []).filter((id: string) => id !== other.id)
-                              : [...(t.combinable_with || []), other.id];
-                            const updated = tables.map((tb,j) => j===i ? {...tb, combinable_with: newCombine} : tb);
-                            setTables(updated);
-                            const supabase = createClient();
-                            await supabase.from("tables").update({ combinable_with: newCombine }).eq("id", t.id);
-                          }} style={{
-                            padding:"5px 12px",borderRadius:"6px",fontSize:"12px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",border:"1px solid",transition:"all .15s",
-                            background: isCombined ? "#FF5C35" : "transparent",
-                            color: isCombined ? "#fff" : muted,
-                            borderColor: isCombined ? "#FF5C35" : border,
-                          }}>
-                            {other.name}
-                          </button>
-                        );
-                      })}
-                      {tables.filter(other => other.id !== t.id).length === 0 && (
-                        <span style={{fontSize:"12px",color:muted,fontStyle:"italic"}}>Noch keine anderen Tische</span>
-                      )}
-                    </div>
-                  </div>
+                <div key={t.id} style={{background:surface,border:`1px solid ${border}`,borderRadius:"12px",padding:"14px 18px",display:"flex",alignItems:"center",gap:"12px"}}>
+                  <input
+                    style={{...inputStyle,flex:1}}
+                    type="text" value={t.name}
+                    onChange={e => setTables(tables.map((tb,j) => j===i ? {...tb,name:e.target.value} : tb))}
+                    onBlur={() => saveTable(t)}
+                  />
+                  <select
+                    style={{...inputStyle,width:"120px"}}
+                    value={t.capacity}
+                    onChange={e => { const updated = tables.map((tb,j) => j===i ? {...tb,capacity:parseInt(e.target.value)} : tb); setTables(updated); saveTable(updated[i]); }}
+                  >
+                    {[1,2,3,4,5,6,7,8,10,12,15,20].map(n => <option key={n} value={n}>{n} Pers.</option>)}
+                  </select>
+                  <button className="del-btn" onClick={() => deleteTable(t.id)} style={{
+                    width:"36px",height:"36px",borderRadius:"8px",display:"flex",alignItems:"center",justifyContent:"center",
+                    background:"transparent",border:`1px solid ${border}`,cursor:"pointer",color:muted,flexShrink:0,
+                  }}>
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 3h10M5 3V2h4v1M3 3l1 9h6l1-9" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
                 </div>
               ))}
               <button onClick={addTable} style={{
                 background:"transparent",border:`1px dashed ${border}`,borderRadius:"12px",padding:"14px",
                 fontSize:"13px",fontWeight:500,color:muted,cursor:"pointer",fontFamily:"inherit",
-                display:"flex",alignItems:"center",justifyContent:"center",gap:"8px",transition:"all 0.15s"
+                display:"flex",alignItems:"center",justifyContent:"center",gap:"8px",
               }}>
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
                 Tisch hinzufügen
               </button>
+            </div>
+          )}
+
+          {/* GROUPS TAB */}
+          {tab === "groups" && (
+            <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
+              <div style={{background:"rgba(255,92,53,.08)",border:"1px solid rgba(255,92,53,.15)",borderRadius:"10px",padding:"12px 16px",fontSize:"12px",color:"#FF5C35",lineHeight:1.6,marginBottom:"4px"}}>
+                💡 Erstelle Gruppen von Tischen die zusammen geschoben werden können. So weiß Tablely automatisch wann es größere Gruppen unterbringen kann.
+              </div>
+
+              {/* Existing groups */}
+              {getGroups().map((g, i) => (
+                <div key={i} style={{background:surface,border:`1px solid ${border}`,borderRadius:"12px",padding:"16px 18px"}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"10px"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+                      <div style={{fontSize:"13px",fontWeight:600,color:text}}>Gruppe {i+1}</div>
+                      <div style={{fontSize:"11px",color:"#FF5C35",background:"rgba(255,92,53,.1)",padding:"2px 10px",borderRadius:"20px",fontWeight:600}}>
+                        {g.totalCapacity} Personen zusammen
+                      </div>
+                    </div>
+                    <button onClick={() => deleteGroup(g.tables)} style={{
+                      width:"28px",height:"28px",borderRadius:"6px",display:"flex",alignItems:"center",justifyContent:"center",
+                      background:"transparent",border:`1px solid ${border}`,cursor:"pointer",color:muted,
+                    }}>
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 3h8M4 3V2h4v1M3 3l1 7h4l1-7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </button>
+                  </div>
+                  <div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>
+                    {g.tables.map(t => (
+                      <div key={t.id} style={{display:"inline-flex",alignItems:"center",gap:"6px",padding:"6px 12px",background:"#FFF0EB",border:"1px solid rgba(255,92,53,.15)",borderRadius:"8px",fontSize:"13px",color:text,fontWeight:500}}>
+                        <span>{t.name}</span>
+                        <span style={{fontSize:"11px",color:muted}}>({t.capacity}P)</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              {/* New group form */}
+              {showNewGroup ? (
+                <div style={{background:surface,border:`1px solid #FF5C35`,borderRadius:"12px",padding:"16px 18px"}}>
+                  <div style={{fontSize:"13px",fontWeight:600,color:text,marginBottom:"10px"}}>Neue Tisch-Gruppe</div>
+                  <div style={{fontSize:"12px",color:muted,marginBottom:"12px"}}>Wähle mindestens 2 Tische die zusammen geschoben werden können:</div>
+                  <div style={{display:"flex",gap:"6px",flexWrap:"wrap",marginBottom:"14px"}}>
+                    {tables.map(t => {
+                      const isSelected = groupSelection.includes(t.id);
+                      const isInOtherGroup = tablesInGroups.has(t.id);
+                      return (
+                        <button key={t.id} disabled={isInOtherGroup} onClick={() => {
+                          if (isSelected) setGroupSelection(groupSelection.filter(id => id !== t.id));
+                          else setGroupSelection([...groupSelection, t.id]);
+                        }} style={{
+                          padding:"6px 12px",borderRadius:"8px",fontSize:"13px",fontWeight:500,cursor:isInOtherGroup?"not-allowed":"pointer",fontFamily:"inherit",border:"1px solid",
+                          background: isSelected ? "#FF5C35" : isInOtherGroup ? "rgba(0,0,0,.05)" : "transparent",
+                          color: isSelected ? "#fff" : isInOtherGroup ? "rgba(0,0,0,.3)" : text,
+                          borderColor: isSelected ? "#FF5C35" : border,
+                          opacity: isInOtherGroup ? 0.5 : 1,
+                        }}>
+                          {t.name} ({t.capacity}P){isInOtherGroup && " ✓ bereits in Gruppe"}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {groupSelection.length >= 2 && (
+                    <div style={{fontSize:"12px",color:"#FF5C35",fontWeight:600,marginBottom:"12px"}}>
+                      = {groupSelection.reduce((sum, id) => sum + (tables.find(t => t.id === id)?.capacity || 0), 0)} Personen zusammen
+                    </div>
+                  )}
+                  <div style={{display:"flex",gap:"8px"}}>
+                    <button onClick={() => { setShowNewGroup(false); setGroupSelection([]); }} style={{
+                      padding:"9px 16px",borderRadius:"8px",background:"transparent",border:`1px solid ${border}`,
+                      color:muted,fontSize:"13px",cursor:"pointer",fontFamily:"inherit",
+                    }}>Abbrechen</button>
+                    <button onClick={saveNewGroup} disabled={groupSelection.length < 2} style={{
+                      padding:"9px 18px",borderRadius:"8px",background:"#FF5C35",border:"none",
+                      color:"#fff",fontSize:"13px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
+                      opacity:groupSelection.length < 2 ? 0.5 : 1,
+                    }}>✓ Gruppe erstellen</button>
+                  </div>
+                </div>
+              ) : (
+                <button onClick={() => setShowNewGroup(true)} style={{
+                  background:"transparent",border:`1px dashed ${border}`,borderRadius:"12px",padding:"14px",
+                  fontSize:"13px",fontWeight:500,color:muted,cursor:"pointer",fontFamily:"inherit",
+                  display:"flex",alignItems:"center",justifyContent:"center",gap:"8px",
+                }}>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+                  Neue Tisch-Gruppe erstellen
+                </button>
+              )}
+
+              {getGroups().length === 0 && !showNewGroup && (
+                <div style={{textAlign:"center",padding:"32px",color:muted,fontSize:"13px"}}>
+                  Noch keine Tisch-Gruppen erstellt.
+                </div>
+              )}
             </div>
           )}
 
@@ -402,7 +498,7 @@ export default function Settings() {
               <button className="save-btn" onClick={saveHours} disabled={saving} style={{
                 background:"#FF5C35",color:"#fff",border:"none",padding:"12px 24px",borderRadius:"10px",
                 fontSize:"14px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
-                opacity:saving?0.7:1,transition:"all 0.2s",alignSelf:"flex-start",marginTop:"20px"
+                opacity:saving?0.7:1,alignSelf:"flex-start",marginTop:"20px"
               }}>
                 {saving ? "Wird gespeichert..." : "Öffnungszeiten speichern"}
               </button>
