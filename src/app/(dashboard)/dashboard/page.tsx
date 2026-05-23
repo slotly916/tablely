@@ -17,14 +17,14 @@ type Reservation = {
   channel: string;
   notes: string | null;
   table_id: string | null;
-  table_ids?: string[];
+  table_ids: string[] | null;
 };
 
 type Table = {
   id: string;
   name: string;
   capacity: number;
-  combined_with?: string | null;
+  combinable_with: string[];
 };
 
 type Restaurant = {
@@ -33,10 +33,6 @@ type Restaurant = {
   slug: string;
   stay_duration?: number;
   large_group_threshold?: number;
-  trial_start?: string;
-  trial_days?: number;
-  plan?: string;
-  is_blocked?: boolean;
 };
 
 const CHANNELS = [
@@ -70,6 +66,12 @@ function minutesToTime(m: number) {
   return `${Math.floor(m/60).toString().padStart(2,"0")}:${(m%60).toString().padStart(2,"0")}`;
 }
 
+function getTableIdsFromRes(r: Reservation): string[] {
+  if (r.table_ids && r.table_ids.length > 0) return r.table_ids;
+  if (r.table_id) return [r.table_id];
+  return [];
+}
+
 export default function Dashboard() {
   const router = useRouter();
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
@@ -84,19 +86,31 @@ export default function Dashboard() {
   const [walkinParty, setWalkinParty] = useState("2");
   const [walkinDate, setWalkinDate] = useState(new Date().toISOString().split("T")[0]);
   const [walkinTime, setWalkinTime] = useState("19:00");
+  const [walkinPhone, setWalkinPhone] = useState("");
   const [suggestedTable, setSuggestedTable] = useState<Table | null>(null);
+  const [suggestedCombo, setSuggestedCombo] = useState<{tables: Table[]; totalCapacity: number} | null>(null);
   const [walkinName, setWalkinName] = useState("");
   const [savingWalkin, setSavingWalkin] = useState(false);
   const [selectedRes, setSelectedRes] = useState<Reservation | null>(null);
+  const [newPendingRes, setNewPendingRes] = useState<Reservation | null>(null);
+  const [confirmingRes, setConfirmingRes] = useState(false);
 
-  // Auto-complete reservations whose time has passed
+  const stayDuration = restaurant?.stay_duration || 150;
+
+  const bg = "#F5F0EB";
+  const surface = "#fff";
+  const border = "#EDE8E3";
+  const text = "#1A1A2E";
+  const muted = "#6B6B80";
+  const sidebarBg = "#1A1A2E";
+
+  // Auto-complete reservations
   useEffect(() => {
     const interval = setInterval(async () => {
       const now = new Date();
       const todayStr = now.toISOString().split("T")[0];
       const nowMins = now.getHours() * 60 + now.getMinutes();
       const supabase = createClient();
-      
       reservations.forEach(async (r) => {
         if (r.status !== "confirmed") return;
         if (r.date !== todayStr) return;
@@ -107,20 +121,9 @@ export default function Dashboard() {
           setReservations(prev => prev.map(x => x.id === r.id ? {...x, status: "completed"} : x));
         }
       });
-    }, 60000); // check every minute
+    }, 60000);
     return () => clearInterval(interval);
   }, [reservations, restaurant]);
-  const [newPendingRes, setNewPendingRes] = useState<Reservation | null>(null);
-  const [confirmingRes, setConfirmingRes] = useState(false);
-
-  const stayDuration = restaurant?.stay_duration || 150; // default 2.5h
-
-  const bg = dark ? "#0F0F14" : "#F5F0EB";
-  const surface = dark ? "rgba(255,255,255,.04)" : "#fff";
-  const border = dark ? "rgba(255,255,255,.08)" : "#EDE8E3";
-  const text = dark ? "#FFFAF5" : "#1A1A2E";
-  const muted = dark ? "rgba(255,255,255,.3)" : "#6B6B80";
-  const sidebarBg = dark ? "#0A0A0F" : "#1A1A2E";
 
   const loadData = useCallback(async () => {
     const supabase = createClient();
@@ -136,7 +139,6 @@ export default function Dashboard() {
     setReservations(res || []);
 
     const { data: tbls } = await supabase.from("tables").select("*").eq("restaurant_id", rest.id).order("name");
-    // Sort numerically: Tisch 1, 2, 3... not 1, 10, 2
     if (tbls) {
       tbls.sort((a: {name: string}, b: {name: string}) => {
         const numA = parseInt(a.name.replace(/[^0-9]/g, "")) || 0;
@@ -145,35 +147,29 @@ export default function Dashboard() {
       });
     }
     setTables(tbls || []);
-
     setLoading(false);
   }, [router]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  // Realtime — neue Reservierungen
+  // Realtime
   useEffect(() => {
     if (!restaurant?.id) return;
     const supabase = createClient();
     const channel = supabase
       .channel(`dashboard-${restaurant.id}`)
-      .on("postgres_changes", {
-        event: "INSERT", schema: "public", table: "reservations",
-      }, (payload: {new: Reservation}) => {
-        const newRes = payload.new;
-        // Nur Reservierungen dieses Restaurants
-        if (newRes.restaurant_id !== restaurant?.id) return;
-        setReservations(prev => [...prev, newRes]);
-        // Popup nur für Großgruppen (15+ Personen)
-        if (newRes.party_size >= (restaurant?.large_group_threshold || 15)) {
-          setNewPendingRes(newRes);
-        }
-      })
-      .subscribe((status: string) => {
-        console.log("Realtime status:", status);
-      });
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "reservations" },
+        (payload: {new: Reservation}) => {
+          const newRes = payload.new;
+          if (newRes.restaurant_id !== restaurant?.id) return;
+          setReservations(prev => [...prev, newRes]);
+          if (newRes.party_size >= (restaurant?.large_group_threshold || 15)) {
+            setNewPendingRes(newRes);
+          }
+        })
+      .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [restaurant?.id]);
+  }, [restaurant?.id, restaurant?.large_group_threshold]);
 
   async function handleLogout() {
     const supabase = createClient();
@@ -186,22 +182,17 @@ export default function Dashboard() {
     const supabase = createClient();
     await supabase.from("reservations").update({ status: "confirmed" }).eq("id", res.id);
     setReservations(prev => prev.map(r => r.id === res.id ? { ...r, status: "confirmed" } : r));
-    // WhatsApp Bestätigung senden
     if (res.guest_phone && res.channel === "whatsapp") {
-      await fetch("/api/whatsapp-notify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          phone: res.guest_phone,
-          message: `✅ Deine Reservierung bei ${restaurant?.name} wurde bestätigt!
-
-📅 ${new Date(res.date).toLocaleDateString("de-AT", {weekday:"long",day:"numeric",month:"long"})}
-🕐 ${res.time.slice(0,5)} Uhr
-👥 ${res.party_size} ${res.party_size===1?"Person":"Personen"}
-
-Wir freuen uns auf dich!`,
-        }),
-      });
+      try {
+        await fetch("/api/whatsapp-notify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            phone: res.guest_phone,
+            message: `Deine Reservierung bei ${restaurant?.name} wurde bestätigt!\n\n${new Date(res.date).toLocaleDateString("de-AT", {weekday:"long",day:"numeric",month:"long"})}\n${res.time.slice(0,5)} Uhr\n${res.party_size} ${res.party_size===1?"Person":"Personen"}\n\nWir freuen uns auf dich!`,
+          }),
+        });
+      } catch {}
     }
     setNewPendingRes(null);
     setConfirmingRes(false);
@@ -212,18 +203,17 @@ Wir freuen uns auf dich!`,
     const supabase = createClient();
     await supabase.from("reservations").update({ status: "cancelled" }).eq("id", res.id);
     setReservations(prev => prev.map(r => r.id === res.id ? { ...r, status: "cancelled" } : r));
-    // WhatsApp Stornierung senden
     if (res.guest_phone && res.channel === "whatsapp") {
-      await fetch("/api/whatsapp-notify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          phone: res.guest_phone,
-          message: `❌ Deine Reservierungsanfrage bei ${restaurant?.name} für den ${new Date(res.date).toLocaleDateString("de-AT", {weekday:"long",day:"numeric",month:"long"})} um ${res.time.slice(0,5)} Uhr konnte leider nicht bestätigt werden.
-
-Bitte kontaktiere uns direkt für einen alternativen Termin.`,
-        }),
-      });
+      try {
+        await fetch("/api/whatsapp-notify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            phone: res.guest_phone,
+            message: `Deine Reservierungsanfrage bei ${restaurant?.name} für den ${new Date(res.date).toLocaleDateString("de-AT")} um ${res.time.slice(0,5)} Uhr konnte leider nicht bestätigt werden.\n\nBitte kontaktiere uns direkt für einen alternativen Termin.`,
+          }),
+        });
+      } catch {}
     }
     setNewPendingRes(null);
     setConfirmingRes(false);
@@ -240,39 +230,84 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
     const resOnDay = reservations.filter(r => r.date === walkinDate && r.status !== "cancelled");
     const walkinMins = timeToMinutes(walkinTime);
 
-    // Find tables that are free at requested time
-    const freeTables = tables.filter(t => {
-      if (t.capacity < party) return false;
-      const isOccupied = resOnDay.some(r => {
-        if (r.table_id !== t.id) return false;
+    function isTableOccupied(tableId: string): boolean {
+      return resOnDay.some(r => {
+        const blockedIds = getTableIdsFromRes(r);
+        if (!blockedIds.includes(tableId)) return false;
         const start = timeToMinutes(r.time);
         const end = start + stayDuration;
         return walkinMins < end && walkinMins + stayDuration > start;
       });
-      return !isOccupied;
-    }).sort((a, b) => a.capacity - b.capacity);
+    }
 
-    setSuggestedTable(freeTables[0] || null);
+    // 1. Einzeltisch
+    const singleTable = tables
+      .filter(t => t.capacity >= party && !isTableOccupied(t.id))
+      .sort((a, b) => a.capacity - b.capacity)[0];
+
+    if (singleTable) {
+      setSuggestedTable(singleTable);
+      setSuggestedCombo(null);
+      return;
+    }
+
+    // 2. Tischkombination
+    for (const t of tables) {
+      if (!t.combinable_with || t.combinable_with.length === 0) continue;
+      if (isTableOccupied(t.id)) continue;
+      const combinableTables = t.combinable_with
+        .map(id => tables.find(tab => tab.id === id))
+        .filter(Boolean) as Table[];
+      const allFree = combinableTables.every(ct => !isTableOccupied(ct.id));
+      if (!allFree) continue;
+      const totalCapacity = t.capacity + combinableTables.reduce((sum, ct) => sum + ct.capacity, 0);
+      if (totalCapacity >= party) {
+        setSuggestedTable(null);
+        setSuggestedCombo({ tables: [t, ...combinableTables], totalCapacity });
+        return;
+      }
+    }
+
+    setSuggestedTable(null);
+    setSuggestedCombo(null);
   }
 
-  async function saveWalkin(tableId?: string) {
+  async function saveWalkin() {
     if (!walkinName || !restaurant) return;
     setSavingWalkin(true);
     const supabase = createClient();
+    const party = parseInt(walkinParty);
+    const threshold = restaurant.large_group_threshold || 15;
+
+    let tableIds: string[] = [];
+    let status = "confirmed";
+
+    if (party >= threshold) {
+      status = "pending";
+    } else {
+      tableIds = suggestedCombo
+        ? suggestedCombo.tables.map(t => t.id)
+        : suggestedTable ? [suggestedTable.id] : [];
+    }
+
     await supabase.from("reservations").insert([{
       restaurant_id: restaurant.id,
       guest_name: walkinName,
-      party_size: parseInt(walkinParty),
+      guest_phone: walkinPhone || null,
+      party_size: party,
       date: walkinDate,
       time: walkinTime,
-      table_id: tableId || suggestedTable?.id || null,
+      table_id: tableIds[0] || null,
+      table_ids: tableIds,
       channel: "walkin",
-      status: "confirmed",
+      status,
     }]);
     await loadData();
     setShowWalkin(false);
     setSuggestedTable(null);
+    setSuggestedCombo(null);
     setWalkinName("");
+    setWalkinPhone("");
     setSavingWalkin(false);
   }
 
@@ -285,7 +320,6 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
     return matchDate && matchChannel;
   });
 
-  // Stats
   const stats = {
     today: todayRes.length,
     online: todayRes.filter(r => r.channel === "online").length,
@@ -295,38 +329,42 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
     pending: reservations.filter(r => r.status === "pending").length,
   };
 
-  // Table timeline data
   function getTableReservations(tableId: string) {
-    return filteredRes.filter(r => r.table_id === tableId);
+    return filteredRes.filter(r => getTableIdsFromRes(r).includes(tableId));
+  }
+
+  function getTableNamesForRes(r: Reservation): string {
+    const ids = getTableIdsFromRes(r);
+    if (ids.length === 0) return "";
+    return ids.map(id => tables.find(t => t.id === id)?.name).filter(Boolean).join(" + ");
   }
 
   if (loading) return (
-    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#0F0F14",fontFamily:"'DM Sans',sans-serif",flexDirection:"column",gap:"12px"}}>
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#F5F0EB",fontFamily:"'DM Sans',sans-serif",flexDirection:"column",gap:"12px"}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      <div style={{width:"24px",height:"24px",borderRadius:"50%",border:"2px solid rgba(255,255,255,.1)",borderTopColor:"#FF5C35",animation:"spin 0.7s linear infinite"}}/>
-      <div style={{color:"rgba(255,255,255,.3)",fontSize:"13px"}}>Wird geladen...</div>
+      <div style={{width:"24px",height:"24px",borderRadius:"50%",border:"2px solid rgba(0,0,0,.1)",borderTopColor:"#FF5C35",animation:"spin 0.7s linear infinite"}}/>
+      <div style={{color:"#6B6B80",fontSize:"13px"}}>Wird geladen...</div>
     </div>
   );
 
   return (
-    <div style={{minHeight:"100vh",background:bg,fontFamily:"'DM Sans',sans-serif",display:"flex",transition:"background .3s"}}>
+    <div style={{minHeight:"100vh",background:bg,fontFamily:"'DM Sans',sans-serif",display:"flex"}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500&display=swap');
         *{box-sizing:border-box;margin:0;padding:0;}
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes pulseGlow{0%,100%{box-shadow:0 0 0 0 rgba(252,211,77,.4)}50%{box-shadow:0 0 0 8px rgba(252,211,77,0)}}
         .nav-btn:hover{background:rgba(255,255,255,.08)!important;}
-        .res-row:hover{background:${dark?"rgba(255,255,255,.03)":"#FAFAF8"}!important;}
+        .res-row:hover{background:#FAFAF8!important;}
         select{appearance:none;-webkit-appearance:none;}
-        input[type=date]{color-scheme:${dark?"dark":"light"};}
-        input[type=time]{color-scheme:${dark?"dark":"light"};}
         ::-webkit-scrollbar{width:4px;}
         ::-webkit-scrollbar-track{background:transparent;}
-        ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px;}
+        ::-webkit-scrollbar-thumb{background:rgba(0,0,0,.1);border-radius:2px;}
       `}</style>
 
       {/* SIDEBAR */}
-      <aside style={{width:"220px",background:sidebarBg,display:"flex",flexDirection:"column",padding:"20px 12px",position:"fixed",top:0,bottom:0,left:0,zIndex:50,borderRight:`1px solid ${border}`}}>
+      <aside style={{width:"220px",background:sidebarBg,display:"flex",flexDirection:"column",padding:"20px 12px",position:"fixed",top:0,bottom:0,left:0,zIndex:50}}>
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:"20px",fontWeight:700,color:"#FFFAF5",marginBottom:"32px",paddingLeft:"8px"}}>
           table<span style={{color:"#FF5C35"}}>ly</span>
         </div>
@@ -334,7 +372,7 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
         {[
           {label:"Dashboard",path:"/dashboard",active:true,icon:<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.3"/><rect x="9" y="1" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.3"/><rect x="1" y="9" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.3"/><rect x="9" y="9" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.3"/></svg>},
           {label:"Neue Reservierung",path:"/dashboard/new",active:false,icon:<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>},
-          {label:"Einstellungen",path:"/dashboard/settings",active:false,icon:<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.2" stroke="currentColor" strokeWidth="1.3"/><path d="M8 1.5V4M8 12v2.5M1.5 8H4M12 8h2.5M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>},
+          {label:"Einstellungen",path:"/dashboard/settings",active:false,icon:<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.2" stroke="currentColor" strokeWidth="1.3"/><path d="M8 1.5V4M8 12v2.5M1.5 8H4M12 8h2.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>},
         ].map((item,i) => (
           <button key={i} className="nav-btn" onClick={() => router.push(item.path)} style={{
             display:"flex",alignItems:"center",gap:"10px",padding:"9px 10px",borderRadius:"8px",
@@ -356,10 +394,10 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
               <a href={`/book/${restaurant.slug}`} target="_blank" style={{fontSize:"10px",color:"#FF5C35",textDecoration:"none",display:"block",marginTop:"3px"}}>Booking Link →</a>
             </div>
           )}
-          <button className="nav-btn" onClick={handleLogout} style={{
+          <button onClick={handleLogout} style={{
             display:"flex",alignItems:"center",gap:"8px",padding:"9px 10px",borderRadius:"8px",
             background:"transparent",border:"1px solid rgba(255,255,255,.08)",
-            color:"rgba(255,255,255,.3)",fontSize:"13px",cursor:"pointer",fontFamily:"inherit",transition:"all .15s",
+            color:"rgba(255,255,255,.3)",fontSize:"13px",cursor:"pointer",fontFamily:"inherit",
           }}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M11 11l3-3-3-3M14 8H6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
             Abmelden
@@ -367,11 +405,8 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
         </div>
       </aside>
 
-      {/* MAIN */}
       <main style={{marginLeft:"220px",flex:1,display:"flex",flexDirection:"column",minHeight:"100vh"}}>
-
-        {/* TOPBAR */}
-        <header style={{height:"56px",borderBottom:`1px solid ${border}`,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 24px",background:dark?"rgba(15,15,20,.95)":"rgba(245,240,235,.95)",backdropFilter:"blur(12px)",position:"sticky",top:0,zIndex:40}}>
+        <header style={{height:"56px",borderBottom:`1px solid ${border}`,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 24px",background:"rgba(245,240,235,.95)",backdropFilter:"blur(12px)",position:"sticky",top:0,zIndex:40}}>
           <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
             <span style={{fontSize:"13px",color:muted}}>tablely</span>
             <span style={{color:muted,fontSize:"12px"}}>›</span>
@@ -382,19 +417,15 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
             <button onClick={() => setShowWalkin(true)} style={{
               display:"flex",alignItems:"center",gap:"6px",padding:"7px 14px",borderRadius:"7px",
               background:"rgba(251,191,36,.15)",border:"1px solid rgba(251,191,36,.25)",
-              color:"#FCD34D",fontSize:"12px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
+              color:"#D97706",fontSize:"12px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
             }}>
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v11M1 6.5h11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
               Walk-in
             </button>
-
-
           </div>
         </header>
 
         <div style={{padding:"24px",flex:1}}>
-
-          {/* GREETING + DATE */}
           <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:"24px",flexWrap:"wrap",gap:"12px"}}>
             <div>
               <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"26px",fontWeight:700,color:text,letterSpacing:"-.5px",marginBottom:"4px"}}>
@@ -411,48 +442,28 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
             </div>
           </div>
 
-          {/* TRIAL BANNER */}
-          {restaurant && restaurant.plan === "trial" && (() => {
-            const trialStart = restaurant.trial_start ? new Date(restaurant.trial_start) : new Date();
-            const trialDays = restaurant.trial_days || 30;
-            const daysLeft = Math.max(0, trialDays - Math.floor((Date.now() - trialStart.getTime()) / 86400000));
-            const pct = Math.min(100, ((trialDays - daysLeft) / trialDays) * 100);
-            if (daysLeft > trialDays) return null;
-            return (
-              <div style={{
-                background: daysLeft <= 5 ? "rgba(239,68,68,.08)" : "rgba(255,92,53,.06)",
-                border: `1px solid ${daysLeft <= 5 ? "rgba(239,68,68,.2)" : "rgba(255,92,53,.15)"}`,
-                borderRadius:"10px",padding:"12px 16px",marginBottom:"20px",
-                display:"flex",alignItems:"center",justifyContent:"space-between",gap:"16px",flexWrap:"wrap",
-              }}>
-                <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-                  <div style={{width:"8px",height:"8px",borderRadius:"50%",background:daysLeft<=5?"#F87171":"#FF5C35",flexShrink:0}}/>
-                  <div>
-                    <span style={{fontSize:"13px",fontWeight:600,color:daysLeft<=5?"#F87171":"#FF5C35"}}>
-                      {daysLeft === 0 ? "Testphase abgelaufen" : `Testphase: noch ${daysLeft} ${daysLeft===1?"Tag":"Tage"}`}
-                    </span>
-                    <div style={{width:"160px",height:"4px",background:"rgba(0,0,0,.08)",borderRadius:"2px",marginTop:"4px",overflow:"hidden"}}>
-                      <div style={{width:`${pct}%`,height:"100%",background:daysLeft<=5?"#F87171":"#FF5C35",borderRadius:"2px",transition:"width .5s"}}/>
-                    </div>
-                  </div>
-                </div>
-                <a href="mailto:michael@tablely.at?subject=Tablely Paket" style={{
-                  fontSize:"12px",fontWeight:500,color:"#fff",background:"#FF5C35",
-                  padding:"6px 14px",borderRadius:"6px",textDecoration:"none",whiteSpace:"nowrap",
-                }}>Paket wählen →</a>
-              </div>
-            );
-          })()}
+          {/* Pending Alert */}
+          {stats.pending > 0 && (
+            <div onClick={() => setFilterChannel("pending")}
+              style={{display:"flex",alignItems:"center",gap:"10px",padding:"10px 16px",
+                background:"rgba(251,191,36,.1)",border:"1px solid rgba(251,191,36,.25)",
+                borderRadius:"10px",marginBottom:"16px",cursor:"pointer"}}>
+              <div style={{width:"8px",height:"8px",borderRadius:"50%",background:"#FCD34D",flexShrink:0,animation:"pulseGlow 2s infinite"}}/>
+              <span style={{fontSize:"13px",color:"#D97706",fontWeight:500}}>
+                {stats.pending} ausstehende Reservierung{stats.pending>1?"en":""} — Klicken zum Anzeigen
+              </span>
+            </div>
+          )}
 
           {/* STATS */}
           <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:"10px",marginBottom:"24px"}}>
             {[
-              {label:"Heute",val:stats.today,color:"#FF5C35",bg:"rgba(255,92,53,.1)"},
-              {label:"Online",val:stats.online,color:"#818CF8",bg:"rgba(99,102,241,.1)"},
-              {label:"WhatsApp",val:stats.whatsapp,color:"#25D366",bg:"rgba(37,211,102,.1)"},
-              {label:"Telefon",val:stats.phone,color:"#FF5C35",bg:"rgba(255,92,53,.08)"},
-              {label:"Walk-in",val:stats.walkin,color:"#FCD34D",bg:"rgba(251,191,36,.1)"},
-              {label:"Ausstehend",val:stats.pending,color:"#FCD34D",bg:"rgba(251,191,36,.08)"},
+              {label:"Heute",val:stats.today,color:"#FF5C35"},
+              {label:"Online",val:stats.online,color:"#818CF8"},
+              {label:"WhatsApp",val:stats.whatsapp,color:"#25D366"},
+              {label:"Telefon",val:stats.phone,color:"#FF5C35"},
+              {label:"Walk-in",val:stats.walkin,color:"#FCD34D"},
+              {label:"Ausstehend",val:stats.pending,color:"#FCD34D"},
             ].map((s,i) => (
               <div key={i} style={{background:surface,border:`1px solid ${border}`,borderRadius:"12px",padding:"14px 12px",textAlign:"center"}}>
                 <div style={{fontFamily:"'Playfair Display',serif",fontSize:"24px",fontWeight:700,color:s.color,letterSpacing:"-1px",marginBottom:"4px"}}>{s.val}</div>
@@ -461,42 +472,26 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
             ))}
           </div>
 
-          {/* PENDING ALERT */}
-          {stats.pending > 0 && (
-            <div onClick={() => { setFilterChannel("all"); setFilterDate(today); }}
-              style={{
-                display:"flex",alignItems:"center",gap:"10px",padding:"10px 16px",
-                background:"rgba(251,191,36,.1)",border:"1px solid rgba(251,191,36,.25)",
-                borderRadius:"10px",marginBottom:"16px",cursor:"pointer",
-              }}>
-              <div style={{width:"8px",height:"8px",borderRadius:"50%",background:"#FCD34D",flexShrink:0}}/>
-              <span style={{fontSize:"13px",color:"#D97706",fontWeight:500}}>
-                {stats.pending} ausstehende Reservierung{stats.pending>1?"en":""} — Klicken zum Anzeigen
-              </span>
-            </div>
-          )}
-
-          {/* VIEW TOGGLE + CHANNEL FILTER */}
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"16px",flexWrap:"wrap",gap:"10px"}}>
             <div style={{display:"flex",gap:"4px",background:surface,border:`1px solid ${border}`,borderRadius:"9px",padding:"3px"}}>
               {[{k:"list",l:"Liste"},{k:"tables",l:"Tischkarte"}].map(v => (
                 <button key={v.k} onClick={() => setView(v.k as "list"|"tables")} style={{
-                  padding:"6px 16px",borderRadius:"7px",fontSize:"12px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",border:"none",transition:"all .15s",
-                  background: view===v.k ? (dark?"rgba(255,255,255,.12)":"#1A1A2E") : "transparent",
-                  color: view===v.k ? (dark?"#FFFAF5":"#fff") : muted,
+                  padding:"6px 16px",borderRadius:"7px",fontSize:"12px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",border:"none",
+                  background: view===v.k ? "#1A1A2E" : "transparent",
+                  color: view===v.k ? "#fff" : muted,
                 }}>{v.l}</button>
               ))}
             </div>
             <div style={{display:"flex",gap:"4px",flexWrap:"wrap"}}>
               <button onClick={() => setFilterChannel("pending")} style={{
-                padding:"5px 12px",borderRadius:"6px",fontSize:"12px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",border:"1px solid",transition:"all .15s",
+                padding:"5px 12px",borderRadius:"6px",fontSize:"12px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",border:"1px solid",
                 background: filterChannel==="pending" ? "#FCD34D" : "transparent",
                 color: filterChannel==="pending" ? "#1A1A2E" : muted,
                 borderColor: filterChannel==="pending" ? "#FCD34D" : border,
               }}>◐ Ausstehend {stats.pending > 0 && `(${stats.pending})`}</button>
               {CHANNELS.map(c => (
                 <button key={c.key} onClick={() => setFilterChannel(c.key)} style={{
-                  padding:"5px 12px",borderRadius:"6px",fontSize:"12px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",border:`1px solid ${border}`,transition:"all .15s",
+                  padding:"5px 12px",borderRadius:"6px",fontSize:"12px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",border:`1px solid ${border}`,
                   background: filterChannel===c.key ? "#FF5C35" : "transparent",
                   color: filterChannel===c.key ? "#fff" : muted,
                   borderColor: filterChannel===c.key ? "#FF5C35" : border,
@@ -505,10 +500,10 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
             </div>
           </div>
 
-          {/* LIST VIEW */}
+          {/* LIST */}
           {view === "list" && (
             <div style={{background:surface,border:`1px solid ${border}`,borderRadius:"14px",overflow:"hidden"}}>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 70px 90px 70px 90px 100px 150px",gap:"10px",padding:"10px 18px",borderBottom:`1px solid ${border}`,background:dark?"rgba(255,255,255,.02)":"rgba(0,0,0,.02)"}}>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 70px 90px 70px 110px 100px 150px",gap:"10px",padding:"10px 18px",borderBottom:`1px solid ${border}`,background:"rgba(0,0,0,.02)"}}>
                 {["Gast","Personen","Datum","Uhrzeit","Tisch","Kanal","Status"].map((h,i)=>(
                   <div key={i} style={{fontSize:"10px",fontWeight:600,color:muted,textTransform:"uppercase",letterSpacing:".7px"}}>{h}</div>
                 ))}
@@ -519,9 +514,9 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
                 </div>
               ) : filteredRes.map((r,i) => (
                 <div key={r.id} className="res-row" onClick={() => setSelectedRes(r)} style={{
-                  display:"grid",gridTemplateColumns:"1fr 70px 90px 70px 90px 100px 150px",gap:"10px",
+                  display:"grid",gridTemplateColumns:"1fr 70px 90px 70px 110px 100px 150px",gap:"10px",
                   padding:"12px 18px",borderBottom:i<filteredRes.length-1?`1px solid ${border}`:"none",
-                  alignItems:"center",transition:"background .12s",cursor:"pointer",
+                  alignItems:"center",cursor:"pointer",
                 }}>
                   <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
                     <div style={{width:"30px",height:"30px",borderRadius:"50%",background:"rgba(255,92,53,.15)",border:"1px solid rgba(255,92,53,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"12px",fontWeight:600,color:"#FF5C35",flexShrink:0}}>
@@ -530,23 +525,19 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
                     <div>
                       <div style={{fontSize:"13px",fontWeight:500,color:text}}>{r.guest_name}</div>
                       {r.guest_phone && <div style={{fontSize:"11px",color:muted}}>{r.guest_phone}</div>}
-                      {r.notes && <div style={{fontSize:"10px",color:muted,fontStyle:"italic"}}>„{r.notes}"</div>}
+                      {r.notes && <div style={{fontSize:"10px",color:muted,fontStyle:"italic"}}>{r.notes}</div>}
                     </div>
                   </div>
                   <div style={{fontSize:"13px",color:muted}}>{r.party_size} Pers.</div>
                   <div style={{fontSize:"12px",color:muted}}>{new Date(r.date).toLocaleDateString("de-AT",{day:"numeric",month:"short"})}</div>
                   <div style={{fontSize:"13px",fontWeight:500,color:text}}>{r.time.slice(0,5)}</div>
                   <div style={{fontSize:"12px",color:muted}}>
-                    {(() => {
-                      const ids = r.table_ids?.length ? r.table_ids : r.table_id ? [r.table_id] : [];
-                      if (!ids.length) return <span style={{color:dark?"rgba(255,255,255,.2)":"#D1D5DB",fontSize:"11px"}}>—</span>;
-                      return ids.map(id => tables.find(t=>t.id===id)?.name).filter(Boolean).join(" + ");
-                    })()}
+                    {getTableNamesForRes(r) || <span style={{color:"#D1D5DB",fontSize:"11px"}}>—</span>}
                   </div>
-                  <div style={{...CHANNEL_COLORS[r.channel]||{bg:"rgba(255,255,255,.1)",color:muted},fontSize:"11px",fontWeight:600,padding:"3px 8px",borderRadius:"5px",width:"fit-content"}}>
+                  <div style={{...CHANNEL_COLORS[r.channel]||{bg:"rgba(0,0,0,.05)",color:muted},fontSize:"11px",fontWeight:600,padding:"3px 8px",borderRadius:"5px",width:"fit-content"}}>
                     {r.channel==="online"?"Online":r.channel==="whatsapp"?"WhatsApp":r.channel==="phone"?"Telefon":"Walk-in"}
                   </div>
-                  <select value={r.status} onChange={(e: React.ChangeEvent<HTMLSelectElement>)=>updateStatus(r.id,e.target.value)} style={{
+                  <select value={r.status} onClick={e => e.stopPropagation()} onChange={(e: React.ChangeEvent<HTMLSelectElement>)=>updateStatus(r.id,e.target.value)} style={{
                     fontSize:"11px",fontWeight:600,padding:"4px 8px",borderRadius:"6px",cursor:"pointer",fontFamily:"inherit",
                     outline:"none",...STATUS_COLORS[r.status],border:`1px solid ${STATUS_COLORS[r.status]?.border||border}`,
                   }}>
@@ -560,22 +551,21 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
             </div>
           )}
 
-          {/* TABLE VIEW */}
+          {/* TABLES */}
           {view === "tables" && (
             <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
               {tables.length === 0 ? (
                 <div style={{background:surface,border:`1px solid ${border}`,borderRadius:"14px",padding:"48px",textAlign:"center",color:muted,fontSize:"14px"}}>
-                  Noch keine Tische konfiguriert. Geh zu Einstellungen → Tische.
+                  Noch keine Tische konfiguriert.
                 </div>
               ) : tables.map(table => {
                 const tableRes = getTableReservations(table.id);
                 const slots = ["12:00","13:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00","21:00","22:00"];
-
                 return (
                   <div key={table.id} style={{background:surface,border:`1px solid ${border}`,borderRadius:"12px",padding:"14px 16px"}}>
                     <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"10px"}}>
                       <div style={{fontSize:"13px",fontWeight:600,color:text}}>{table.name}</div>
-                      <div style={{fontSize:"11px",color:muted,background:dark?"rgba(255,255,255,.05)":"rgba(0,0,0,.05)",padding:"2px 8px",borderRadius:"5px"}}>
+                      <div style={{fontSize:"11px",color:muted,background:"rgba(0,0,0,.05)",padding:"2px 8px",borderRadius:"5px"}}>
                         {table.capacity} Pers.
                       </div>
                       {tableRes.length === 0 && (
@@ -584,15 +574,12 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
                         </div>
                       )}
                     </div>
-                    {/* Timeline */}
-                    <div style={{position:"relative",height:"40px",background:dark?"rgba(255,255,255,.03)":"rgba(0,0,0,.04)",borderRadius:"8px",overflow:"hidden"}}>
-                      {/* Hour markers */}
+                    <div style={{position:"relative",height:"40px",background:"rgba(0,0,0,.04)",borderRadius:"8px",overflow:"hidden"}}>
                       {slots.map((s,i) => (
-                        <div key={i} style={{position:"absolute",left:`${(i/10)*100}%`,top:0,bottom:0,borderLeft:`1px solid ${dark?"rgba(255,255,255,.06)":"rgba(0,0,0,.08)"}`,display:"flex",alignItems:"flex-end",paddingBottom:"3px"}}>
+                        <div key={i} style={{position:"absolute",left:`${(i/10)*100}%`,top:0,bottom:0,borderLeft:`1px solid rgba(0,0,0,.08)`,display:"flex",alignItems:"flex-end",paddingBottom:"3px"}}>
                           <span style={{fontSize:"8px",color:muted,paddingLeft:"2px",whiteSpace:"nowrap"}}>{s}</span>
                         </div>
                       ))}
-                      {/* Reservation blocks */}
                       {tableRes.map(r => {
                         const startMins = timeToMinutes(r.time) - 12*60;
                         const totalMins = 10*60;
@@ -603,7 +590,7 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
                           <div key={r.id} title={`${r.guest_name} · ${r.party_size} Pers. · ${r.time.slice(0,5)}`} style={{
                             position:"absolute",left:`${left}%`,width:`${width}%`,top:"4px",bottom:"4px",
                             background:colors.color,borderRadius:"5px",opacity:.85,
-                            display:"flex",alignItems:"center",padding:"0 6px",overflow:"hidden",cursor:"default",
+                            display:"flex",alignItems:"center",padding:"0 6px",overflow:"hidden",
                           }}>
                             <span style={{fontSize:"10px",fontWeight:600,color:"#fff",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
                               {r.guest_name} ({r.party_size})
@@ -612,15 +599,6 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
                         );
                       })}
                     </div>
-                    {tableRes.length > 0 && (
-                      <div style={{marginTop:"8px",display:"flex",gap:"8px",flexWrap:"wrap"}}>
-                        {tableRes.map(r => (
-                          <div key={r.id} style={{fontSize:"11px",color:muted}}>
-                            {r.time.slice(0,5)} – {minutesToTime(timeToMinutes(r.time)+stayDuration)} · {r.guest_name} · {r.party_size} Pers.
-                          </div>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 );
               })}
@@ -629,7 +607,7 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
         </div>
       </main>
 
-      {/* NEUE RESERVIERUNG POPUP */}
+      {/* GROSSGRUPPEN POPUP */}
       {newPendingRes && (
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.6)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:"24px"}}>
           <div style={{background:"#fff",borderRadius:"20px",padding:"32px",width:"100%",maxWidth:"460px",boxShadow:"0 40px 80px rgba(0,0,0,.3)",animation:"slideIn .3s ease"}}>
@@ -638,21 +616,20 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 11c-.55 0-1-.45-1-1V8c0-.55.45-1 1-1s1 .45 1 1v4c0 .55-.45 1-1 1zm1 4h-2v-2h2v2z" fill="#FCD34D"/></svg>
               </div>
               <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:"22px",fontWeight:700,color:"#1A1A2E",marginBottom:"6px"}}>
-                Neue Reservierung
+                Großgruppen-Anfrage
               </h3>
               <p style={{fontSize:"13px",color:"#6B6B80",fontWeight:300}}>
-                {newPendingRes.party_size >= 15 ? "Großgruppe — manuelle Bestätigung erforderlich" : "Neue Anfrage eingegangen"}
+                {newPendingRes.party_size} Personen — manuelle Bestätigung erforderlich
               </p>
             </div>
-
             <div style={{background:"#F5F0EB",borderRadius:"12px",padding:"16px 20px",marginBottom:"24px"}}>
               {[
                 {l:"Name", v:newPendingRes.guest_name},
-                {l:"Datum", v:new Date(newPendingRes.date).toLocaleDateString("de-AT",{weekday:"long",day:"numeric",month:"long",year:"numeric"})},
+                {l:"Datum", v:new Date(newPendingRes.date).toLocaleDateString("de-AT",{weekday:"long",day:"numeric",month:"long"})},
                 {l:"Uhrzeit", v:`${newPendingRes.time.slice(0,5)} Uhr`},
-                {l:"Personen", v:`${newPendingRes.party_size} ${newPendingRes.party_size===1?"Person":"Personen"}`},
+                {l:"Personen", v:`${newPendingRes.party_size} Personen`},
                 ...(newPendingRes.guest_phone ? [{l:"Telefon", v:newPendingRes.guest_phone}] : []),
-                {l:"Kanal", v:newPendingRes.channel==="whatsapp"?"WhatsApp":newPendingRes.channel==="online"?"Online":"Telefon"},
+                {l:"Kanal", v:newPendingRes.channel==="whatsapp"?"WhatsApp":newPendingRes.channel==="online"?"Online":newPendingRes.channel==="phone"?"Telefon":"Walk-in"},
               ].map((r,i,arr)=>(
                 <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:i<arr.length-1?"1px solid #EDE8E3":"none",fontSize:"14px"}}>
                   <span style={{color:"#6B6B80"}}>{r.l}</span>
@@ -660,7 +637,6 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
                 </div>
               ))}
             </div>
-
             <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
               <button onClick={()=>cancelReservation(newPendingRes)} disabled={confirmingRes} style={{
                 flex:1,padding:"12px",borderRadius:"10px",background:"rgba(239,68,68,.1)",border:"1px solid rgba(239,68,68,.2)",
@@ -687,14 +663,14 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
         </div>
       )}
 
-      {/* RESERVIERUNG DETAIL MODAL */}
+      {/* RES DETAIL */}
       {selectedRes && (
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.6)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:"24px"}}
           onClick={e=>{if(e.target===e.currentTarget)setSelectedRes(null);}}>
-          <div style={{background:"#fff",borderRadius:"20px",padding:"32px",width:"100%",maxWidth:"480px",boxShadow:"0 40px 80px rgba(0,0,0,.2)"}}>
+          <div style={{background:"#fff",borderRadius:"20px",padding:"32px",width:"100%",maxWidth:"480px"}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"24px"}}>
               <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:"22px",fontWeight:700,color:"#1A1A2E"}}>Reservierungsdetails</h3>
-              <button onClick={()=>setSelectedRes(null)} style={{background:"transparent",border:"none",color:"#6B6B80",cursor:"pointer",fontSize:"20px",lineHeight:1}}>✕</button>
+              <button onClick={()=>setSelectedRes(null)} style={{background:"transparent",border:"none",color:"#6B6B80",cursor:"pointer",fontSize:"20px"}}>✕</button>
             </div>
             <div style={{background:"#F5F0EB",borderRadius:"12px",padding:"20px",marginBottom:"20px"}}>
               {[
@@ -704,11 +680,7 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
                 {l:"Datum", v:new Date(selectedRes.date).toLocaleDateString("de-AT",{weekday:"long",day:"numeric",month:"long",year:"numeric"})},
                 {l:"Uhrzeit", v:`${selectedRes.time.slice(0,5)} – ${minutesToTime(timeToMinutes(selectedRes.time)+(restaurant?.stay_duration||150))} Uhr`},
                 {l:"Personen", v:`${selectedRes.party_size} ${selectedRes.party_size===1?"Person":"Personen"}`},
-                {l:"Tisch", v:(() => {
-                  const ids = selectedRes.table_ids?.length ? selectedRes.table_ids : selectedRes.table_id ? [selectedRes.table_id] : [];
-                  if (!ids.length) return "Nicht zugewiesen";
-                  return ids.map((id: string) => tables.find(t=>t.id===id)?.name).filter(Boolean).join(" + ");
-                })()},
+                {l:"Tisch", v:getTableNamesForRes(selectedRes)||"Nicht zugewiesen"},
                 {l:"Kanal", v:selectedRes.channel==="whatsapp"?"WhatsApp":selectedRes.channel==="online"?"Online":selectedRes.channel==="phone"?"Telefon":"Walk-in"},
                 ...(selectedRes.notes ? [{l:"Notizen", v:selectedRes.notes}] : []),
               ].map((row,i,arr)=>(
@@ -741,71 +713,87 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
 
       {/* WALK-IN MODAL */}
       {showWalkin && (
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:"24px"}} onClick={e=>{if(e.target===e.currentTarget){setShowWalkin(false);setSuggestedTable(null);}}}>
-          <div style={{background:dark?"#1A1A2E":"#fff",borderRadius:"16px",padding:"28px",width:"100%",maxWidth:"440px",border:`1px solid ${border}`}}>
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:"24px"}} onClick={e=>{if(e.target===e.currentTarget){setShowWalkin(false);setSuggestedTable(null);setSuggestedCombo(null);}}}>
+          <div style={{background:"#fff",borderRadius:"16px",padding:"28px",width:"100%",maxWidth:"460px",border:`1px solid ${border}`,maxHeight:"90vh",overflow:"auto"}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"20px"}}>
-              <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:"20px",fontWeight:700,color:text}}>Walk-in</h3>
-              <button onClick={()=>{setShowWalkin(false);setSuggestedTable(null);}} style={{background:"transparent",border:"none",color:muted,cursor:"pointer",fontSize:"18px",lineHeight:1}}>✕</button>
+              <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:"20px",fontWeight:700,color:text}}>Walk-in / Neue Reservierung</h3>
+              <button onClick={()=>{setShowWalkin(false);setSuggestedTable(null);setSuggestedCombo(null);}} style={{background:"transparent",border:"none",color:muted,cursor:"pointer",fontSize:"18px"}}>✕</button>
             </div>
-
             <div style={{display:"flex",flexDirection:"column",gap:"12px",marginBottom:"16px"}}>
               <div>
-                <label style={{fontSize:"11px",fontWeight:600,color:muted,textTransform:"uppercase",letterSpacing:".5px",display:"block",marginBottom:"5px"}}>Name des Gastes</label>
+                <label style={{fontSize:"11px",fontWeight:600,color:muted,textTransform:"uppercase",letterSpacing:".5px",display:"block",marginBottom:"5px"}}>Name des Gastes *</label>
                 <input value={walkinName} onChange={e=>setWalkinName(e.target.value)} placeholder="Max Mustermann"
-                  style={{width:"100%",padding:"9px 12px",borderRadius:"8px",border:`1px solid ${border}`,background:dark?"rgba(255,255,255,.05)":"#f9f9f9",color:text,fontSize:"14px",fontFamily:"inherit",outline:"none"}}/>
+                  style={{width:"100%",padding:"9px 12px",borderRadius:"8px",border:`1px solid ${border}`,background:"#f9f9f9",color:text,fontSize:"14px",fontFamily:"inherit",outline:"none"}}/>
+              </div>
+              <div>
+                <label style={{fontSize:"11px",fontWeight:600,color:muted,textTransform:"uppercase",letterSpacing:".5px",display:"block",marginBottom:"5px"}}>Telefon</label>
+                <input value={walkinPhone} onChange={e=>setWalkinPhone(e.target.value)} placeholder="+43 660 123456"
+                  style={{width:"100%",padding:"9px 12px",borderRadius:"8px",border:`1px solid ${border}`,background:"#f9f9f9",color:text,fontSize:"14px",fontFamily:"inherit",outline:"none"}}/>
               </div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}}>
                 <div>
                   <label style={{fontSize:"11px",fontWeight:600,color:muted,textTransform:"uppercase",letterSpacing:".5px",display:"block",marginBottom:"5px"}}>Personen</label>
-                  <select value={walkinParty} onChange={e=>setWalkinParty(e.target.value)}
-                    style={{width:"100%",padding:"9px 12px",borderRadius:"8px",border:`1px solid ${border}`,background:dark?"rgba(255,255,255,.05)":"#f9f9f9",color:text,fontSize:"14px",fontFamily:"inherit",outline:"none"}}>
-                    {[1,2,3,4,5,6,7,8,10,12,15,20].map(n=><option key={n} value={n}>{n}</option>)}
+                  <select value={walkinParty} onChange={e=>{setWalkinParty(e.target.value);setSuggestedTable(null);setSuggestedCombo(null);}}
+                    style={{width:"100%",padding:"9px 12px",borderRadius:"8px",border:`1px solid ${border}`,background:"#f9f9f9",color:text,fontSize:"14px",fontFamily:"inherit",outline:"none"}}>
+                    {[1,2,3,4,5,6,7,8,10,12,15,20,25,30].map(n=><option key={n} value={n}>{n}</option>)}
                   </select>
                 </div>
                 <div>
                   <label style={{fontSize:"11px",fontWeight:600,color:muted,textTransform:"uppercase",letterSpacing:".5px",display:"block",marginBottom:"5px"}}>Datum</label>
-                  <input type="date" value={walkinDate} onChange={e=>setWalkinDate(e.target.value)}
-                    style={{width:"100%",padding:"9px 8px",borderRadius:"8px",border:`1px solid ${border}`,background:dark?"rgba(255,255,255,.05)":"#f9f9f9",color:text,fontSize:"13px",fontFamily:"inherit",outline:"none"}}/>
+                  <input type="date" value={walkinDate} onChange={e=>{setWalkinDate(e.target.value);setSuggestedTable(null);setSuggestedCombo(null);}}
+                    style={{width:"100%",padding:"9px 8px",borderRadius:"8px",border:`1px solid ${border}`,background:"#f9f9f9",color:text,fontSize:"13px",fontFamily:"inherit",outline:"none"}}/>
                 </div>
                 <div>
                   <label style={{fontSize:"11px",fontWeight:600,color:muted,textTransform:"uppercase",letterSpacing:".5px",display:"block",marginBottom:"5px"}}>Uhrzeit</label>
-                  <input type="time" value={walkinTime} onChange={e=>setWalkinTime(e.target.value)}
-                    style={{width:"100%",padding:"9px 8px",borderRadius:"8px",border:`1px solid ${border}`,background:dark?"rgba(255,255,255,.05)":"#f9f9f9",color:text,fontSize:"13px",fontFamily:"inherit",outline:"none"}}/>
+                  <input type="time" value={walkinTime} onChange={e=>{setWalkinTime(e.target.value);setSuggestedTable(null);setSuggestedCombo(null);}}
+                    style={{width:"100%",padding:"9px 8px",borderRadius:"8px",border:`1px solid ${border}`,background:"#f9f9f9",color:text,fontSize:"13px",fontFamily:"inherit",outline:"none"}}/>
                 </div>
               </div>
 
-              <button onClick={suggestTable} style={{
-                padding:"10px",borderRadius:"8px",background:"rgba(255,92,53,.15)",border:"1px solid rgba(255,92,53,.25)",
-                color:"#FF5C35",fontSize:"13px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
-              }}>
-                KI: Tisch vorschlagen →
-              </button>
-
-              {suggestedTable !== undefined && (
-                <div style={{background:suggestedTable?"rgba(52,211,153,.1)":"rgba(239,68,68,.1)",border:`1px solid ${suggestedTable?"rgba(52,211,153,.25)":"rgba(239,68,68,.25)"}`,borderRadius:"10px",padding:"12px 14px"}}>
-                  {suggestedTable ? (
-                    <>
-                      <div style={{fontSize:"12px",fontWeight:600,color:"#34D399",marginBottom:"4px"}}>✓ Tisch verfügbar</div>
-                      <div style={{fontSize:"14px",color:text,fontWeight:500}}>{suggestedTable.name} — {suggestedTable.capacity} Personen</div>
-                      <div style={{fontSize:"11px",color:muted,marginTop:"2px"}}>{walkinTime} – {minutesToTime(timeToMinutes(walkinTime)+stayDuration)} Uhr</div>
-                    </>
-                  ) : (
-                    <>
-                      <div style={{fontSize:"12px",fontWeight:600,color:"#F87171",marginBottom:"4px"}}>✗ Kein freier Tisch</div>
-                      <div style={{fontSize:"13px",color:muted}}>Kein passender Tisch für {walkinParty} Personen zu dieser Zeit.</div>
-                    </>
-                  )}
+              {parseInt(walkinParty) >= (restaurant?.large_group_threshold || 15) ? (
+                <div style={{background:"rgba(252,211,77,.15)",border:"1px solid rgba(252,211,77,.3)",borderRadius:"10px",padding:"12px 14px",fontSize:"12px",color:"#D97706",lineHeight:1.5}}>
+                  ℹ Großgruppe — wird als ausstehend gespeichert und braucht manuelle Bestätigung.
                 </div>
+              ) : (
+                <>
+                  <button onClick={suggestTable} style={{
+                    padding:"10px",borderRadius:"8px",background:"rgba(255,92,53,.15)",border:"1px solid rgba(255,92,53,.25)",
+                    color:"#FF5C35",fontSize:"13px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
+                  }}>
+                    KI: Tisch vorschlagen →
+                  </button>
+                  {(suggestedTable || suggestedCombo) ? (
+                    <div style={{background:"rgba(52,211,153,.1)",border:"1px solid rgba(52,211,153,.25)",borderRadius:"10px",padding:"12px 14px"}}>
+                      <div style={{fontSize:"12px",fontWeight:600,color:"#059669",marginBottom:"6px"}}>✓ Tisch verfügbar</div>
+                      {suggestedTable && (
+                        <>
+                          <div style={{fontSize:"14px",color:text,fontWeight:500}}>{suggestedTable.name} — {suggestedTable.capacity} Personen</div>
+                          <div style={{fontSize:"11px",color:muted,marginTop:"2px"}}>{walkinTime} – {minutesToTime(timeToMinutes(walkinTime)+stayDuration)} Uhr</div>
+                        </>
+                      )}
+                      {suggestedCombo && (
+                        <>
+                          <div style={{fontSize:"14px",color:text,fontWeight:500}}>
+                            Tische zusammen: {suggestedCombo.tables.map(t => t.name).join(" + ")}
+                          </div>
+                          <div style={{fontSize:"12px",color:muted,marginTop:"3px"}}>
+                            Zusammen {suggestedCombo.totalCapacity} Plätze · {walkinTime} – {minutesToTime(timeToMinutes(walkinTime)+stayDuration)} Uhr
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ) : null}
+                </>
               )}
             </div>
 
             <div style={{display:"flex",gap:"8px"}}>
-              <button onClick={()=>{setShowWalkin(false);setSuggestedTable(null);}} style={{
+              <button onClick={()=>{setShowWalkin(false);setSuggestedTable(null);setSuggestedCombo(null);}} style={{
                 flex:1,padding:"10px",borderRadius:"8px",background:"transparent",border:`1px solid ${border}`,
                 color:muted,fontSize:"13px",cursor:"pointer",fontFamily:"inherit",
               }}>Abbrechen</button>
-              {suggestedTable && (
-                <button onClick={()=>saveWalkin(suggestedTable.id)} disabled={!walkinName||savingWalkin} style={{
+              {(suggestedTable || suggestedCombo || parseInt(walkinParty) >= (restaurant?.large_group_threshold || 15)) && (
+                <button onClick={saveWalkin} disabled={!walkinName||savingWalkin} style={{
                   flex:2,padding:"10px",borderRadius:"8px",background:"#FF5C35",border:"none",
                   color:"#fff",fontSize:"13px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
                   opacity:!walkinName||savingWalkin?0.6:1,
@@ -813,10 +801,6 @@ Bitte kontaktiere uns direkt für einen alternativen Termin.`,
                   {savingWalkin?"Wird gespeichert...":"✓ Bestätigen & eintragen"}
                 </button>
               )}
-              <button onClick={()=>router.push("/dashboard/new")} style={{
-                flex:1,padding:"10px",borderRadius:"8px",background:surface,border:`1px solid ${border}`,
-                color:text,fontSize:"13px",cursor:"pointer",fontFamily:"inherit",
-              }}>Manuell</button>
             </div>
           </div>
         </div>
