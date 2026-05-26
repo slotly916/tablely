@@ -42,7 +42,7 @@ export default function Pricing() {
         { text: "Eigene österreichische WhatsApp Nummer", included: true },
         { text: "WhatsApp Erinnerungen für Gäste", included: true },
         { text: "WhatsApp Bestätigungen automatisch", included: true },
-        { text: "Versteht „morgen", „Samstag", „mit Familie"", included: true },
+        { text: "Versteht morgen, Samstag, mit Familie", included: true },
         { text: "Großgruppen-Erkennung", included: true },
         { text: "Telefon KI", included: false },
       ],
