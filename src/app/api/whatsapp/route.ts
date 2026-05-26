@@ -10,22 +10,25 @@ const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN!;
 const WA_TOKEN = process.env.WHATSAPP_TOKEN!;
 const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID!;
 const GROQ_KEY = process.env.GROQ_API_KEY!;
-const MAX_AUTO_PARTY = 14;
 
 type RestaurantRow = {
   id: string;
   name: string;
   stay_duration: number;
+  large_group_threshold: number;
 };
 
 type ReservationRow = {
   table_id: string | null;
+  table_ids: string[] | null;
   time: string;
 };
 
 type TableRow = {
   id: string;
+  name: string;
   capacity: number;
+  combinable_with: string[];
 };
 
 export async function GET(req: Request) {
@@ -76,6 +79,7 @@ export async function POST(req: Request) {
   }
 
   const rest = restaurant as RestaurantRow;
+  const largeGroupThreshold = rest.large_group_threshold || 15;
 
   // Konversationshistorie laden
   const { data: conv } = await supabase
@@ -98,21 +102,36 @@ export async function POST(req: Request) {
   const today = new Date();
   const todayStr = today.toLocaleDateString("de-AT", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
 
-  const systemPrompt = `Du bist der Reservierungsassistent von "${rest.name}" in Österreich.
+  const systemPrompt = `Du bist der freundliche Reservierungsassistent von "${rest.name}" in Österreich.
 Heute ist ${todayStr} (${today.toISOString().split("T")[0]}).
 
 Öffnungszeiten:
 ${hoursText}
 
+DEINE AUFGABE:
+Du sammelst alle 4 wichtigen Infos vom Gast: Name, Datum, Uhrzeit, Personenzahl.
+Verstehe auch unklare oder unvollständige Nachrichten und frage höflich nach was fehlt.
+
+VERSTÄNDNIS-REGELN:
+- Wenn jemand "morgen", "übermorgen", "Samstag" schreibt — rechne das in ein konkretes Datum um.
+- Wenn jemand "abends", "zum Mittagessen", "spät" schreibt — frag nach der genauen Uhrzeit.
+- Wenn jemand "für uns", "zu zweit", "mit der Familie" schreibt — frag wie viele Personen genau.
+- Wenn jemand undeutlich schreibt oder Tippfehler hat — versuche es zu verstehen, frag im Zweifel nach.
+- Wenn jemand "Hallo" oder ähnlich schreibt — begrüße zurück und frage was er möchte.
+
 WICHTIGE REGELN:
-1. Du brauchst IMMER alle 4 Infos bevor du bestätigst: Name, Datum, Uhrzeit, Personenzahl.
-2. Wenn eine Info fehlt, frage NUR nach der fehlenden Info — eine Frage pro Nachricht.
-3. Nutze den bisherigen Gesprächsverlauf — vergiss nie was der Gast bereits gesagt hat.
-4. Berechne den Wochentag IMMER aus dem echten Datum — nie raten.
-5. Bei mehr als ${MAX_AUTO_PARTY} Personen: Leite ans Team weiter und schreibe am Ende: LARGE_GROUP:{"name":"...","date":"YYYY-MM-DD","time":"HH:MM","party_size":N}
-6. Wenn du ALLE 4 Infos hast: Bestätige herzlich und schreibe am Ende: RESERVATION_DATA:{"name":"...","date":"YYYY-MM-DD","time":"HH:MM","party_size":N}
-7. Antworte immer auf Deutsch, kurz und freundlich — max 3 Sätze.
-8. Schreibe RESERVATION_DATA und LARGE_GROUP immer exakt so — niemals auf Deutsch.`;
+1. Frage IMMER nach fehlenden Infos — eine Frage pro Nachricht.
+2. Nutze den bisherigen Gesprächsverlauf — vergiss nie was der Gast bereits gesagt hat.
+3. Berechne den Wochentag IMMER aus dem echten Datum — nie raten.
+
+KRITISCH — PERSONENZAHL PRÜFEN:
+- Wenn Personenzahl MEHR ALS ODER GLEICH ${largeGroupThreshold} ist: Schreibe dem Gast dass sich das Team meldet. Schreibe am Ende NUR: LARGE_GROUP:{"name":"...","date":"YYYY-MM-DD","time":"HH:MM","party_size":N}
+- Wenn Personenzahl WENIGER ALS ${largeGroupThreshold} ist: Bestätige die Reservierung herzlich. Schreibe am Ende NUR: RESERVATION_DATA:{"name":"...","date":"YYYY-MM-DD","time":"HH:MM","party_size":N}
+- NIEMALS RESERVATION_DATA bei ${largeGroupThreshold} oder mehr Personen verwenden!
+- NIEMALS LARGE_GROUP bei weniger als ${largeGroupThreshold} Personen verwenden!
+
+4. Antworte immer auf Deutsch, kurz und freundlich — max 3 Sätze.
+5. Schreibe RESERVATION_DATA und LARGE_GROUP immer exakt so — niemals auf Deutsch übersetzen.`;
 
   const messages = [
     { role: "system", content: systemPrompt },
@@ -160,8 +179,8 @@ WICHTIGE REGELN:
         channel: "whatsapp",
         status: "pending",
         notes: "Großgruppe — manuelle Prüfung erforderlich",
+        table_ids: [],
       }]);
-      // Feste Nachricht — KI bestätigt NICHT, Team meldet sich
       await sendWhatsApp(from, `Vielen Dank für deine Anfrage, ${resData.name}! 🙏\n\nFür Gruppen ab ${resData.party_size} Personen meldet sich unser Team persönlich bei dir — wir prüfen die Verfügbarkeit und bestätigen deinen Wunschtermin so schnell wie möglich.\n\nWir freuen uns auf euch! 🍽️`);
     } catch {
       await sendWhatsApp(from, "Vielen Dank für deine Anfrage! Für Großgruppen meldet sich unser Team persönlich bei dir.");
@@ -175,47 +194,99 @@ WICHTIGE REGELN:
     try {
       const resData = JSON.parse(reservationMatch[1]);
       const stayDuration: number = rest.stay_duration || 150;
+      const party: number = resData.party_size;
 
-      // Freien Tisch finden
+      // Alle Reservierungen für das Datum laden
       const { data: existingRes } = await supabase
         .from("reservations")
-        .select("table_id, time")
+        .select("table_id, table_ids, time")
         .eq("restaurant_id", rest.id)
         .eq("date", resData.date)
         .neq("status", "cancelled");
 
+      // Alle Tische laden mit combinable_with
       const { data: allTables } = await supabase
         .from("tables")
-        .select("id, capacity")
-        .eq("restaurant_id", rest.id)
-        .gte("capacity", resData.party_size)
-        .order("capacity", { ascending: true });
+        .select("id, name, capacity, combinable_with")
+        .eq("restaurant_id", rest.id);
 
       const reqStart = parseInt(resData.time.split(":")[0]) * 60 + parseInt(resData.time.split(":")[1]);
       const reqEnd = reqStart + stayDuration;
 
-      const freeTable = (allTables as TableRow[] || []).find((t: TableRow) => {
-        return !(existingRes as ReservationRow[] || []).some((r: ReservationRow) => {
-          if (r.table_id !== t.id) return false;
+      function isTableOccupied(tableId: string): boolean {
+        return (existingRes as ReservationRow[] || []).some((r: ReservationRow) => {
+          const blockedIds = (r.table_ids && r.table_ids.length > 0) ? r.table_ids : (r.table_id ? [r.table_id] : []);
+          if (!blockedIds.includes(tableId)) return false;
           const rStart = parseInt(r.time.split(":")[0]) * 60 + parseInt(r.time.split(":")[1]);
           const rEnd = rStart + stayDuration;
           return reqStart < rEnd && reqEnd > rStart;
         });
-      });
+      }
 
-      await supabase.from("reservations").insert([{
-        restaurant_id: rest.id,
-        guest_name: resData.name,
-        guest_phone: from,
-        party_size: resData.party_size,
-        date: resData.date,
-        time: resData.time,
-        table_id: freeTable?.id || null,
-        channel: "whatsapp",
-        status: "confirmed",
-      }]);
+      const tables = (allTables as TableRow[] || []);
 
-      await sendWhatsApp(from, aiMessage.replace(/RESERVATION_DATA:\s*\{[^}]+\}/i, "").trim());
+      // 1. Kleinsten passenden Einzeltisch finden
+      let assignedTableIds: string[] = [];
+      let assignedTableNames: string[] = [];
+
+      const singleTable = tables
+        .filter(t => t.capacity >= party && !isTableOccupied(t.id))
+        .sort((a, b) => a.capacity - b.capacity)[0];
+
+      if (singleTable) {
+        assignedTableIds = [singleTable.id];
+        assignedTableNames = [singleTable.name];
+      } else {
+        // 2. Tischkombination versuchen
+        for (const t of tables) {
+          if (!t.combinable_with || t.combinable_with.length === 0) continue;
+          if (isTableOccupied(t.id)) continue;
+          const combinableTables = t.combinable_with
+            .map(id => tables.find(tab => tab.id === id))
+            .filter(Boolean) as TableRow[];
+          const allFree = combinableTables.every(ct => !isTableOccupied(ct.id));
+          if (!allFree) continue;
+          const totalCapacity = t.capacity + combinableTables.reduce((sum, ct) => sum + ct.capacity, 0);
+          if (totalCapacity >= party) {
+            assignedTableIds = [t.id, ...combinableTables.map(ct => ct.id)];
+            assignedTableNames = [t.name, ...combinableTables.map(ct => ct.name)];
+            break;
+          }
+        }
+      }
+
+      // Reservierung speichern
+      if (assignedTableIds.length === 0) {
+        // Kein Tisch verfügbar — Pending Status
+        await supabase.from("reservations").insert([{
+          restaurant_id: rest.id,
+          guest_name: resData.name,
+          guest_phone: from,
+          party_size: party,
+          date: resData.date,
+          time: resData.time,
+          channel: "whatsapp",
+          status: "pending",
+          notes: "Kein passender Tisch — manuelle Prüfung",
+          table_ids: [],
+        }]);
+        await sendWhatsApp(from, `Hallo ${resData.name}! 🙏\n\nLeider sind zu dieser Zeit keine passenden Tische frei. Unser Team prüft das und meldet sich bei dir mit Alternativen.\n\nVielen Dank für deine Geduld!`);
+      } else {
+        // Tisch(e) zuweisen — confirmed
+        await supabase.from("reservations").insert([{
+          restaurant_id: rest.id,
+          guest_name: resData.name,
+          guest_phone: from,
+          party_size: party,
+          date: resData.date,
+          time: resData.time,
+          table_id: assignedTableIds[0],
+          table_ids: assignedTableIds,
+          channel: "whatsapp",
+          status: "confirmed",
+        }]);
+        await sendWhatsApp(from, aiMessage.replace(/RESERVATION_DATA:\s*\{[^}]+\}/i, "").trim());
+      }
     } catch {
       await sendWhatsApp(from, aiMessage.replace(/RESERVATION_DATA:\s*\{[^}]+\}/i, "").trim());
     }
