@@ -11,7 +11,6 @@ const DAYS = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag","S
 
 export default function Settings() {
   const router = useRouter();
-  const dark = false;
   const [tab, setTab] = useState<"restaurant"|"tables"|"groups"|"hours">("restaurant");
   const [restaurantId, setRestaurantId] = useState("");
   const [saving, setSaving] = useState(false);
@@ -23,11 +22,12 @@ export default function Settings() {
   const [slug, setSlug] = useState("");
   const [stayDuration, setStayDuration] = useState(150);
   const [largeGroupThreshold, setLargeGroupThreshold] = useState(15);
+  const [googlePlaceId, setGooglePlaceId] = useState("");
+  const [googleReviewUrl, setGoogleReviewUrl] = useState("");
 
   const [tables, setTables] = useState<Table[]>([]);
   const [hours, setHours] = useState<Hour[]>([]);
 
-  // Group creation
   const [showNewGroup, setShowNewGroup] = useState(false);
   const [groupSelection, setGroupSelection] = useState<string[]>([]);
 
@@ -54,6 +54,8 @@ export default function Settings() {
     setSlug(rest.slug || "");
     setStayDuration(rest.stay_duration || 150);
     setLargeGroupThreshold(rest.large_group_threshold || 15);
+    setGooglePlaceId(rest.google_place_id || "");
+    setGoogleReviewUrl(rest.google_review_url || "");
 
     const { data: tbls } = await supabase.from("tables").select("*").eq("restaurant_id", rest.id).order("name");
     if (tbls) {
@@ -73,7 +75,13 @@ export default function Settings() {
   async function saveRestaurant() {
     setSaving(true);
     const supabase = createClient();
-    await supabase.from("restaurants").update({ name, phone, address, stay_duration: stayDuration, large_group_threshold: largeGroupThreshold }).eq("id", restaurantId);
+    await supabase.from("restaurants").update({
+      name, phone, address,
+      stay_duration: stayDuration,
+      large_group_threshold: largeGroupThreshold,
+      google_place_id: googlePlaceId || null,
+      google_review_url: googleReviewUrl || null,
+    }).eq("id", restaurantId);
     setSaving(false);
     showSaved();
   }
@@ -93,7 +101,6 @@ export default function Settings() {
   async function deleteTable(id: string) {
     const supabase = createClient();
     await supabase.from("tables").delete().eq("id", id);
-    // Remove from other tables' combinable_with too
     for (const t of tables) {
       if (t.combinable_with?.includes(id)) {
         const newCombine = t.combinable_with.filter(x => x !== id);
@@ -117,19 +124,14 @@ export default function Settings() {
     showSaved();
   }
 
-  // GROUP LOGIC - Find existing groups by analyzing combinable_with
   function getGroups(): {tables: Table[], totalCapacity: number}[] {
     const groups: {tables: Table[], totalCapacity: number}[] = [];
     const processed = new Set<string>();
-
     for (const t of tables) {
       if (processed.has(t.id)) continue;
       if (!t.combinable_with || t.combinable_with.length === 0) continue;
-
-      // Build group: this table + all its combinable_with
       const groupTables = [t];
       processed.add(t.id);
-
       for (const otherId of t.combinable_with) {
         const other = tables.find(tab => tab.id === otherId);
         if (other && !processed.has(other.id)) {
@@ -137,7 +139,6 @@ export default function Settings() {
           processed.add(other.id);
         }
       }
-
       if (groupTables.length > 1) {
         groups.push({
           tables: groupTables,
@@ -151,12 +152,10 @@ export default function Settings() {
   async function saveNewGroup() {
     if (groupSelection.length < 2) return;
     const supabase = createClient();
-    // For each selected table, set combinable_with to ALL other selected tables
     for (const tableId of groupSelection) {
       const others = groupSelection.filter(id => id !== tableId);
       await supabase.from("tables").update({ combinable_with: others }).eq("id", tableId);
     }
-    // Reload tables
     const { data: tbls } = await supabase.from("tables").select("*").eq("restaurant_id", restaurantId).order("name");
     if (tbls) {
       tbls.sort((a: {name: string}, b: {name: string}) => {
@@ -201,7 +200,6 @@ export default function Settings() {
     fontSize: "12px", fontWeight: 500, color: muted, marginBottom: "6px", display: "block", textTransform: "uppercase", letterSpacing: "0.5px",
   };
 
-  // Tables that are already in a group
   const tablesInGroups = new Set<string>();
   getGroups().forEach(g => g.tables.forEach(t => tablesInGroups.add(t.id)));
 
@@ -272,7 +270,6 @@ export default function Settings() {
             ))}
           </div>
 
-          {/* RESTAURANT TAB */}
           {tab === "restaurant" && (
             <div style={{background:surface,border:`1px solid ${border}`,borderRadius:"16px",padding:"24px",display:"flex",flexDirection:"column",gap:"18px"}}>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"16px"}}>
@@ -299,17 +296,36 @@ export default function Settings() {
                   <option value={180}>3 Stunden</option>
                   <option value={240}>4 Stunden</option>
                 </select>
-                <div style={{fontSize:"11px",color:muted,marginTop:"4px"}}>
-                  Tische werden für diese Dauer blockiert.
-                </div>
               </div>
               <div>
                 <label style={labelStyle}>Großgruppen-Meldung ab</label>
                 <select style={inputStyle} value={largeGroupThreshold} onChange={e => setLargeGroupThreshold(parseInt(e.target.value))}>
                   {[5,8,10,12,15,20,25,30].map(n => <option key={n} value={n}>Ab {n} Personen</option>)}
                 </select>
-                <div style={{fontSize:"11px",color:muted,marginTop:"4px"}}>
-                  Ab dieser Personenzahl muss die Reservierung manuell bestätigt werden.
+              </div>
+
+              {/* GOOGLE BEWERTUNGEN */}
+              <div style={{background:"rgba(66,133,244,.05)",border:"1px solid rgba(66,133,244,.2)",borderRadius:"12px",padding:"18px"}}>
+                <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"6px"}}>
+                  <div style={{fontSize:"15px"}}>⭐</div>
+                  <div style={{fontSize:"13px",fontWeight:600,color:text}}>Google Bewertungen automatisch sammeln</div>
+                </div>
+                <div style={{fontSize:"12px",color:muted,marginBottom:"14px",lineHeight:1.5}}>
+                  Gäste bekommen 2h nach dem Besuch eine Mail mit 5 Sternen. 4-5 Sterne führen direkt zu Google, 1-3 Sterne bleiben intern bei dir.
+                </div>
+                <div style={{marginBottom:"12px"}}>
+                  <label style={labelStyle}>Google Place ID</label>
+                  <input style={inputStyle} type="text" value={googlePlaceId} onChange={e => setGooglePlaceId(e.target.value)} placeholder="ChIJ..." />
+                  <div style={{fontSize:"11px",color:muted,marginTop:"6px",lineHeight:1.6}}>
+                    So findest du deine Place ID: Geh auf <a href="https://developers.google.com/maps/documentation/places/web-service/place-id" target="_blank" rel="noopener noreferrer" style={{color:"#FF5C35",textDecoration:"none",fontWeight:500}}>Google Place ID Finder</a>, such dein Restaurant, kopier die ID die unter dem Namen erscheint.
+                  </div>
+                </div>
+                <div>
+                  <label style={labelStyle}>ODER: Direkter Google Review Link</label>
+                  <input style={inputStyle} type="text" value={googleReviewUrl} onChange={e => setGoogleReviewUrl(e.target.value)} placeholder="https://g.page/r/..." />
+                  <div style={{fontSize:"11px",color:muted,marginTop:"6px",lineHeight:1.6}}>
+                    Hast du schon einen Google Bewertungs-Kurzlink? Hier einfügen.
+                  </div>
                 </div>
               </div>
 
@@ -337,20 +353,15 @@ export default function Settings() {
             </div>
           )}
 
-          {/* TABLES TAB */}
           {tab === "tables" && (
             <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
               {tables.map((t,i) => (
                 <div key={t.id} style={{background:surface,border:`1px solid ${border}`,borderRadius:"12px",padding:"14px 18px",display:"flex",alignItems:"center",gap:"12px"}}>
-                  <input
-                    style={{...inputStyle,flex:1}}
-                    type="text" value={t.name}
+                  <input style={{...inputStyle,flex:1}} type="text" value={t.name}
                     onChange={e => setTables(tables.map((tb,j) => j===i ? {...tb,name:e.target.value} : tb))}
                     onBlur={() => saveTable(t)}
                   />
-                  <select
-                    style={{...inputStyle,width:"120px"}}
-                    value={t.capacity}
+                  <select style={{...inputStyle,width:"120px"}} value={t.capacity}
                     onChange={e => { const updated = tables.map((tb,j) => j===i ? {...tb,capacity:parseInt(e.target.value)} : tb); setTables(updated); saveTable(updated[i]); }}
                   >
                     {[1,2,3,4,5,6,7,8,10,12,15,20].map(n => <option key={n} value={n}>{n} Pers.</option>)}
@@ -374,14 +385,11 @@ export default function Settings() {
             </div>
           )}
 
-          {/* GROUPS TAB */}
           {tab === "groups" && (
             <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
               <div style={{background:"rgba(255,92,53,.08)",border:"1px solid rgba(255,92,53,.15)",borderRadius:"10px",padding:"12px 16px",fontSize:"12px",color:"#FF5C35",lineHeight:1.6,marginBottom:"4px"}}>
-                💡 Erstelle Gruppen von Tischen die zusammen geschoben werden können. So weiß Tablely automatisch wann es größere Gruppen unterbringen kann.
+                💡 Erstelle Gruppen von Tischen die zusammen geschoben werden können.
               </div>
-
-              {/* Existing groups */}
               {getGroups().map((g, i) => (
                 <div key={i} style={{background:surface,border:`1px solid ${border}`,borderRadius:"12px",padding:"16px 18px"}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"10px"}}>
@@ -400,20 +408,17 @@ export default function Settings() {
                   </div>
                   <div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>
                     {g.tables.map(t => (
-                      <div key={t.id} style={{display:"inline-flex",alignItems:"center",gap:"6px",padding:"6px 12px",background:"#FFF0EB",border:"1px solid rgba(255,92,53,.15)",borderRadius:"8px",fontSize:"13px",color:text,fontWeight:500}}>
-                        <span>{t.name}</span>
-                        <span style={{fontSize:"11px",color:muted}}>({t.capacity}P)</span>
+                      <div key={t.id} style={{padding:"6px 12px",background:"#FFF0EB",border:"1px solid rgba(255,92,53,.15)",borderRadius:"8px",fontSize:"13px",color:text,fontWeight:500}}>
+                        {t.name} <span style={{fontSize:"11px",color:muted}}>({t.capacity}P)</span>
                       </div>
                     ))}
                   </div>
                 </div>
               ))}
-
-              {/* New group form */}
               {showNewGroup ? (
-                <div style={{background:surface,border:`1px solid #FF5C35`,borderRadius:"12px",padding:"16px 18px"}}>
-                  <div style={{fontSize:"13px",fontWeight:600,color:text,marginBottom:"10px"}}>Neue Tisch-Gruppe</div>
-                  <div style={{fontSize:"12px",color:muted,marginBottom:"12px"}}>Wähle mindestens 2 Tische die zusammen geschoben werden können:</div>
+                <div style={{background:surface,border:"1px solid #FF5C35",borderRadius:"12px",padding:"16px 18px"}}>
+                  <div style={{fontSize:"13px",fontWeight:600,color:text,marginBottom:"6px"}}>Neue Tisch-Gruppe</div>
+                  <div style={{fontSize:"12px",color:muted,marginBottom:"12px"}}>Mindestens 2 Tische auswählen:</div>
                   <div style={{display:"flex",gap:"6px",flexWrap:"wrap",marginBottom:"14px"}}>
                     {tables.map(t => {
                       const isSelected = groupSelection.includes(t.id);
@@ -429,7 +434,7 @@ export default function Settings() {
                           borderColor: isSelected ? "#FF5C35" : border,
                           opacity: isInOtherGroup ? 0.5 : 1,
                         }}>
-                          {t.name} ({t.capacity}P){isInOtherGroup && " ✓ bereits in Gruppe"}
+                          {t.name} ({t.capacity}P)
                         </button>
                       );
                     })}
@@ -440,67 +445,42 @@ export default function Settings() {
                     </div>
                   )}
                   <div style={{display:"flex",gap:"8px"}}>
-                    <button onClick={() => { setShowNewGroup(false); setGroupSelection([]); }} style={{
-                      padding:"9px 16px",borderRadius:"8px",background:"transparent",border:`1px solid ${border}`,
-                      color:muted,fontSize:"13px",cursor:"pointer",fontFamily:"inherit",
-                    }}>Abbrechen</button>
-                    <button onClick={saveNewGroup} disabled={groupSelection.length < 2} style={{
-                      padding:"9px 18px",borderRadius:"8px",background:"#FF5C35",border:"none",
-                      color:"#fff",fontSize:"13px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
-                      opacity:groupSelection.length < 2 ? 0.5 : 1,
-                    }}>✓ Gruppe erstellen</button>
+                    <button onClick={() => { setShowNewGroup(false); setGroupSelection([]); }} style={{padding:"9px 16px",borderRadius:"8px",background:"transparent",border:`1px solid ${border}`,color:muted,fontSize:"13px",cursor:"pointer",fontFamily:"inherit"}}>Abbrechen</button>
+                    <button onClick={saveNewGroup} disabled={groupSelection.length < 2} style={{padding:"9px 18px",borderRadius:"8px",background:"#FF5C35",border:"none",color:"#fff",fontSize:"13px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",opacity:groupSelection.length < 2 ? 0.5 : 1}}>✓ Gruppe erstellen</button>
                   </div>
                 </div>
               ) : (
-                <button onClick={() => setShowNewGroup(true)} style={{
-                  background:"transparent",border:`1px dashed ${border}`,borderRadius:"12px",padding:"14px",
-                  fontSize:"13px",fontWeight:500,color:muted,cursor:"pointer",fontFamily:"inherit",
-                  display:"flex",alignItems:"center",justifyContent:"center",gap:"8px",
-                }}>
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
-                  Neue Tisch-Gruppe erstellen
-                </button>
-              )}
-
-              {getGroups().length === 0 && !showNewGroup && (
-                <div style={{textAlign:"center",padding:"32px",color:muted,fontSize:"13px"}}>
-                  Noch keine Tisch-Gruppen erstellt.
-                </div>
+                <button onClick={() => setShowNewGroup(true)} style={{background:"transparent",border:`1px dashed ${border}`,borderRadius:"12px",padding:"14px",fontSize:"13px",fontWeight:500,color:muted,cursor:"pointer",fontFamily:"inherit"}}>+ Neue Tisch-Gruppe erstellen</button>
               )}
             </div>
           )}
 
-          {/* HOURS TAB */}
           {tab === "hours" && (
-            <div style={{background:surface,border:`1px solid ${border}`,borderRadius:"16px",padding:"24px",display:"flex",flexDirection:"column",gap:"0"}}>
+            <div style={{background:surface,border:`1px solid ${border}`,borderRadius:"16px",padding:"24px"}}>
               {DAYS.map((day,i) => {
                 const h = hours[i];
                 if (!h) return null;
                 return (
                   <div key={i} style={{display:"flex",alignItems:"center",gap:"12px",padding:"12px 0",borderBottom: i<6 ? `1px solid ${border}` : "none"}}>
-                    <span style={{width:"100px",fontSize:"13px",fontWeight:500,color:text,flexShrink:0}}>{day}</span>
+                    <span style={{width:"100px",fontSize:"13px",fontWeight:500,color:text}}>{day}</span>
                     {h.is_closed ? (
                       <span style={{fontSize:"13px",color:muted,flex:1}}>Geschlossen</span>
                     ) : (
                       <>
                         <input style={{...inputStyle,width:"100px"}} type="time" value={h.open_time} onChange={e => setHours(hours.map((hr,j) => j===i ? {...hr,open_time:e.target.value} : hr))} />
-                        <span style={{fontSize:"13px",color:muted}}>–</span>
+                        <span style={{color:muted}}>–</span>
                         <input style={{...inputStyle,width:"100px"}} type="time" value={h.close_time} onChange={e => setHours(hours.map((hr,j) => j===i ? {...hr,close_time:e.target.value} : hr))} />
                       </>
                     )}
-                    <label style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:"6px",fontSize:"12px",color:muted,cursor:"pointer",flexShrink:0}}>
+                    <label style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:"6px",fontSize:"12px",color:muted,cursor:"pointer"}}>
                       <input type="checkbox" checked={h.is_closed} onChange={e => setHours(hours.map((hr,j) => j===i ? {...hr,is_closed:e.target.checked} : hr))} />
                       Geschlossen
                     </label>
                   </div>
                 );
               })}
-              <button className="save-btn" onClick={saveHours} disabled={saving} style={{
-                background:"#FF5C35",color:"#fff",border:"none",padding:"12px 24px",borderRadius:"10px",
-                fontSize:"14px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
-                opacity:saving?0.7:1,alignSelf:"flex-start",marginTop:"20px"
-              }}>
-                {saving ? "Wird gespeichert..." : "Öffnungszeiten speichern"}
+              <button onClick={saveHours} disabled={saving} style={{background:"#FF5C35",color:"#fff",border:"none",padding:"12px 24px",borderRadius:"10px",fontSize:"14px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",opacity:saving?0.7:1,marginTop:"20px"}}>
+                {saving ? "Wird gespeichert..." : "Speichern"}
               </button>
             </div>
           )}
