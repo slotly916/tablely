@@ -1,515 +1,466 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
-function RegisterModal({ onClose }: { onClose: () => void }) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [status, setStatus] = useState<"idle"|"loading"|"success"|"error">("idle");
-  const [errorMsg, setErrorMsg] = useState("");
+export default function LandingV2() {
+  const [chatMessages, setChatMessages] = useState<{from:"user"|"ai",text:string,delay:number}[]>([]);
+  const [showRegister, setShowRegister] = useState(false);
+  const [counter, setCounter] = useState(0);
+  const [scrollY, setScrollY] = useState(0);
+  const heroRef = useRef<HTMLDivElement>(null);
 
-  async function handleGoogleLogin() {
-    const { createClient } = await import("@/lib/supabase");
-    const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/onboarding` },
+  // Animated chat
+  useEffect(() => {
+    const messages: {from:"user"|"ai",text:string,delay:number}[] = [
+      { from: "user", text: "Hallo, ich hätte gerne einen Tisch für 4 Personen morgen Abend", delay: 800 },
+      { from: "ai", text: "Hallo! 👋 Gerne. Für welche Uhrzeit darf ich reservieren?", delay: 2200 },
+      { from: "user", text: "So gegen 19:30 wenn möglich", delay: 3800 },
+      { from: "ai", text: "Perfekt! Auf welchen Namen darf ich die Reservierung anlegen?", delay: 5200 },
+      { from: "user", text: "Auf Müller bitte", delay: 6800 },
+      { from: "ai", text: "Reserviert! ✅\n\n📅 Morgen, 19:30 Uhr\n👥 4 Personen\n\nDu bekommst gleich eine Bestätigung. Wir freuen uns!", delay: 8400 },
+    ];
+
+    messages.forEach((msg, i) => {
+      setTimeout(() => {
+        setChatMessages(prev => [...prev, msg]);
+      }, msg.delay);
     });
-  }
 
-  async function handleRegister() {
-    if (!name || !email || !password) { setErrorMsg("Bitte alle Felder ausfüllen."); return; }
-    if (password.length < 8) { setErrorMsg("Passwort muss mindestens 8 Zeichen lang sein."); return; }
-    setStatus("loading"); setErrorMsg("");
-    try {
-      const res = await fetch("/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+    // Loop after 12 seconds
+    const loop = setInterval(() => {
+      setChatMessages([]);
+      messages.forEach((msg) => {
+        setTimeout(() => {
+          setChatMessages(prev => [...prev, msg]);
+        }, msg.delay);
       });
-      const data = await res.json();
-      if (data.error) { setStatus("error"); setErrorMsg(data.error); return; }
-      setStatus("success");
-    } catch { setStatus("error"); setErrorMsg("Verbindungsfehler."); }
-  }
+    }, 14000);
+
+    return () => clearInterval(loop);
+  }, []);
+
+  // Counter animation
+  useEffect(() => {
+    let current = 0;
+    const target = 1247;
+    const increment = target / 80;
+    const timer = setInterval(() => {
+      current += increment;
+      if (current >= target) {
+        setCounter(target);
+        clearInterval(timer);
+      } else {
+        setCounter(Math.floor(current));
+      }
+    }, 30);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Scroll parallax
+  useEffect(() => {
+    const handler = () => setScrollY(window.scrollY);
+    window.addEventListener("scroll", handler);
+    return () => window.removeEventListener("scroll", handler);
+  }, []);
 
   return (
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:500,padding:"20px",fontFamily:"'DM Sans',sans-serif"}}
-      onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-      <div style={{background:"#FFFAF5",borderRadius:"20px",padding:"36px",width:"100%",maxWidth:"420px",boxShadow:"0 40px 80px rgba(0,0,0,.3)"}}>
-        {status==="success" ? (
-          <div style={{textAlign:"center",padding:"20px 0"}}>
-            <div style={{width:"56px",height:"56px",borderRadius:"50%",background:"#E8F8F1",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px"}}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#25C281" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            </div>
-            <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"24px",fontWeight:700,color:"#1A1A2E",marginBottom:"10px"}}>Konto erstellt!</h2>
-            <p style={{color:"#6B6B80",fontSize:"14px",lineHeight:1.7,marginBottom:"20px"}}>Bestätigungsmail wurde an <strong>{email}</strong> gesendet.</p>
-            <button onClick={onClose} style={{background:"#FF5C35",color:"#fff",border:"none",padding:"12px 28px",borderRadius:"10px",fontSize:"14px",fontWeight:500,cursor:"pointer",fontFamily:"inherit"}}>Schließen</button>
-          </div>
-        ) : (
-          <>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"8px"}}>
-              <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"22px",fontWeight:700,color:"#1A1A2E"}}>30 Tage gratis testen</h2>
-              <button onClick={onClose} style={{background:"transparent",border:"none",color:"#6B6B80",cursor:"pointer",fontSize:"20px",lineHeight:1}}>✕</button>
-            </div>
-            <div style={{display:"inline-flex",alignItems:"center",gap:"6px",background:"rgba(255,92,53,.1)",border:"1px solid rgba(255,92,53,.2)",borderRadius:"20px",padding:"4px 12px",marginBottom:"20px"}}>
-              <div style={{width:"5px",height:"5px",borderRadius:"50%",background:"#FF5C35"}}/>
-              <span style={{fontSize:"11px",color:"#FF5C35",fontWeight:600}}>Noch 5 von 10 Plätzen frei</span>
-            </div>
-            <button onClick={handleGoogleLogin} style={{
-              width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:"10px",
-              padding:"12px",borderRadius:"10px",border:"1.5px solid #F0EBE3",background:"#fff",
-              fontSize:"14px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",color:"#1A1A2E",
-              marginBottom:"12px",
-            }}>
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
-                <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
-                <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
-                <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
-              </svg>
-              Mit Google registrieren
-            </button>
-            <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"12px"}}>
-              <div style={{flex:1,height:"1px",background:"#F0EBE3"}}/>
-              <span style={{fontSize:"12px",color:"#6B6B80"}}>oder mit E-Mail</span>
-              <div style={{flex:1,height:"1px",background:"#F0EBE3"}}/>
-            </div>
-            <div style={{display:"flex",flexDirection:"column",gap:"10px",marginBottom:"14px"}}>
-              <input style={{width:"100%",padding:"11px 14px",border:"1.5px solid #F0EBE3",borderRadius:"10px",fontSize:"14px",fontFamily:"inherit",background:"#fff",color:"#1A1A2E",outline:"none"}} type="text" placeholder="Dein Name" value={name} onChange={e=>setName(e.target.value)} disabled={status==="loading"}/>
-              <input style={{width:"100%",padding:"11px 14px",border:"1.5px solid #F0EBE3",borderRadius:"10px",fontSize:"14px",fontFamily:"inherit",background:"#fff",color:"#1A1A2E",outline:"none"}} type="email" placeholder="deine@email.at" value={email} onChange={e=>setEmail(e.target.value)} disabled={status==="loading"}/>
-              <input style={{width:"100%",padding:"11px 14px",border:"1.5px solid #F0EBE3",borderRadius:"10px",fontSize:"14px",fontFamily:"inherit",background:"#fff",color:"#1A1A2E",outline:"none"}} type="password" placeholder="Passwort (min. 8 Zeichen)" value={password} onChange={e=>setPassword(e.target.value)} disabled={status==="loading"} onKeyDown={e=>e.key==="Enter"&&handleRegister()}/>
-            </div>
-            {errorMsg && <p style={{color:"#E24B4A",fontSize:"13px",marginBottom:"10px"}}>{errorMsg}</p>}
-            <button onClick={handleRegister} disabled={status==="loading"} style={{width:"100%",background:"#FF5C35",color:"#fff",border:"none",padding:"14px",borderRadius:"10px",fontSize:"15px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",opacity:status==="loading"?0.7:1,marginBottom:"12px"}}>
-              {status==="loading" ? "Wird registriert..." : "Kostenlos starten →"}
-            </button>
-            <p style={{fontSize:"11px",color:"#6B6B80",textAlign:"center",lineHeight:1.6}}>
-              Erste 10 Restaurants: 30 Tage gratis + 3 Monate 10% Rabatt.<br/>
-              Alle Features außer KI Telefon (in Entwicklung).
-            </p>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-export default function Home() {
-  const [showModal, setShowModal] = useState(false);
-
-  return (
-    <>
+    <div style={{minHeight:"100vh",background:"#F5F0EB",fontFamily:"'DM Sans',sans-serif",overflow:"hidden",position:"relative"}}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400;1,700&family=DM+Sans:wght@300;400;500&display=swap');
-        *{margin:0;padding:0;box-sizing:border-box;}
-        :root{--orange:#FF5C35;--dark:#1A1A2E;--cream:#FFFAF5;--muted:#6B6B80;--border:#F0EBE3;}
-        html{scroll-behavior:smooth;}
-        body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--dark);overflow-x:hidden;}
-        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-        @keyframes float3d{0%,100%{transform:perspective(1000px) rotateX(2deg) rotateY(-2deg) translateY(0)}50%{transform:perspective(1000px) rotateX(-1deg) rotateY(2deg) translateY(-8px)}}
-        @keyframes shimmer{0%{background-position:200% center}100%{background-position:-200% center}}
-        @keyframes spin3d{0%{transform:perspective(600px) rotateY(0deg)}100%{transform:perspective(600px) rotateY(360deg)}}
-        .card-3d{transform-style:preserve-3d;transition:transform .4s ease;}
-        .card-3d:hover{transform:perspective(1000px) rotateX(-3deg) rotateY(5deg) scale(1.02);}
-        .btn-3d{transform-style:preserve-3d;box-shadow:0 8px 0 rgba(200,60,20,.8),0 12px 20px rgba(255,92,53,.3);transition:all .15s;}
-        .btn-3d:hover{transform:translateY(-3px);box-shadow:0 11px 0 rgba(200,60,20,.8),0 16px 24px rgba(255,92,53,.4)!important;}
-        .btn-3d:active{transform:translateY(4px);box-shadow:0 4px 0 rgba(200,60,20,.8),0 6px 12px rgba(255,92,53,.2)!important;}
-        .number-badge{background:linear-gradient(135deg,#1A1A2E 0%,#2A2A4E 50%,#1A1A2E 100%);border:1px solid rgba(255,92,53,.3);box-shadow:0 20px 40px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.08),0 0 0 1px rgba(255,92,53,.1);}
-        .feat-card:hover{transform:perspective(800px) rotateX(-2deg) translateY(-4px);box-shadow:0 20px 40px rgba(26,26,46,.15)!important;}
-        @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-        .nav-cta:hover{background:var(--orange)!important;color:#fff!important;}
-        .btn-main:hover{background:#FF7A5A!important;transform:translateY(-2px);}
-        .feat-card:hover{transform:translateY(-3px);}
-        .stress-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
-        .stress-item:last-child{border:none;padding-bottom:0;}
-        .demo-btn:hover{background:#FF7A5A!important;transform:translateY(-2px);}
-        @media(max-width:768px){
-          .hero-grid{grid-template-columns:1fr!important;gap:32px!important;padding:40px 20px 0!important;}
-          .hero-mockup{display:none!important;}
-          .pain-grid{grid-template-columns:1fr!important;gap:32px!important;}
-          .feat-big-grid{grid-template-columns:1fr!important;}
-          .feat-mini-grid{grid-template-columns:1fr 1fr!important;}
-          .numbers-grid{grid-template-columns:1fr!important;}
-          .number-item{border-right:none!important;border-bottom:1px solid rgba(255,255,255,.07)!important;}
-          .wa-section-grid{grid-template-columns:1fr!important;gap:40px!important;}
-          .wa-mockup{display:none!important;}
-          .booking-grid{grid-template-columns:1fr!important;gap:32px!important;}
-          .iphone-col{width:200px!important;}
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;700i;900&family=DM+Sans:wght@300;400;500;600&display=swap');
+        *{box-sizing:border-box;margin:0;padding:0;}
+        
+        @keyframes float-particle {
+          0%, 100% { transform: translate(0,0) rotate(0deg); opacity: 0.3; }
+          50% { transform: translate(20px, -30px) rotate(180deg); opacity: 0.7; }
+        }
+        @keyframes pulse-glow {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(255,92,53,0.4); }
+          50% { box-shadow: 0 0 0 20px rgba(255,92,53,0); }
+        }
+        @keyframes slide-in-bubble {
+          from { opacity: 0; transform: translateY(10px) scale(0.95); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes typing {
+          0%, 60% { opacity: 0.3; }
+          30% { opacity: 1; }
+        }
+        @keyframes gradient-shift {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+        @keyframes phone-rotate {
+          0% { transform: perspective(2000px) rotateY(-12deg) rotateX(8deg); }
+          100% { transform: perspective(2000px) rotateY(-15deg) rotateX(10deg); }
+        }
+        @keyframes ticker {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        @keyframes fade-in-up {
+          from { opacity: 0; transform: translateY(30px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+        
+        .particle {
+          position: absolute;
+          border-radius: 50%;
+          pointer-events: none;
+        }
+        
+        .chat-bubble {
+          animation: slide-in-bubble 0.4s ease-out;
+        }
+        
+        .typing-dot {
+          animation: typing 1.4s infinite;
+        }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        
+        .gradient-text {
+          background: linear-gradient(135deg, #FF5C35 0%, #FFA07A 50%, #FF5C35 100%);
+          background-size: 200% 100%;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          animation: shimmer 4s ease-in-out infinite;
+        }
+        
+        .cta-primary:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 16px 40px rgba(255,92,53,0.4) !important;
+        }
+        
+        .nav-blur {
+          backdrop-filter: blur(20px) saturate(180%);
+          -webkit-backdrop-filter: blur(20px) saturate(180%);
+        }
+        
+        .stat-card {
+          animation: fade-in-up 0.8s ease-out backwards;
+        }
+        .stat-card:nth-child(1) { animation-delay: 0.6s; }
+        .stat-card:nth-child(2) { animation-delay: 0.7s; }
+        .stat-card:nth-child(3) { animation-delay: 0.8s; }
+        
+        @media (max-width: 900px) {
+          .hero-grid { grid-template-columns: 1fr !important; }
+          .phone-mockup { max-width: 320px !important; margin: 0 auto !important; transform: none !important; }
+          .hero-headline { font-size: clamp(36px, 9vw, 56px) !important; }
         }
       `}</style>
 
+      {/* PARTICLES BACKGROUND */}
+      <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:1}}>
+        {[...Array(20)].map((_, i) => (
+          <div key={i} className="particle" style={{
+            width: `${4 + Math.random()*8}px`,
+            height: `${4 + Math.random()*8}px`,
+            left: `${Math.random()*100}%`,
+            top: `${Math.random()*100}%`,
+            background: i % 3 === 0 ? "rgba(255,92,53,0.15)" : "rgba(26,26,46,0.08)",
+            animation: `float-particle ${8 + Math.random()*6}s ease-in-out infinite`,
+            animationDelay: `${Math.random()*5}s`,
+          }}/>
+        ))}
+      </div>
+
       {/* NAV */}
-      <nav style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 32px",position:"sticky",top:0,background:"rgba(255,250,245,0.97)",backdropFilter:"blur(16px)",zIndex:100,borderBottom:"1px solid var(--border)"}}>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:"22px",fontWeight:700,color:"var(--dark)"}}>table<span style={{color:"var(--orange)"}}>ly</span></div>
-        <div style={{display:"flex",alignItems:"center",gap:"24px"}}>
-          <div style={{display:"flex",gap:"24px"}}>
-            {[["#features","Funktionen"],["#screenshots","App"]].map(([h,l])=>(
-              <a key={h} href={h} style={{textDecoration:"none",color:"var(--muted)",fontSize:"14px"}}>{l}</a>
-            ))}
-          </div>
-          <button className="nav-cta" onClick={()=>setShowModal(true)} style={{background:"var(--dark)",color:"#fff",border:"none",padding:"10px 20px",borderRadius:"8px",fontSize:"13px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",transition:"all .2s"}}>
-            Jetzt gratis testen
+      <nav className="nav-blur" style={{
+        position:"sticky",top:0,zIndex:100,
+        padding:"16px 32px",display:"flex",alignItems:"center",justifyContent:"space-between",
+        background:"rgba(245,240,235,0.7)",borderBottom:"1px solid rgba(0,0,0,0.04)",
+      }}>
+        <a href="/" style={{textDecoration:"none",fontFamily:"'Playfair Display',serif",fontSize:"24px",fontWeight:700,color:"#1A1A2E",letterSpacing:"-0.5px"}}>
+          table<span style={{color:"#FF5C35",fontStyle:"italic"}}>ly</span>
+        </a>
+        <div style={{display:"flex",gap:"32px",alignItems:"center"}}>
+          <a href="#features" style={{textDecoration:"none",fontSize:"14px",color:"#6B6B80",fontWeight:500,transition:"color .2s"}}>Funktionen</a>
+          <a href="/pricing" style={{textDecoration:"none",fontSize:"14px",color:"#6B6B80",fontWeight:500}}>Preise</a>
+          <a href="/login" style={{textDecoration:"none",fontSize:"14px",color:"#6B6B80",fontWeight:500}}>Login</a>
+          <button onClick={() => setShowRegister(true)} style={{
+            padding:"9px 22px",background:"#1A1A2E",color:"#fff",borderRadius:"10px",
+            fontSize:"13px",fontWeight:600,border:"none",cursor:"pointer",fontFamily:"inherit",
+            letterSpacing:".3px",
+          }}>
+            Gratis testen →
           </button>
         </div>
       </nav>
 
       {/* HERO */}
-      <div style={{background:"var(--dark)",overflow:"hidden",position:"relative"}}>
-        <div style={{position:"absolute",top:"-200px",right:"-100px",width:"500px",height:"500px",background:"radial-gradient(circle,rgba(255,92,53,.15) 0%,transparent 70%)",pointerEvents:"none"}}/>
-        <div className="hero-grid" style={{maxWidth:"1200px",margin:"0 auto",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"80px",alignItems:"center"}}>
+      <section ref={heroRef} style={{position:"relative",zIndex:2,padding:"60px 24px 80px",maxWidth:"1280px",margin:"0 auto"}}>
+        <div className="hero-grid" style={{display:"grid",gridTemplateColumns:"1.1fr 0.9fr",gap:"60px",alignItems:"center"}}>
+          
+          {/* LEFT: TEXT */}
           <div>
-            <div style={{display:"inline-flex",alignItems:"center",gap:"8px",background:"rgba(255,92,53,.15)",border:"1px solid rgba(255,92,53,.25)",borderRadius:"20px",padding:"6px 14px",marginBottom:"20px"}}>
-              <div style={{width:"6px",height:"6px",borderRadius:"50%",background:"#FF5C35",animation:"pulse 2s infinite",flexShrink:0}}/>
-              <span style={{fontSize:"12px",color:"#FF5C35",fontWeight:500}}>Noch 5 Plätze — 30 Tage gratis + 3 Monate 10% Rabatt</span>
+            {/* Status Badge */}
+            <div style={{
+              display:"inline-flex",alignItems:"center",gap:"8px",
+              padding:"6px 14px",borderRadius:"20px",
+              background:"rgba(52,211,153,0.1)",border:"1px solid rgba(52,211,153,0.25)",
+              marginBottom:"24px",animation:"fade-in-up 0.6s ease-out",
+            }}>
+              <span style={{width:"6px",height:"6px",borderRadius:"50%",background:"#34D399",animation:"pulse-glow 2s infinite"}}/>
+              <span style={{fontSize:"12px",color:"#059669",fontWeight:600,letterSpacing:".3px"}}>Live · 27 Restaurants verbunden</span>
             </div>
-            <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(40px,5vw,56px)",fontWeight:700,lineHeight:1.05,letterSpacing:"-2px",color:"#FFFAF5",marginBottom:"20px"}}>
-              Kein Anruf.<br/>Kein Buch.<br/><span style={{color:"#FF5C35",fontStyle:"italic"}}>Kein Chaos.</span>
+
+            <h1 className="hero-headline" style={{
+              fontFamily:"'Playfair Display',serif",
+              fontSize:"clamp(44px, 6vw, 72px)",
+              fontWeight:700,
+              color:"#1A1A2E",
+              letterSpacing:"-2.5px",
+              lineHeight:0.95,
+              marginBottom:"24px",
+              animation:"fade-in-up 0.8s ease-out 0.1s backwards",
+            }}>
+              Nie wieder<br/>
+              eine Reservierung <span className="gradient-text" style={{fontStyle:"italic",fontWeight:900}}>verpassen.</span>
             </h1>
-            <p style={{color:"rgba(255,255,255,.5)",fontSize:"17px",lineHeight:1.75,fontWeight:300,marginBottom:"36px",maxWidth:"440px"}}>
-              Stoßzeit. Küche brennt. Telefon klingelt. Dein Kellner blättert im Reservierungsbuch — 3 Minuten für eine Reservierung. <strong style={{color:"rgba(255,255,255,.8)",fontWeight:500}}>Tablely macht das in 3 Sekunden.</strong>
+
+            <p style={{
+              fontSize:"19px",color:"#6B6B80",fontWeight:300,lineHeight:1.55,
+              marginBottom:"32px",maxWidth:"540px",
+              animation:"fade-in-up 0.8s ease-out 0.2s backwards",
+            }}>
+              Tablely nimmt deine Reservierungen rund um die Uhr automatisch an —
+              <span style={{color:"#1A1A2E",fontWeight:500}}> per WhatsApp, Telefon und Online</span>.
+              Schluss mit dem Reservierungschaos im Service.
             </p>
-            <div style={{display:"flex",alignItems:"center",gap:"16px",flexWrap:"wrap"}}>
-              <button className="btn-3d" onClick={()=>setShowModal(true)} style={{background:"#FF5C35",color:"#fff",border:"none",padding:"16px 28px",borderRadius:"10px",fontSize:"16px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}>
-                Jetzt 30 Tage kostenlos testen →
+
+            {/* CTAs */}
+            <div style={{display:"flex",gap:"12px",flexWrap:"wrap",marginBottom:"40px",animation:"fade-in-up 0.8s ease-out 0.3s backwards"}}>
+              <button onClick={() => setShowRegister(true)} className="cta-primary" style={{
+                padding:"15px 28px",background:"#FF5C35",color:"#fff",
+                borderRadius:"12px",fontSize:"15px",fontWeight:600,border:"none",cursor:"pointer",
+                fontFamily:"inherit",letterSpacing:".3px",
+                boxShadow:"0 8px 24px rgba(255,92,53,0.25)",
+                transition:"all .25s",display:"flex",alignItems:"center",gap:"8px",
+              }}>
+                Heute Reservierungen automatisieren
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </button>
-              <span style={{fontSize:"13px",color:"rgba(255,255,255,.3)"}}>Keine Kreditkarte</span>
+              <a href="/demo" style={{
+                padding:"15px 24px",background:"transparent",color:"#1A1A2E",
+                borderRadius:"12px",fontSize:"15px",fontWeight:500,
+                border:"1px solid rgba(26,26,46,0.15)",cursor:"pointer",fontFamily:"inherit",
+                textDecoration:"none",display:"flex",alignItems:"center",gap:"8px",
+                transition:"all .2s",
+              }}>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 2l9 5-9 5V2z" fill="currentColor"/></svg>
+                Live Demo ansehen
+              </a>
             </div>
-          </div>
-          <div className="hero-mockup" style={{animation:"float3d 6s ease-in-out infinite"}}>
-            <div style={{background:"#1E1E2E",borderRadius:"14px",overflow:"hidden",boxShadow:"0 40px 80px rgba(0,0,0,.6)",border:"1px solid rgba(255,255,255,.08)"}}>
-              <div style={{background:"#2A2A3E",padding:"10px 14px",display:"flex",alignItems:"center",gap:"8px",borderBottom:"1px solid rgba(255,255,255,.06)"}}>
-                <div style={{display:"flex",gap:"5px"}}>
-                  {["#FF5F57","#FEBC2E","#28C840"].map((c,i)=><div key={i} style={{width:"10px",height:"10px",borderRadius:"50%",background:c}}/>)}
-                </div>
-                <div style={{flex:1,background:"rgba(255,255,255,.05)",borderRadius:"5px",padding:"4px 10px",fontSize:"10px",color:"rgba(255,255,255,.25)",textAlign:"center"}}>tablely.at/dashboard</div>
-              </div>
-              <img src="/dashboard-dunkel.png" alt="Tablely Dashboard" style={{width:"100%",height:"auto",display:"block"}}/>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* PAIN */}
-      <section style={{background:"var(--cream)",padding:"100px 32px"}}>
-        <div className="pain-grid" style={{maxWidth:"1100px",margin:"0 auto",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"80px",alignItems:"center"}}>
-          <div style={{background:"#fff",borderRadius:"20px",padding:"28px",border:"1.5px solid var(--border)",boxShadow:"0 8px 32px rgba(26,26,46,.06)"}}>
-            <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"20px"}}>
-              <div style={{width:"28px",height:"28px",borderRadius:"50%",background:"#FEE8E8",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 2l10 10M12 2L2 12" stroke="#E24B4A" strokeWidth="1.5" strokeLinecap="round"/></svg>
+            {/* TRUST INDICATORS */}
+            <div style={{display:"flex",gap:"36px",flexWrap:"wrap",animation:"fade-in-up 0.8s ease-out 0.4s backwards"}}>
+              <div className="stat-card">
+                <div style={{fontFamily:"'Playfair Display',serif",fontSize:"32px",fontWeight:700,color:"#1A1A2E",letterSpacing:"-1px",lineHeight:1}}>
+                  {counter.toLocaleString("de-AT")}+
+                </div>
+                <div style={{fontSize:"12px",color:"#6B6B80",fontWeight:500,marginTop:"4px"}}>Reservierungen automatisiert</div>
               </div>
-              <span style={{fontSize:"13px",fontWeight:600,color:"var(--dark)"}}>So läuft es in den meisten Restaurants</span>
+              <div className="stat-card">
+                <div style={{fontFamily:"'Playfair Display',serif",fontSize:"32px",fontWeight:700,color:"#1A1A2E",letterSpacing:"-1px",lineHeight:1}}>
+                  24/7
+                </div>
+                <div style={{fontSize:"12px",color:"#6B6B80",fontWeight:500,marginTop:"4px"}}>Auch nachts und am Wochenende</div>
+              </div>
+              <div className="stat-card">
+                <div style={{fontFamily:"'Playfair Display',serif",fontSize:"32px",fontWeight:700,color:"#1A1A2E",letterSpacing:"-1px",lineHeight:1}}>
+                  60% <span style={{fontSize:"18px",color:"#34D399"}}>↓</span>
+                </div>
+                <div style={{fontSize:"12px",color:"#6B6B80",fontWeight:500,marginTop:"4px"}}>Weniger No-Shows</div>
+              </div>
             </div>
-            {[
-              {t:"Telefon klingelt mitten in der Stoßzeit",d:"Kellner unterbricht alles — Gäste warten, Tische warten."},
-              {t:"Im Buch blättern, rechnen, nachdenken",d:"Passt Tisch 3? Kann ich die 4 Personen dazwischen schieben?"},
-              {t:"No-Show um 20:00 Uhr",d:"Tisch für 4 bleibt leer. Umsatz weg. Nichts zu machen."},
-              {t:"WhatsApp-Chaos, Zettel, Missverständnisse",d:"Wer hat was gebucht? Doppelbuchung. Peinlich."},
-            ].map((s,i)=>(
-              <div key={i} className="stress-item">
-                <div style={{width:"20px",height:"20px",borderRadius:"50%",background:"#FEE8E8",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"2px"}}>
-                  <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M1.5 1.5l6 6M7.5 1.5l-6 6" stroke="#E24B4A" strokeWidth="1.2" strokeLinecap="round"/></svg>
-                </div>
-                <div>
-                  <div style={{fontSize:"13px",fontWeight:500,color:"var(--dark)",marginBottom:"2px"}}>{s.t}</div>
-                  <div style={{fontSize:"12px",color:"var(--muted)",lineHeight:1.5}}>{s.d}</div>
-                </div>
-              </div>
-            ))}
           </div>
-          <div>
-            <div style={{fontSize:"11px",fontWeight:600,textTransform:"uppercase",letterSpacing:"1px",color:"var(--orange)",marginBottom:"12px"}}>Das Problem</div>
-            <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(26px,4vw,40px)",fontWeight:700,letterSpacing:"-1px",lineHeight:1.1,marginBottom:"20px"}}>Das Reservierungsbuch kostet dich täglich Geld.</h2>
-            <p style={{color:"var(--muted)",fontSize:"16px",lineHeight:1.8,fontWeight:300,marginBottom:"16px"}}>Jeder Anruf während der Stoßzeit ist eine Ablenkung. Jede Minute im Buch blättern ist verschwendete Zeit.</p>
-            <p style={{color:"var(--muted)",fontSize:"16px",lineHeight:1.8,fontWeight:300}}>Österreichische Restaurants verlieren täglich bis zu <strong style={{color:"var(--dark)"}}>2 Stunden</strong> durch manuelle Reservierungen. Tablely gibt dir diese Zeit zurück.</p>
-          </div>
-        </div>
-      </section>
 
-      {/* FEATURES */}
-      <section id="features" style={{background:"#F5F0EB",padding:"100px 32px"}}>
-        <div style={{maxWidth:"1100px",margin:"0 auto"}}>
-          <div style={{textAlign:"center",marginBottom:"60px"}}>
-            <div style={{fontSize:"11px",fontWeight:600,textTransform:"uppercase",letterSpacing:"1px",color:"var(--orange)",marginBottom:"12px"}}>Wie es funktioniert</div>
-            <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(26px,4vw,40px)",fontWeight:700,letterSpacing:"-1px",marginBottom:"16px"}}>Drei Wege zu buchen.<br/>Ein Dashboard für alles.</h2>
-            <p style={{color:"var(--muted)",fontSize:"16px",fontWeight:300,maxWidth:"480px",margin:"0 auto"}}>WhatsApp, Telefon oder online — deine Gäste wählen wie sie buchen.</p>
-          </div>
-          <div className="feat-big-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"20px",marginBottom:"20px"}}>
-            <div className="feat-card" style={{background:"var(--dark)",borderRadius:"20px",padding:"32px",transition:"all .25s"}}>
-              <div style={{background:"rgba(255,92,53,.15)",border:"1px solid rgba(255,92,53,.2)",borderRadius:"8px",padding:"3px 10px",fontSize:"10px",fontWeight:600,textTransform:"uppercase",letterSpacing:".8px",color:"#FF5C35",display:"inline-block",marginBottom:"20px"}}>WhatsApp KI</div>
-              <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:"22px",fontWeight:700,color:"#FFFAF5",marginBottom:"12px"}}>Gäste schreiben — KI antwortet & bucht</h3>
-              <p style={{color:"rgba(255,255,255,.45)",fontSize:"14px",lineHeight:1.7,fontWeight:300,marginBottom:"24px"}}>Deine Gäste schreiben per WhatsApp. Die KI versteht alles, antwortet in Sekunden und trägt die Reservierung automatisch ein.</p>
-              <div style={{background:"rgba(255,255,255,.05)",borderRadius:"12px",padding:"16px",border:"1px solid rgba(255,255,255,.08)"}}>
-                <div style={{fontSize:"11px",padding:"8px 12px",borderRadius:"10px 10px 10px 2px",background:"rgba(255,255,255,.1)",color:"rgba(255,255,255,.8)",maxWidth:"80%",marginBottom:"8px",lineHeight:1.5}}>Hallo! Tisch für 3 am Freitag um 19:30? 🙏</div>
-                <div style={{fontSize:"11px",padding:"8px 12px",borderRadius:"10px 10px 2px 10px",background:"#25D366",color:"#fff",maxWidth:"80%",marginLeft:"auto",lineHeight:1.5}}>Perfekt! Tisch für 3 am Fr. 20.03. um 19:30 ✅ Wir freuen uns auf euch!</div>
-              </div>
-            </div>
-            <div className="feat-card" style={{background:"var(--orange)",borderRadius:"20px",padding:"32px",transition:"all .25s"}}>
-              <div style={{background:"rgba(255,255,255,.2)",borderRadius:"8px",padding:"3px 10px",fontSize:"10px",fontWeight:600,textTransform:"uppercase",letterSpacing:".8px",color:"#fff",display:"inline-block",marginBottom:"20px"}}>KI Telefon</div>
-              <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:"22px",fontWeight:700,color:"#fff",marginBottom:"12px"}}>KI nimmt Anrufe entgegen — automatisch</h3>
-              <p style={{color:"rgba(255,255,255,.8)",fontSize:"14px",lineHeight:1.7,fontWeight:300,marginBottom:"24px"}}>Kein Anruf geht verloren. Die KI nimmt ab, versteht den Gast und trägt alles ein.</p>
-              <div style={{background:"rgba(255,255,255,.12)",borderRadius:"12px",padding:"16px",border:"1px solid rgba(255,255,255,.15)"}}>
-                {[["Gast ruft an","KI nimmt ab"],["Tisch, Zeit, Personen","KI versteht alles"],["Reservierung","Automatisch gespeichert"]].map(([l,r],i)=>(
-                  <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:i<2?"1px solid rgba(255,255,255,.1)":"none",fontSize:"11px"}}>
-                    <span style={{color:"rgba(255,255,255,.7)"}}>{l}</span>
-                    <span style={{color:"#fff",fontWeight:500}}>→ {r}</span>
+          {/* RIGHT: PHONE MOCKUP WITH ANIMATED CHAT */}
+          <div style={{position:"relative",perspective:"2000px"}}>
+            <div className="phone-mockup" style={{
+              width:"100%",maxWidth:"380px",margin:"0 auto",
+              transform: `perspective(2000px) rotateY(${-12 - scrollY*0.01}deg) rotateX(${8 + scrollY*0.005}deg)`,
+              transition:"transform 0.1s ease-out",
+              filter:"drop-shadow(0 40px 80px rgba(26,26,46,0.25))",
+            }}>
+              <div style={{
+                background:"#1A1A2E",borderRadius:"42px",padding:"12px",
+                border:"4px solid #0A0A18",
+                position:"relative",
+              }}>
+                {/* Notch */}
+                <div style={{
+                  position:"absolute",top:"12px",left:"50%",transform:"translateX(-50%)",
+                  width:"100px",height:"24px",background:"#0A0A18",borderRadius:"0 0 16px 16px",
+                  zIndex:10,
+                }}/>
+                
+                {/* Screen */}
+                <div style={{
+                  background:"linear-gradient(180deg, #E8DDD0 0%, #F5F0EB 100%)",
+                  borderRadius:"32px",
+                  height:"640px",
+                  overflow:"hidden",
+                  position:"relative",
+                }}>
+                  {/* WhatsApp Header */}
+                  <div style={{
+                    background:"#075E54",padding:"42px 16px 12px",
+                    display:"flex",alignItems:"center",gap:"10px",
+                  }}>
+                    <div style={{width:"36px",height:"36px",borderRadius:"50%",background:"#FF5C35",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Playfair Display',serif",fontWeight:700,color:"#fff",fontSize:"16px"}}>R</div>
+                    <div style={{flex:1}}>
+                      <div style={{color:"#fff",fontSize:"14px",fontWeight:600}}>Restaurant Defereggental</div>
+                      <div style={{color:"rgba(255,255,255,0.7)",fontSize:"11px"}}>● Online · KI antwortet sofort</div>
+                    </div>
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/></svg>
                   </div>
-                ))}
+
+                  {/* Chat */}
+                  <div style={{
+                    padding:"16px 12px",
+                    background:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cpath d='M0 0h80v80H0z' fill='%23E8DDD0'/%3E%3Cpath d='M20 20l8 8M28 20l-8 8M52 52l8 8M60 52l-8 8' stroke='%23D4C5B0' stroke-width='1' opacity='0.5'/%3E%3C/svg%3E")`,
+                    height:"calc(100% - 70px)",
+                    overflow:"hidden",
+                    display:"flex",flexDirection:"column",gap:"8px",
+                  }}>
+                    {chatMessages.map((msg, i) => (
+                      <div key={i} className="chat-bubble" style={{
+                        alignSelf: msg.from === "user" ? "flex-end" : "flex-start",
+                        maxWidth:"85%",
+                        background: msg.from === "user" ? "#DCF8C6" : "#fff",
+                        padding:"8px 12px",
+                        borderRadius: msg.from === "user" ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
+                        boxShadow:"0 1px 2px rgba(0,0,0,0.1)",
+                        fontSize:"13px",
+                        color:"#1A1A2E",
+                        lineHeight:1.4,
+                        whiteSpace:"pre-line",
+                      }}>
+                        {msg.text}
+                        <div style={{fontSize:"9px",color:"#6B6B80",textAlign:"right",marginTop:"3px"}}>
+                          {new Date().toLocaleTimeString("de-AT",{hour:"2-digit",minute:"2-digit"})} ✓✓
+                        </div>
+                      </div>
+                    ))}
+                    {chatMessages.length > 0 && chatMessages.length < 6 && (
+                      <div style={{alignSelf:"flex-start",background:"#fff",padding:"10px 14px",borderRadius:"14px 14px 14px 4px",boxShadow:"0 1px 2px rgba(0,0,0,0.1)",display:"flex",gap:"4px",alignItems:"center"}}>
+                        <span className="typing-dot" style={{width:"6px",height:"6px",borderRadius:"50%",background:"#6B6B80",display:"inline-block"}}/>
+                        <span className="typing-dot" style={{width:"6px",height:"6px",borderRadius:"50%",background:"#6B6B80",display:"inline-block"}}/>
+                        <span className="typing-dot" style={{width:"6px",height:"6px",borderRadius:"50%",background:"#6B6B80",display:"inline-block"}}/>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="feat-mini-grid" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"16px"}}>
-            {[
-              {icon:<svg viewBox="0 0 28 28" fill="none" width="28" height="28"><rect x="3" y="5" width="22" height="18" rx="3" stroke="#FF5C35" strokeWidth="1.4"/><path d="M3 11h22M9 4v3M19 4v3" stroke="#FF5C35" strokeWidth="1.4" strokeLinecap="round"/></svg>,t:"Online Buchung",d:"Eigene Booking Page — Gäste buchen direkt rund um die Uhr."},
-              {icon:<svg viewBox="0 0 28 28" fill="none" width="28" height="28"><rect x="2" y="2" width="24" height="24" rx="4" stroke="#FF5C35" strokeWidth="1.4"/><path d="M2 11h24" stroke="#FF5C35" strokeWidth="1.4"/><rect x="6" y="15" width="7" height="5" rx="1.5" fill="#FF5C35" fillOpacity=".2" stroke="#FF5C35" strokeWidth="1.2"/></svg>,t:"Alles im Dashboard",d:"WhatsApp, Telefon, Online — alles an einem Ort."},
-              {icon:<svg viewBox="0 0 28 28" fill="none" width="28" height="28"><path d="M14 3v3M14 3a8 8 0 0 1 8 8c0 4-1.5 5.5-1.5 5.5H7.5S6 15 6 11A8 8 0 0 1 14 3Z" stroke="#FF5C35" strokeWidth="1.4" strokeLinejoin="round"/><path d="M10 19s0 4 4 4 4-4 4-4" stroke="#FF5C35" strokeWidth="1.4" strokeLinecap="round"/></svg>,t:"Auto-Erinnerungen",d:"Gäste werden 24h und 2h vorher erinnert. No-Shows sinken auf fast null."},
-              {icon:<svg viewBox="0 0 28 28" fill="none" width="28" height="28"><path d="M14 2C8.48 2 4 6.48 4 12c0 1.9.5 3.7 1.4 5.3L4 22l4.9-1.4C10.3 21.5 12.1 22 14 22c5.52 0 10-4.48 10-10S19.52 2 14 2zm4.6 13.7c-.3.8-1.5 1.5-2.1 1.6-.5.1-1.2.1-3.8-.8s-4.2-3-4.7-3.9c-.5-.9-1.5-2.4-1.5-3.9s.8-2.1 1.1-2.4c.3-.3.6-.4.9-.4h.6c.3 0 .5.1.7.7l1.2 3c.1.3.1.6 0 .8l-.5.6c-.2.2-.3.5-.1.8.7 1.1 1.6 2 2.8 2.7.3.2.6.1.8-.1l.7-.9c.2-.3.5-.3.8-.1l2.9 1.4c.3.1.5.3.5.6-.1.6-.3 1.3-.8 1.8z" fill="#FF5C35" opacity=".2"/><path d="M14 2C8.48 2 4 6.48 4 12c0 1.9.5 3.7 1.4 5.3L4 22l4.9-1.4C10.3 21.5 12.1 22 14 22c5.52 0 10-4.48 10-10S19.52 2 14 2z" stroke="#FF5C35" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>,t:"Eigene Nummer inklusive",d:"Wir stellen dir eine österreichische WhatsApp Nummer — kein Setup, einfach loslegen."},
-            ].map((f,i)=>(
-              <div key={i} className="feat-card" style={{background:"#fff",borderRadius:"16px",padding:"24px",border:"1.5px solid var(--border)",transition:"all .25s"}}>
-                <div style={{marginBottom:"14px"}}>{f.icon}</div>
-                <div style={{fontSize:"14px",fontWeight:600,color:"var(--dark)",marginBottom:"6px"}}>{f.t}</div>
-                <p style={{fontSize:"13px",color:"var(--muted)",lineHeight:1.6,fontWeight:300}}>{f.d}</p>
+
+            {/* Floating Stats Cards around Phone */}
+            <div style={{
+              position:"absolute",top:"15%",left:"-5%",
+              background:"rgba(255,255,255,0.9)",backdropFilter:"blur(10px)",
+              borderRadius:"14px",padding:"12px 16px",
+              boxShadow:"0 12px 32px rgba(0,0,0,0.08)",
+              border:"1px solid rgba(255,255,255,0.5)",
+              animation:"fade-in-up 1s ease-out 0.8s backwards",
+              zIndex:5,
+            }}>
+              <div style={{fontSize:"10px",color:"#6B6B80",fontWeight:500,marginBottom:"3px"}}>HEUTE ANGENOMMEN</div>
+              <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+                <div style={{width:"8px",height:"8px",borderRadius:"50%",background:"#34D399",animation:"pulse-glow 2s infinite"}}/>
+                <div style={{fontSize:"18px",fontWeight:700,color:"#1A1A2E",fontFamily:"'Playfair Display',serif"}}>23 Reservierungen</div>
               </div>
-            ))}
+            </div>
+
+            <div style={{
+              position:"absolute",bottom:"18%",right:"-5%",
+              background:"rgba(26,26,46,0.95)",backdropFilter:"blur(10px)",
+              borderRadius:"14px",padding:"12px 16px",
+              boxShadow:"0 12px 32px rgba(0,0,0,0.15)",
+              animation:"fade-in-up 1s ease-out 1s backwards",
+              zIndex:5,
+            }}>
+              <div style={{fontSize:"10px",color:"rgba(255,255,255,0.5)",fontWeight:500,marginBottom:"3px"}}>NÄCHSTE</div>
+              <div style={{fontSize:"14px",color:"#fff",fontWeight:600,marginBottom:"2px"}}>Familie Hofer · 6 Pers.</div>
+              <div style={{fontSize:"11px",color:"#FF5C35",fontWeight:500}}>Heute · 19:30 Uhr</div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* WHATSAPP NUMMER SEKTION */}
-      <section style={{background:"var(--dark)",padding:"100px 32px"}}>
-        <div className="wa-section-grid" style={{maxWidth:"1100px",margin:"0 auto",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"80px",alignItems:"center"}}>
-          <div>
-            <div style={{fontSize:"11px",fontWeight:600,textTransform:"uppercase",letterSpacing:"1px",color:"#25D366",marginBottom:"12px"}}>Inklusive</div>
-            <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(26px,4vw,40px)",fontWeight:700,color:"#FFFAF5",letterSpacing:"-1px",lineHeight:1.1,marginBottom:"20px"}}>
-              Deine eigene<br/><span style={{color:"#25D366",fontStyle:"italic"}}>WhatsApp Nummer.</span>
-            </h2>
-            <p style={{color:"rgba(255,255,255,.5)",fontSize:"16px",lineHeight:1.8,fontWeight:300,marginBottom:"20px"}}>
-              Wir stellen dir eine eigene österreichische WhatsApp Business Nummer zur Verfügung — vollständig eingerichtet, sofort einsatzbereit. Deine Gäste schreiben auf diese Nummer, die KI antwortet automatisch.
-            </p>
-            <p style={{color:"rgba(255,255,255,.5)",fontSize:"16px",lineHeight:1.8,fontWeight:300,marginBottom:"32px"}}>
-              Deine private Nummer bleibt komplett unberührt. Kein Setup, kein technisches Wissen nötig — wir kümmern uns um alles.
-            </p>
-            <div style={{display:"flex",flexDirection:"column",gap:"14px"}}>
+      {/* TICKER STRIP */}
+      <section style={{
+        background:"#1A1A2E",padding:"24px 0",overflow:"hidden",
+        borderTop:"1px solid rgba(255,255,255,0.05)",
+        borderBottom:"1px solid rgba(255,255,255,0.05)",
+        position:"relative",zIndex:2,
+      }}>
+        <div style={{display:"flex",animation:"ticker 30s linear infinite",gap:"60px",whiteSpace:"nowrap"}}>
+          {[...Array(2)].map((_, repeat) => (
+            <div key={repeat} style={{display:"flex",gap:"60px"}}>
               {[
-                {t:"Eigene +43 Nummer",d:"Eine professionelle österreichische Nummer speziell für Reservierungen."},
-                {t:"Sofort einsatzbereit",d:"Wir richten alles ein — du musst nichts tun."},
-                {t:"Private Nummer bleibt privat",d:"Dein persönliches Handy bekommt keine Reservierungsanfragen mehr."},
-                {t:"24/7 automatisch",d:"Die KI antwortet auch nachts, am Wochenende und an Feiertagen."},
-              ].map((item,i)=>(
-                <div key={i} style={{display:"flex",alignItems:"flex-start",gap:"12px"}}>
-                  <div style={{width:"20px",height:"20px",borderRadius:"50%",background:"rgba(37,211,102,.15)",border:"1px solid rgba(37,211,102,.3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:"2px"}}>
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="#25D366" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  </div>
-                  <div>
-                    <div style={{fontSize:"14px",fontWeight:600,color:"#FFFAF5",marginBottom:"2px"}}>{item.t}</div>
-                    <div style={{fontSize:"13px",color:"rgba(255,255,255,.4)",fontWeight:300,lineHeight:1.5}}>{item.d}</div>
-                  </div>
+                {icon:"💬", text:"WhatsApp KI antwortet in unter 3 Sekunden"},
+                {icon:"📞", text:"Telefon-KI versteht Deutsch und Englisch"},
+                {icon:"⚡", text:"24/7 verfügbar — auch nachts"},
+                {icon:"🎯", text:"Automatische Tisch-Zuweisung"},
+                {icon:"🔔", text:"Erinnerungen 24h und 2h vorher"},
+                {icon:"📊", text:"Live Dashboard auf jedem Gerät"},
+              ].map((item, i) => (
+                <div key={i} style={{display:"flex",alignItems:"center",gap:"12px",color:"rgba(255,255,255,0.6)",fontSize:"14px",fontWeight:500}}>
+                  <span style={{fontSize:"18px"}}>{item.icon}</span>
+                  <span>{item.text}</span>
+                  <span style={{color:"#FF5C35",margin:"0 30px"}}>◆</span>
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* Right — WhatsApp Chat Mockup */}
-          <div style={{position:"relative"}}>
-            <div style={{position:"absolute",inset:"-30px",background:"radial-gradient(ellipse,rgba(37,211,102,.15) 0%,transparent 70%)",filter:"blur(20px)",zIndex:0}}/>
-            <div className="card-3d wa-mockup" style={{position:"relative",zIndex:1,background:"#111B21",borderRadius:"16px",overflow:"hidden",boxShadow:"0 40px 80px rgba(0,0,0,.6)",border:"1px solid rgba(255,255,255,.06)"}}>
-              {/* WhatsApp Header */}
-              <div style={{background:"#202C33",padding:"12px 16px",display:"flex",alignItems:"center",gap:"10px",borderBottom:"1px solid rgba(255,255,255,.06)"}}>
-                <div style={{width:"36px",height:"36px",borderRadius:"50%",background:"#25D366",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 1.5C5.3 1.5 1.5 5.3 1.5 10c0 1.5.4 2.9 1.1 4.2L1.5 18.5l4.4-1.1C7.1 18.1 8.5 18.5 10 18.5c4.7 0 8.5-3.8 8.5-8.5S14.7 1.5 10 1.5z" fill="white"/></svg>
-                </div>
-                <div>
-                  <div style={{fontSize:"13px",fontWeight:600,color:"#E9EDEF"}}>Alpengasthof</div>
-                  <div style={{fontSize:"11px",color:"#8696A0"}}>+43 720 123 456 · Online</div>
-                </div>
-              </div>
-              {/* Chat Messages */}
-              <div style={{padding:"16px",display:"flex",flexDirection:"column",gap:"10px",background:"#0B141A",minHeight:"280px"}}>
-                <div style={{alignSelf:"flex-end",background:"#005C4B",padding:"8px 12px",borderRadius:"10px 10px 2px 10px",maxWidth:"75%"}}>
-                  <div style={{fontSize:"13px",color:"#E9EDEF",lineHeight:1.5}}>Hallo! Ich möchte für Freitag 20. Mai einen Tisch für 4 Personen um 19 Uhr reservieren. Mein Name ist Maria Huber.</div>
-                  <div style={{fontSize:"10px",color:"rgba(255,255,255,.4)",textAlign:"right",marginTop:"4px"}}>18:42 ✓✓</div>
-                </div>
-                <div style={{alignSelf:"flex-start",background:"#202C33",padding:"8px 12px",borderRadius:"10px 10px 10px 2px",maxWidth:"75%"}}>
-                  <div style={{fontSize:"13px",color:"#E9EDEF",lineHeight:1.5}}>Hallo Frau Huber! 😊 Perfekt — ich habe einen Tisch für 4 Personen am Freitag, 20. Mai um 19:00 Uhr für Sie reserviert. ✅ Wir freuen uns auf Sie!</div>
-                  <div style={{fontSize:"10px",color:"rgba(255,255,255,.4)",textAlign:"right",marginTop:"4px"}}>18:42</div>
-                </div>
-                <div style={{alignSelf:"flex-end",background:"#005C4B",padding:"8px 12px",borderRadius:"10px 10px 2px 10px",maxWidth:"75%"}}>
-                  <div style={{fontSize:"13px",color:"#E9EDEF",lineHeight:1.5}}>Vielen Dank! 🙏</div>
-                  <div style={{fontSize:"10px",color:"rgba(255,255,255,.4)",textAlign:"right",marginTop:"4px"}}>18:43 ✓✓</div>
-                </div>
-                <div style={{alignSelf:"flex-start",background:"#202C33",padding:"8px 12px",borderRadius:"10px 10px 10px 2px",maxWidth:"60%"}}>
-                  <div style={{fontSize:"11px",color:"#8696A0",fontStyle:"italic"}}>Tablely KI · automatisch geantwortet</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* BUCHUNGSWEGE SEKTION */}
-      <section style={{background:"#F5F0EB",padding:"100px 32px"}}>
-        <div style={{maxWidth:"1100px",margin:"0 auto"}}>
-
-          {/* Mission Header */}
-          <div style={{textAlign:"center",marginBottom:"72px"}}>
-            <div style={{fontSize:"11px",fontWeight:600,textTransform:"uppercase",letterSpacing:"1px",color:"var(--orange)",marginBottom:"12px"}}>Unsere Mission</div>
-            <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(28px,5vw,48px)",fontWeight:700,color:"#1A1A2E",letterSpacing:"-2px",lineHeight:1.05,marginBottom:"20px"}}>
-              Wir geben Restaurants<br/><span style={{color:"#FF5C35",fontStyle:"italic"}}>ihre Zeit zurück.</span>
-            </h2>
-            <p style={{fontSize:"17px",color:"#6B6B80",fontWeight:300,maxWidth:"600px",margin:"0 auto",lineHeight:1.8}}>
-              Tablely verbindet alle Buchungskanäle in einem System — WhatsApp, Online und Telefon. Deine Gäste buchen wie sie möchten. Du siehst alles an einem Ort.
-            </p>
-          </div>
-
-          {/* Unique Selling Point Banner */}
-          <div style={{background:"#1A1A2E",borderRadius:"20px",padding:"28px 36px",marginBottom:"72px",display:"flex",alignItems:"center",gap:"20px",flexWrap:"wrap"}}>
-            <div style={{width:"44px",height:"44px",borderRadius:"12px",background:"rgba(255,92,53,.15)",border:"1px solid rgba(255,92,53,.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-              <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 2l2.4 7.4H21l-6.2 4.5 2.4 7.4L11 17l-6.2 3.8 2.4-7.4L1 9.4h7.6z" stroke="#FF5C35" strokeWidth="1.5" strokeLinejoin="round"/></svg>
-            </div>
-            <div style={{flex:1}}>
-              <div style={{fontSize:"15px",fontWeight:600,color:"#FFFAF5",marginBottom:"4px"}}>Wir sind der einzige Anbieter in Österreich der alle drei Kanäle vereint.</div>
-              <div style={{fontSize:"13px",color:"rgba(255,255,255,.4)",fontWeight:300,lineHeight:1.6}}>WhatsApp KI + Online Buchung + KI Telefon — alles in einem Dashboard. Kein anderer Anbieter in Österreich macht das. Deine Gäste buchen dort wo sie sind — du hast alles im Blick.</div>
-            </div>
-          </div>
-
-          {/* 3 Buchungswege */}
-          <div className="booking-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"32px",alignItems:"start"}}>
-
-            {/* WhatsApp */}
-            <div style={{display:"flex",flexDirection:"column",alignItems:"center",textAlign:"center"}}>
-              <div style={{background:"#1A1A2E",borderRadius:"40px",padding:"10px",boxShadow:"0 40px 60px rgba(0,0,0,.25)",marginBottom:"28px",width:"280px"}}>
-                <img src="/iphone_whatsapp.png" alt="WhatsApp KI" style={{width:"100%",borderRadius:"32px",display:"block"}}/>
-              </div>
-              <div style={{display:"inline-flex",alignItems:"center",gap:"6px",background:"rgba(37,211,102,.1)",border:"1px solid rgba(37,211,102,.2)",borderRadius:"20px",padding:"4px 12px",marginBottom:"12px"}}>
-                <div style={{width:"6px",height:"6px",borderRadius:"50%",background:"#25D366"}}/>
-                <span style={{fontSize:"11px",color:"#25D366",fontWeight:600}}>WhatsApp KI</span>
-              </div>
-              <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:"20px",fontWeight:700,color:"#1A1A2E",marginBottom:"10px",letterSpacing:"-.5px"}}>Gäste schreiben —<br/>KI bucht automatisch</h3>
-              <p style={{fontSize:"13px",color:"#6B6B80",lineHeight:1.7,fontWeight:300}}>Deine Gäste schreiben per WhatsApp wie mit einem Freund. Die KI versteht auch wenn jemand nicht perfekt schreibt — fragt nach was fehlt und bestätigt die Reservierung in Sekunden. Auch um Mitternacht.</p>
-            </div>
-
-            {/* Online Booking */}
-            <div style={{display:"flex",flexDirection:"column",alignItems:"center",textAlign:"center"}}>
-              <div style={{background:"#1A1A2E",borderRadius:"40px",padding:"10px",boxShadow:"0 40px 60px rgba(0,0,0,.25)",marginBottom:"28px",width:"280px"}}>
-                <img src="/iphone_bookingpage.png" alt="Online Buchung" style={{width:"100%",borderRadius:"32px",display:"block"}}/>
-              </div>
-              <div style={{display:"inline-flex",alignItems:"center",gap:"6px",background:"rgba(99,102,241,.1)",border:"1px solid rgba(99,102,241,.2)",borderRadius:"20px",padding:"4px 12px",marginBottom:"12px"}}>
-                <div style={{width:"6px",height:"6px",borderRadius:"50%",background:"#818CF8"}}/>
-                <span style={{fontSize:"11px",color:"#818CF8",fontWeight:600}}>Online Buchung</span>
-              </div>
-              <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:"20px",fontWeight:700,color:"#1A1A2E",marginBottom:"10px",letterSpacing:"-.5px"}}>Deine eigene<br/>Buchungsseite</h3>
-              <p style={{fontSize:"13px",color:"#6B6B80",lineHeight:1.7,fontWeight:300}}>Jedes Restaurant bekommt eine eigene Buchungsseite — deinen Link teilst du auf Instagram, Google oder deiner Website. Gäste wählen Datum, Uhrzeit und Personenzahl. Fertig in 30 Sekunden.</p>
-            </div>
-
-            {/* Telefon KI */}
-            <div style={{display:"flex",flexDirection:"column",alignItems:"center",textAlign:"center",position:"relative"}}>
-              <div style={{position:"relative",marginBottom:"28px",width:"280px"}}>
-                <div style={{background:"#1A1A2E",borderRadius:"40px",padding:"10px",boxShadow:"0 40px 60px rgba(0,0,0,.25)",width:"280px"}}>
-                  <img src="/iphone_tel.png" alt="KI Telefon" style={{width:"100%",borderRadius:"32px",display:"block",filter:"brightness(.6)"}}/>
-                </div>
-                <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:"40px"}}>
-                  <div style={{background:"rgba(26,26,46,.9)",border:"1px solid rgba(255,255,255,.1)",borderRadius:"12px",padding:"8px 14px",fontSize:"11px",fontWeight:600,color:"rgba(255,255,255,.6)"}}>
-                    ⏳ In Entwicklung
-                  </div>
-                </div>
-              </div>
-              <div style={{display:"inline-flex",alignItems:"center",gap:"6px",background:"rgba(255,92,53,.1)",border:"1px solid rgba(255,92,53,.2)",borderRadius:"20px",padding:"4px 12px",marginBottom:"12px"}}>
-                <div style={{width:"6px",height:"6px",borderRadius:"50%",background:"#FF5C35"}}/>
-                <span style={{fontSize:"11px",color:"#FF5C35",fontWeight:600}}>KI Telefon · bald</span>
-              </div>
-              <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:"20px",fontWeight:700,color:"#1A1A2E",marginBottom:"10px",letterSpacing:"-.5px"}}>KI nimmt Anrufe<br/>automatisch entgegen</h3>
-              <p style={{fontSize:"13px",color:"#6B6B80",lineHeight:1.7,fontWeight:300}}>Kein Anruf geht mehr verloren. Die KI nimmt ab, versteht den Gast und trägt die Reservierung automatisch ein — egal wie voll es im Restaurant ist. Kommt bald.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* PRODUKT BILD */}
-      <section id="screenshots" style={{background:"#F5F0EB",padding:"80px 20px 0",overflow:"hidden"}}>
-        <div style={{maxWidth:"1100px",margin:"0 auto"}}>
-          <div style={{textAlign:"center",marginBottom:"40px"}}>
-            <div style={{fontSize:"11px",fontWeight:600,textTransform:"uppercase",letterSpacing:"1px",color:"#FF5C35",marginBottom:"12px"}}>Das Produkt</div>
-            <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(26px,4vw,40px)",fontWeight:700,letterSpacing:"-1px",color:"#1A1A2E",marginBottom:"12px"}}>Vom Gast direkt ins Dashboard.</h2>
-            <p style={{color:"#6B6B80",fontSize:"16px",fontWeight:300,maxWidth:"480px",margin:"0 auto",lineHeight:1.7}}>Gäste buchen auf dem iPhone — du verwaltest alles auf dem Mac.</p>
-          </div>
-          <div style={{borderRadius:"20px 20px 0 0",overflow:"hidden",boxShadow:"0 -8px 60px rgba(26,26,46,.15)"}}>
-            <img src="/mac_iohon.png" alt="Tablely Dashboard" style={{width:"100%",height:"auto",display:"block"}}/>
-          </div>
-        </div>
-      </section>
-
-      {/* DEMO CTA */}
-      <section style={{background:"var(--cream)",padding:"64px 20px"}}>
-        <div style={{maxWidth:"700px",margin:"0 auto",textAlign:"center",padding:"48px 32px",background:"var(--dark)",borderRadius:"20px"}}>
-          <div style={{fontSize:"11px",fontWeight:600,textTransform:"uppercase",letterSpacing:"1px",color:"var(--orange)",marginBottom:"12px"}}>Live Demo</div>
-          <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(22px,4vw,28px)",fontWeight:700,color:"#FFFAF5",letterSpacing:"-0.5px",marginBottom:"12px"}}>Probier es selbst aus.</h3>
-          <p style={{fontSize:"15px",color:"rgba(255,255,255,.45)",fontWeight:300,marginBottom:"28px",lineHeight:1.7}}>
-            Reserviere als Gast — sieh wie es sofort im Dashboard erscheint.
-          </p>
-          <a href="/demo" className="demo-btn" style={{display:"inline-flex",alignItems:"center",gap:"8px",background:"#FF5C35",color:"#fff",padding:"13px 28px",borderRadius:"10px",fontSize:"15px",fontWeight:500,textDecoration:"none",transition:"all .2s"}}>
-            Demo starten →
-          </a>
-        </div>
-      </section>
-
-      {/* NUMBERS */}
-      <div style={{background:"var(--dark)",padding:"80px 32px"}}>
-        <div style={{maxWidth:"1100px",margin:"0 auto"}}>
-          <div style={{fontSize:"11px",fontWeight:600,textTransform:"uppercase",letterSpacing:"1px",color:"var(--orange)",marginBottom:"12px"}}>Was Tablely bewirkt</div>
-          <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(26px,4vw,40px)",fontWeight:700,color:"#FFFAF5",letterSpacing:"-1px",marginBottom:"40px"}}>Zahlen die sprechen.</h2>
-          <div className="numbers-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",border:"1px solid rgba(255,255,255,.07)",borderRadius:"16px",overflow:"hidden"}}>
-            {[
-              {v:"–60%",l:"weniger No-Shows durch automatische Erinnerungen"},
-              {v:"2h",l:"täglich gespart — keine Reservierungsanrufe mehr"},
-              {v:"24/7",l:"Buchungen annehmen — auch wenn du schläfst"},
-            ].map((n,i)=>(
-              <div key={i} className="number-item" style={{padding:"40px 32px",textAlign:"center",borderRight:i<2?"1px solid rgba(255,255,255,.07)":"none"}}>
-                <div style={{fontFamily:"'Playfair Display',serif",fontSize:"48px",fontWeight:700,color:"var(--orange)",letterSpacing:"-2px",marginBottom:"10px"}}>{n.v}</div>
-                <div style={{fontSize:"14px",color:"rgba(255,255,255,.4)",fontWeight:300,lineHeight:1.5}}>{n.l}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* CTA SEKTION */}
-      <section id="cta" style={{background:"#1A1A2E",padding:"80px 20px"}}>
-        <div style={{maxWidth:"640px",margin:"0 auto",textAlign:"center"}}>
-          <div style={{display:"inline-flex",alignItems:"center",gap:"6px",background:"rgba(255,92,53,.15)",border:"1px solid rgba(255,92,53,.25)",borderRadius:"20px",padding:"5px 14px",marginBottom:"20px"}}>
-            <div style={{width:"6px",height:"6px",borderRadius:"50%",background:"#FF5C35",animation:"pulse 2s infinite",flexShrink:0}}/>
-            <span style={{fontSize:"12px",color:"#FF5C35",fontWeight:500}}>Noch 5 von 10 Plätzen frei</span>
-          </div>
-          <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(28px,5vw,40px)",fontWeight:700,color:"#FFFAF5",letterSpacing:"-1px",lineHeight:1.1,marginBottom:"16px"}}>
-            30 Tage gratis.<br/><span style={{color:"#FF5C35",fontStyle:"italic"}}>Nur für die ersten 10.</span>
-          </h2>
-          <p style={{color:"rgba(255,255,255,.45)",fontSize:"15px",lineHeight:1.75,fontWeight:300,marginBottom:"24px"}}>
-            Die ersten 10 Restaurants testen alle Features 30 Tage kostenlos — danach 3 Monate mit <strong style={{color:"rgba(255,255,255,.7)"}}>10% Rabatt</strong>. Ab dem 11. Restaurant gibt es nur noch 14 Tage ohne Vergünstigung.
-          </p>
-          <div style={{display:"flex",flexWrap:"wrap",gap:"8px",justifyContent:"center",marginBottom:"32px"}}>
-            {["✓ Online Buchungsseite","✓ WhatsApp KI","✓ Erinnerungen","✓ Dashboard","✓ Walk-in Assistent","⏳ KI Telefon (bald)"].map((f,i)=>(
-              <div key={i} style={{fontSize:"12px",fontWeight:500,padding:"5px 12px",borderRadius:"20px",background:f.startsWith("⏳")?"rgba(255,255,255,.05)":"rgba(255,92,53,.12)",color:f.startsWith("⏳")?"rgba(255,255,255,.3)":"#FF5C35",border:`1px solid ${f.startsWith("⏳")?"rgba(255,255,255,.08)":"rgba(255,92,53,.2)"}`}}>{f}</div>
-            ))}
-          </div>
-          <button onClick={()=>setShowModal(true)} className="btn-3d" style={{background:"#FF5C35",color:"#fff",border:"none",padding:"16px 36px",borderRadius:"10px",fontSize:"16px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",marginBottom:"12px"}}>
-            Jetzt 30 Tage kostenlos testen →
-          </button>
-          <p style={{fontSize:"12px",color:"rgba(255,255,255,.25)"}}>Keine Kreditkarte. Keine Verpflichtung.</p>
-        </div>
-      </section>
-
-      {/* FOOTER */}
-      <footer style={{padding:"24px 32px",borderTop:"1px solid var(--border)",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:"12px"}}>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:"18px",fontWeight:700,color:"var(--dark)"}}>table<span style={{color:"var(--orange)"}}>ly</span></div>
-        <div style={{display:"flex",gap:"20px"}}>
-          {[["Impressum","/impressum"],["Datenschutz","/datenschutz"],["AGB","/agb"]].map(([l,h])=>(
-            <a key={h} href={h} style={{fontSize:"12px",color:"var(--muted)",textDecoration:"none"}}>{l}</a>
           ))}
         </div>
-        <p style={{fontSize:"12px",color:"var(--muted)"}}>© 2026 Tablely · Michael Kleinlercher e.U.</p>
-      </footer>
+      </section>
 
-      {showModal && <RegisterModal onClose={()=>setShowModal(false)}/>}
-    </>
+      {/* REGISTER MODAL */}
+      {showRegister && (
+        <div onClick={() => setShowRegister(false)} style={{
+          position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(8px)",
+          display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:"24px",
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background:"#fff",borderRadius:"24px",padding:"40px 36px",maxWidth:"440px",width:"100%",
+            boxShadow:"0 40px 80px rgba(0,0,0,0.3)",
+          }}>
+            <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"28px",fontWeight:700,color:"#1A1A2E",marginBottom:"8px",letterSpacing:"-0.5px"}}>
+              Heute starten.
+            </h2>
+            <p style={{fontSize:"14px",color:"#6B6B80",marginBottom:"24px",lineHeight:1.6}}>
+              30 Tage gratis testen. Keine Kreditkarte erforderlich.
+            </p>
+            <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
+              <a href="/register" style={{
+                padding:"13px",background:"#FF5C35",color:"#fff",borderRadius:"10px",
+                textAlign:"center",textDecoration:"none",fontSize:"14px",fontWeight:600,
+              }}>
+                Mit E-Mail registrieren
+              </a>
+              <a href="/api/auth/google" style={{
+                padding:"13px",background:"#fff",color:"#1A1A2E",borderRadius:"10px",
+                textAlign:"center",textDecoration:"none",fontSize:"14px",fontWeight:500,
+                border:"1px solid #EDE8E3",display:"flex",alignItems:"center",justifyContent:"center",gap:"10px",
+              }}>
+                <svg width="16" height="16" viewBox="0 0 16 16"><path d="M15.68 8.18c0-.56-.05-1.1-.14-1.62H8v3.07h4.31c-.18 1-.74 1.85-1.59 2.42v2.01h2.58c1.5-1.39 2.38-3.43 2.38-5.88z" fill="#4285F4"/><path d="M8 16c2.16 0 3.97-.71 5.3-1.94l-2.58-2.01c-.72.48-1.63.77-2.72.77-2.09 0-3.86-1.41-4.49-3.31H.83v2.07A8 8 0 0 0 8 16z" fill="#34A853"/><path d="M3.51 9.51A4.8 4.8 0 0 1 3.25 8c0-.52.09-1.03.26-1.51V4.42H.83a8 8 0 0 0 0 7.16l2.68-2.07z" fill="#FBBC05"/><path d="M8 3.18c1.18 0 2.24.41 3.07 1.2l2.3-2.3A8 8 0 0 0 8 0a8 8 0 0 0-7.17 4.42l2.68 2.07C4.14 4.59 5.91 3.18 8 3.18z" fill="#EA4335"/></svg>
+                Mit Google fortfahren
+              </a>
+            </div>
+            <p style={{fontSize:"11px",color:"#6B6B80",textAlign:"center",marginTop:"16px",lineHeight:1.5}}>
+              Mit der Registrierung akzeptierst du unsere AGB und Datenschutz.
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
