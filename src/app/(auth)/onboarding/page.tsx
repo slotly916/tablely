@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 
-const STEPS = ["Restaurant", "Tische", "Öffnungszeiten", "Einstellungen", "WhatsApp", "App"];
+const STEPS = ["Restaurant", "Tische", "Gruppen", "Öffnungszeiten", "Einstellungen", "WhatsApp", "App"];
 const DAYS = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"];
 
 export default function Onboarding() {
@@ -13,41 +13,59 @@ export default function Onboarding() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Step 1 — Restaurant
   const [restaurantName, setRestaurantName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
 
-  // Step 2 — Tische
-  const [tables, setTables] = useState<Array<{name: string; capacity: number; combinable_with: string[]}>>([
-    { name: "Tisch 1", capacity: 2, combinable_with: [] },
-    { name: "Tisch 2", capacity: 4, combinable_with: [] },
+  const [tables, setTables] = useState<Array<{name: string; capacity: number}>>([
+    { name: "Tisch 1", capacity: 2 },
+    { name: "Tisch 2", capacity: 4 },
   ]);
 
-  // Step 3 — Öffnungszeiten
+  // Tisch-Gruppen — array of arrays of table names
+  const [groups, setGroups] = useState<string[][]>([]);
+  const [showNewGroup, setShowNewGroup] = useState(false);
+  const [groupSelection, setGroupSelection] = useState<string[]>([]);
+
   const [hours, setHours] = useState(
     DAYS.map((_, i) => ({ day: i, open: "11:00", close: "22:00", closed: i === 6 }))
   );
 
-  // Step 4 — Einstellungen
   const [stayDuration, setStayDuration] = useState(150);
   const [largeGroupThreshold, setLargeGroupThreshold] = useState(15);
 
-  // Step 5 — WhatsApp
   const [waPhoneId, setWaPhoneId] = useState("");
   const [skipWa, setSkipWa] = useState(false);
 
   function addTable() {
-    setTables([...tables, { name: `Tisch ${tables.length + 1}`, capacity: 2, combinable_with: [] }]);
+    setTables([...tables, { name: `Tisch ${tables.length + 1}`, capacity: 2 }]);
   }
   function removeTable(i: number) {
+    const tableName = tables[i].name;
     setTables(tables.filter((_, idx) => idx !== i));
+    // Auch aus Gruppen entfernen
+    setGroups(groups.map(g => g.filter(n => n !== tableName)).filter(g => g.length >= 2));
   }
-  function updateTable(i: number, field: string, value: string | number | string[]) {
+  function updateTable(i: number, field: string, value: string | number) {
     setTables(tables.map((t, idx) => idx === i ? { ...t, [field]: value } : t));
   }
   function updateHours(i: number, field: string, value: string | boolean) {
     setHours(hours.map((h, idx) => idx === i ? { ...h, [field]: value } : h));
+  }
+
+  // Tables that are already in a group
+  const tablesInGroups = new Set<string>();
+  groups.forEach(g => g.forEach(n => tablesInGroups.add(n)));
+
+  function saveNewGroup() {
+    if (groupSelection.length < 2) return;
+    setGroups([...groups, groupSelection]);
+    setShowNewGroup(false);
+    setGroupSelection([]);
+  }
+
+  function deleteGroup(idx: number) {
+    setGroups(groups.filter((_, i) => i !== idx));
   }
 
   async function handleFinish() {
@@ -58,7 +76,6 @@ export default function Onboarding() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
 
-      // Slug generieren
       const slug = restaurantName.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-") + "-";
 
       const { data: restaurant, error: rErr } = await supabase
@@ -81,37 +98,37 @@ export default function Onboarding() {
 
       if (rErr) throw rErr;
 
+      let insertedTables: { id: string; name: string }[] = [];
       if (tables.length > 0) {
         const sorted = [...tables].sort((a, b) => {
           const na = parseInt(a.name.replace(/[^0-9]/g, "")) || 0;
           const nb = parseInt(b.name.replace(/[^0-9]/g, "")) || 0;
           return na - nb;
         });
-        // Insert tables first, then update with table IDs for combinable_with
-        const { data: insertedTables, error: tErr } = await supabase.from("tables")
-          .insert(sorted.map(t => ({ 
-            name: t.name, 
-            capacity: t.capacity, 
+        const { data, error: tErr } = await supabase.from("tables")
+          .insert(sorted.map(t => ({
+            name: t.name,
+            capacity: t.capacity,
             restaurant_id: restaurant.id,
             combinable_with: []
           })))
           .select();
         if (tErr) throw tErr;
+        insertedTables = data || [];
+      }
+
+      // Apply groups — for each group, update combinable_with
+      for (const group of groups) {
+        const groupTableIds = group
+          .map(name => insertedTables.find(t => t.name === name)?.id)
+          .filter(Boolean) as string[];
         
-        // Now update combinable_with with actual table IDs
-        if (insertedTables) {
-          for (const t of sorted) {
-            if (t.combinable_with && t.combinable_with.length > 0) {
-              const myTable = insertedTables.find(it => it.name === t.name);
-              const combinableIds = t.combinable_with
-                .map(name => insertedTables.find(it => it.name === name)?.id)
-                .filter(Boolean);
-              if (myTable && combinableIds.length > 0) {
-                await supabase.from("tables")
-                  .update({ combinable_with: combinableIds })
-                  .eq("id", myTable.id);
-              }
-            }
+        if (groupTableIds.length >= 2) {
+          for (const tableId of groupTableIds) {
+            const others = groupTableIds.filter(id => id !== tableId);
+            await supabase.from("tables")
+              .update({ combinable_with: others })
+              .eq("id", tableId);
           }
         }
       }
@@ -126,7 +143,6 @@ export default function Onboarding() {
         })));
       if (hErr) throw hErr;
 
-      // Willkommensmail
       try {
         await fetch("/api/welcome-email", {
           method: "POST",
@@ -135,7 +151,6 @@ export default function Onboarding() {
         });
       } catch {}
 
-      // Admin Benachrichtigung
       try {
         await fetch("/api/notify-admin", {
           method: "POST",
@@ -162,8 +177,7 @@ export default function Onboarding() {
       <div style={card}>
         <a href="/" style={logo}>table<span style={{color:"#FF5C35"}}>ly</span></a>
 
-        {/* Progress */}
-        <div style={{display:"flex",gap:"6px",marginBottom:"32px"}}>
+        <div style={{display:"flex",gap:"4px",marginBottom:"32px"}}>
           {STEPS.map((s, i) => (
             <div key={i} style={{flex:1}}>
               <div style={{height:"3px",borderRadius:"2px",background:i<=step?"#FF5C35":"#F0EBE3",transition:"background .3s",marginBottom:"5px"}}/>
@@ -172,7 +186,6 @@ export default function Onboarding() {
           ))}
         </div>
 
-        {/* STEP 1 — Restaurant */}
         {step === 0 && (
           <>
             <h1 style={title}>Dein Restaurant einrichten</h1>
@@ -191,58 +204,118 @@ export default function Onboarding() {
           </>
         )}
 
-        {/* STEP 2 — Tische */}
+        {/* STEP 2 — TISCHE (vereinfacht, ohne Kombinationen) */}
         {step === 1 && (
           <>
             <h1 style={title}>Deine Tische</h1>
-            <p style={sub}>Definiere deine Tische und welche zusammen geschoben werden können.</p>
-            <div style={{display:"flex",flexDirection:"column",gap:"12px",marginBottom:"16px"}}>
+            <p style={sub}>Lege deine Tische mit Personenzahl an. Tisch-Gruppen kommen im nächsten Schritt.</p>
+            <div style={{display:"flex",flexDirection:"column",gap:"10px",marginBottom:"14px"}}>
               {tables.map((t, i) => (
-                <div key={i} style={{background:"#FFFFFF",borderRadius:"10px",padding:"12px",border:"1px solid #F0EBE3"}}>
-                  <div style={{display:"flex",gap:"10px",alignItems:"center",marginBottom:"8px"}}>
-                    <input style={{...input,flex:1}} type="text" placeholder="Tischname" value={t.name} onChange={e=>updateTable(i,"name",e.target.value)}/>
-                    <select style={{...input,width:"110px"}} value={t.capacity} onChange={e=>updateTable(i,"capacity",parseInt(e.target.value))}>
-                      {[1,2,3,4,5,6,7,8,10,12,15,20].map(n=>(
-                        <option key={n} value={n}>{n} Pers.</option>
-                      ))}
-                    </select>
-                    {tables.length > 1 && (
-                      <button onClick={()=>removeTable(i)} style={{background:"none",border:"none",cursor:"pointer",color:"#E24B4A",fontSize:"20px",lineHeight:1,flexShrink:0}}>×</button>
-                    )}
-                  </div>
+                <div key={i} style={{background:"#fff",borderRadius:"10px",padding:"12px 14px",border:"1px solid #F0EBE3",display:"flex",gap:"10px",alignItems:"center"}}>
+                  <input style={{...input,flex:1}} type="text" placeholder="Tischname" value={t.name} onChange={e=>updateTable(i,"name",e.target.value)}/>
+                  <select style={{...input,width:"110px"}} value={t.capacity} onChange={e=>updateTable(i,"capacity",parseInt(e.target.value))}>
+                    {[1,2,3,4,5,6,7,8,10,12,15,20].map(n=>(
+                      <option key={n} value={n}>{n} Pers.</option>
+                    ))}
+                  </select>
                   {tables.length > 1 && (
-                    <div>
-                      <div style={{fontSize:"11px",color:"#6B6B80",marginBottom:"6px"}}>Kombinierbar mit:</div>
-                      <div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>
-                        {tables.map((other, j) => j !== i && (
-                          <button key={j} onClick={()=>{
-                            const isSelected = t.combinable_with.includes(other.name);
-                            const newCombinable = isSelected 
-                              ? t.combinable_with.filter(n => n !== other.name)
-                              : [...t.combinable_with, other.name];
-                            updateTable(i, "combinable_with", newCombinable);
-                          }} style={{
-                            padding:"4px 10px",borderRadius:"14px",fontSize:"11px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",border:"1px solid",
-                            background: t.combinable_with.includes(other.name) ? "#FF5C35" : "transparent",
-                            color: t.combinable_with.includes(other.name) ? "#fff" : "#6B6B80",
-                            borderColor: t.combinable_with.includes(other.name) ? "#FF5C35" : "#F0EBE3",
-                          }}>{other.name}</button>
-                        ))}
-                      </div>
-                    </div>
+                    <button onClick={()=>removeTable(i)} style={{background:"none",border:"none",cursor:"pointer",color:"#E24B4A",fontSize:"20px",lineHeight:1,flexShrink:0}}>×</button>
                   )}
                 </div>
               ))}
             </div>
             <button onClick={addTable} style={outlineBtn}>+ Tisch hinzufügen</button>
-            <div style={{background:"rgba(255,92,53,.08)",border:"1px solid rgba(255,92,53,.15)",borderRadius:"10px",padding:"12px 16px",fontSize:"12px",color:"#FF5C35",lineHeight:1.6,marginTop:"12px"}}>
-              💡 Tipp: Wähle bei jedem Tisch aus welche Tische daneben stehen und zusammengeschoben werden können. Tablely nutzt das automatisch für Gruppen.
+          </>
+        )}
+
+        {/* STEP 3 — TISCH-GRUPPEN (NEU) */}
+        {step === 2 && (
+          <>
+            <h1 style={title}>Tisch-Gruppen</h1>
+            <p style={sub}>Welche Tische können zusammen geschoben werden? Das hilft Tablely bei größeren Gruppen.</p>
+            
+            <div style={{background:"rgba(255,92,53,.08)",border:"1px solid rgba(255,92,53,.15)",borderRadius:"10px",padding:"12px 16px",fontSize:"12px",color:"#FF5C35",lineHeight:1.6,marginBottom:"16px"}}>
+              💡 Beispiel: Tisch 5 + Tisch 6 stehen nebeneinander und ergeben zusammen 10 Plätze. Tablely nutzt das automatisch wenn eine Gruppe von 8 Personen kommt.
+            </div>
+
+            <div style={{display:"flex",flexDirection:"column",gap:"10px",marginBottom:"14px"}}>
+              {/* Existing groups */}
+              {groups.map((g, i) => {
+                const totalCapacity = g.reduce((sum, name) => sum + (tables.find(t => t.name === name)?.capacity || 0), 0);
+                return (
+                  <div key={i} style={{background:"#fff",border:"1px solid #F0EBE3",borderRadius:"12px",padding:"14px 16px"}}>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"8px"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
+                        <div style={{fontSize:"13px",fontWeight:600,color:"#1A1A2E"}}>Gruppe {i+1}</div>
+                        <div style={{fontSize:"11px",color:"#FF5C35",background:"rgba(255,92,53,.1)",padding:"2px 10px",borderRadius:"20px",fontWeight:600}}>
+                          {totalCapacity} Personen zusammen
+                        </div>
+                      </div>
+                      <button onClick={() => deleteGroup(i)} style={{background:"none",border:"none",cursor:"pointer",color:"#E24B4A",fontSize:"18px",lineHeight:1}}>×</button>
+                    </div>
+                    <div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>
+                      {g.map(name => {
+                        const cap = tables.find(t => t.name === name)?.capacity || 0;
+                        return (
+                          <div key={name} style={{padding:"4px 10px",background:"#FFF0EB",border:"1px solid rgba(255,92,53,.15)",borderRadius:"6px",fontSize:"12px",color:"#1A1A2E",fontWeight:500}}>
+                            {name} <span style={{fontSize:"10px",color:"#6B6B80"}}>({cap}P)</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {showNewGroup ? (
+                <div style={{background:"#fff",border:"1px solid #FF5C35",borderRadius:"12px",padding:"14px 16px"}}>
+                  <div style={{fontSize:"13px",fontWeight:600,color:"#1A1A2E",marginBottom:"6px"}}>Neue Gruppe</div>
+                  <div style={{fontSize:"12px",color:"#6B6B80",marginBottom:"10px"}}>Mindestens 2 Tische auswählen:</div>
+                  <div style={{display:"flex",gap:"6px",flexWrap:"wrap",marginBottom:"12px"}}>
+                    {tables.map(t => {
+                      const isSelected = groupSelection.includes(t.name);
+                      const isInOtherGroup = tablesInGroups.has(t.name);
+                      return (
+                        <button key={t.name} disabled={isInOtherGroup} onClick={() => {
+                          if (isSelected) setGroupSelection(groupSelection.filter(n => n !== t.name));
+                          else setGroupSelection([...groupSelection, t.name]);
+                        }} style={{
+                          padding:"5px 10px",borderRadius:"6px",fontSize:"12px",fontWeight:500,cursor:isInOtherGroup?"not-allowed":"pointer",fontFamily:"inherit",border:"1px solid",
+                          background: isSelected ? "#FF5C35" : isInOtherGroup ? "rgba(0,0,0,.05)" : "transparent",
+                          color: isSelected ? "#fff" : isInOtherGroup ? "rgba(0,0,0,.3)" : "#1A1A2E",
+                          borderColor: isSelected ? "#FF5C35" : "#F0EBE3",
+                          opacity: isInOtherGroup ? 0.5 : 1,
+                        }}>
+                          {t.name} ({t.capacity}P)
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {groupSelection.length >= 2 && (
+                    <div style={{fontSize:"11px",color:"#FF5C35",fontWeight:600,marginBottom:"10px"}}>
+                      = {groupSelection.reduce((sum, name) => sum + (tables.find(t => t.name === name)?.capacity || 0), 0)} Personen zusammen
+                    </div>
+                  )}
+                  <div style={{display:"flex",gap:"8px"}}>
+                    <button onClick={() => { setShowNewGroup(false); setGroupSelection([]); }} style={{padding:"7px 14px",borderRadius:"8px",background:"transparent",border:"1px solid #F0EBE3",color:"#6B6B80",fontSize:"12px",cursor:"pointer",fontFamily:"inherit"}}>Abbrechen</button>
+                    <button onClick={saveNewGroup} disabled={groupSelection.length < 2} style={{padding:"7px 16px",borderRadius:"8px",background:"#FF5C35",border:"none",color:"#fff",fontSize:"12px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",opacity:groupSelection.length < 2 ? 0.5 : 1}}>✓ Erstellen</button>
+                  </div>
+                </div>
+              ) : (
+                <button onClick={() => setShowNewGroup(true)} style={outlineBtn}>+ Neue Tisch-Gruppe</button>
+              )}
+
+              {groups.length === 0 && !showNewGroup && (
+                <div style={{fontSize:"12px",color:"#6B6B80",fontStyle:"italic",textAlign:"center",padding:"16px"}}>
+                  Optional — kannst du auch später in den Einstellungen erstellen.
+                </div>
+              )}
             </div>
           </>
         )}
 
-        {/* STEP 3 — Öffnungszeiten */}
-        {step === 2 && (
+        {/* STEP 4 — Öffnungszeiten */}
+        {step === 3 && (
           <>
             <h1 style={title}>Öffnungszeiten</h1>
             <p style={sub}>Wann ist dein Restaurant geöffnet?</p>
@@ -269,8 +342,8 @@ export default function Onboarding() {
           </>
         )}
 
-        {/* STEP 4 — Einstellungen */}
-        {step === 3 && (
+        {/* STEP 5 — Einstellungen */}
+        {step === 4 && (
           <>
             <h1 style={title}>Einstellungen</h1>
             <p style={sub}>Diese Einstellungen können später jederzeit geändert werden.</p>
@@ -285,7 +358,7 @@ export default function Onboarding() {
                   <option value={240}>4 Stunden</option>
                 </select>
                 <div style={{fontSize:"11px",color:"#6B6B80",marginTop:"4px"}}>
-                  Tische werden für diese Dauer blockiert. Nach {Math.floor(stayDuration/60)}:{String(stayDuration%60).padStart(2,"0")}h ist der Tisch wieder frei.
+                  Tische werden für diese Dauer blockiert.
                 </div>
               </Field>
               <Field label="Großgruppen-Meldung ab">
@@ -302,17 +375,15 @@ export default function Onboarding() {
           </>
         )}
 
-        {/* STEP 5 — WhatsApp */}
-        {step === 4 && (
+        {/* STEP 6 — WhatsApp */}
+        {step === 5 && (
           <>
             <h1 style={title}>WhatsApp KI verbinden</h1>
             <p style={sub}>Verbinde deine WhatsApp Business Nummer in wenigen Klicks — direkt über Meta.</p>
             <div style={{display:"flex",flexDirection:"column",gap:"16px"}}>
-
-              {/* Embedded Signup Button */}
               <div style={{background:"#F5F0EB",borderRadius:"16px",padding:"24px",border:"1px solid #F0EBE3",textAlign:"center"}}>
                 <div style={{width:"48px",height:"48px",borderRadius:"12px",background:"#25D366",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px"}}>
-                  <svg width="26" height="26" viewBox="0 0 26 26" fill="none"><path d="M13 2C7 2 2 7 2 13c0 1.9.5 3.7 1.4 5.3L2 24l5.9-1.4C9.3 23.5 11.1 24 13 24c6 0 11-5 11-11S19 2 13 2zm5.5 15.5c-.2.6-1.3 1.2-1.8 1.3-.5 0-.9.1-3.2-.7s-3.6-2.6-4.1-3.4c-.5-.8-1.3-2-1.3-3.4s.7-1.8.9-2.1c.3-.2.5-.3.8-.3h.5c.2 0 .4.1.6.6l1 2.6c.1.2.1.5 0 .7l-.4.5c-.1.2-.3.4-.1.7.6 1 1.4 1.8 2.5 2.4.3.2.5.1.7-.1l.6-.8c.2-.3.4-.3.7-.1l2.5 1.2c.3.1.4.3.4.5-.1.4-.2 1-.8 1.4z" fill="white"/></svg>
+                  <svg width="26" height="26" viewBox="0 0 26 26" fill="none"><path d="M13 2C7 2 2 7 2 13c0 1.9.5 3.7 1.4 5.3L2 24l5.9-1.4C9.3 23.5 11.1 24 13 24c6 0 11-5 11-11S19 2 13 2z" fill="white"/></svg>
                 </div>
                 <div style={{fontSize:"15px",fontWeight:600,color:"#1A1A2E",marginBottom:"6px"}}>Mit Meta verbinden</div>
                 <p style={{fontSize:"13px",color:"#6B6B80",lineHeight:1.6,marginBottom:"16px",fontWeight:300}}>
@@ -324,12 +395,10 @@ export default function Onboarding() {
                   rel="noopener noreferrer"
                   style={{display:"inline-flex",alignItems:"center",gap:"8px",background:"#1877F2",color:"#fff",padding:"12px 24px",borderRadius:"10px",fontSize:"14px",fontWeight:500,textDecoration:"none"}}
                 >
-                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M18 9a9 9 0 1 0-10.406 8.892v-6.29H5.31V9h2.284V7.018c0-2.254 1.343-3.5 3.4-3.5.984 0 2.014.175 2.014.175v2.214h-1.135c-1.118 0-1.467.694-1.467 1.407V9h2.496l-.399 2.602h-2.097v6.29A9.003 9.003 0 0 0 18 9z" fill="white"/></svg>
                   Mit Facebook / Meta verbinden →
                 </a>
               </div>
 
-              {/* Tablely stellt Nummer */}
               <div style={{background:"#F5F0EB",borderRadius:"12px",padding:"18px",border:"1px solid #F0EBE3"}}>
                 <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"10px"}}>
                   <div style={{width:"32px",height:"32px",borderRadius:"8px",background:"#25D366",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
@@ -340,12 +409,7 @@ export default function Onboarding() {
                 <p style={{fontSize:"12px",color:"#6B6B80",lineHeight:1.6,marginBottom:"12px",fontWeight:300}}>
                   Du bekommst eine eigene österreichische WhatsApp Business Nummer von uns — vollständig eingerichtet. Deine Nummer ist innerhalb von <strong style={{color:"#1A1A2E"}}>12–24 Stunden</strong> einsatzbereit.
                 </p>
-                <div style={{display:"flex",flexDirection:"column",gap:"6px",marginBottom:"12px"}}>
-                  {["✓ Eigene +43 Nummer","✓ Vollständig eingerichtet von uns","✓ Keine technischen Kenntnisse nötig","✓ Private Nummer bleibt unberührt"].map((f,i)=>(
-                    <div key={i} style={{fontSize:"12px",color:"#1A1A2E",fontWeight:400}}>{f}</div>
-                  ))}
-                </div>
-                <a href="mailto:info@tablely.at?subject=WhatsApp Nummer für mein Restaurant&body=Hallo Tablely Team, ich möchte eine österreichische WhatsApp Nummer für mein Restaurant." style={{display:"inline-flex",alignItems:"center",gap:"6px",background:"#FF5C35",color:"#fff",padding:"9px 16px",borderRadius:"8px",fontSize:"13px",fontWeight:500,textDecoration:"none"}}>
+                <a href="mailto:info@tablely.at?subject=WhatsApp Nummer für mein Restaurant" style={{display:"inline-flex",alignItems:"center",gap:"6px",background:"#FF5C35",color:"#fff",padding:"9px 16px",borderRadius:"8px",fontSize:"13px",fontWeight:500,textDecoration:"none"}}>
                   Nummer anfordern → info@tablely.at
                 </a>
               </div>
@@ -358,8 +422,8 @@ export default function Onboarding() {
           </>
         )}
 
-        {/* STEP 6 — App installieren */}
-        {step === 5 && (
+        {/* STEP 7 — App */}
+        {step === 6 && (
           <>
             <h1 style={title}>App installieren</h1>
             <p style={sub}>Tablely kann wie eine App installiert werden. So hast du das Dashboard immer griffbereit.</p>
@@ -367,23 +431,20 @@ export default function Onboarding() {
               <div style={{background:"#F5F0EB",borderRadius:"14px",padding:"18px",border:"1px solid #F0EBE3"}}>
                 <div style={{fontSize:"13px",fontWeight:600,color:"#1A1A2E",marginBottom:"10px"}}>iPhone / iPad</div>
                 <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
-                  <div style={{fontSize:"13px",color:"#6B6B80"}}>1. Safari oeffnen und tablely.at/dashboard aufrufen</div>
+                  <div style={{fontSize:"13px",color:"#6B6B80"}}>1. Safari öffnen und tablely.at/dashboard aufrufen</div>
                   <div style={{fontSize:"13px",color:"#6B6B80"}}>2. Teilen-Symbol antippen (Pfeil nach oben)</div>
-                  <div style={{fontSize:"13px",color:"#6B6B80"}}>3. Zum Home-Bildschirm hinzufuegen</div>
-                  <div style={{fontSize:"13px",color:"#6B6B80"}}>4. Hinzufuegen bestaetigen</div>
+                  <div style={{fontSize:"13px",color:"#6B6B80"}}>3. Zum Home-Bildschirm hinzufügen</div>
+                  <div style={{fontSize:"13px",color:"#6B6B80"}}>4. Hinzufügen bestätigen</div>
                 </div>
               </div>
               <div style={{background:"#F5F0EB",borderRadius:"14px",padding:"18px",border:"1px solid #F0EBE3"}}>
                 <div style={{fontSize:"13px",fontWeight:600,color:"#1A1A2E",marginBottom:"10px"}}>Android / Chrome</div>
                 <div style={{display:"flex",flexDirection:"column",gap:"6px"}}>
-                  <div style={{fontSize:"13px",color:"#6B6B80"}}>1. Chrome oeffnen und tablely.at/dashboard aufrufen</div>
+                  <div style={{fontSize:"13px",color:"#6B6B80"}}>1. Chrome öffnen und tablely.at/dashboard aufrufen</div>
                   <div style={{fontSize:"13px",color:"#6B6B80"}}>2. Drei Punkte oben rechts antippen</div>
-                  <div style={{fontSize:"13px",color:"#6B6B80"}}>3. Zum Startbildschirm hinzufuegen</div>
-                  <div style={{fontSize:"13px",color:"#6B6B80"}}>4. Bestaetigen</div>
+                  <div style={{fontSize:"13px",color:"#6B6B80"}}>3. Zum Startbildschirm hinzufügen</div>
+                  <div style={{fontSize:"13px",color:"#6B6B80"}}>4. Bestätigen</div>
                 </div>
-              </div>
-              <div style={{background:"rgba(255,92,53,.08)",border:"1px solid rgba(255,92,53,.15)",borderRadius:"10px",padding:"12px 16px",fontSize:"12px",color:"#FF5C35",lineHeight:1.6}}>
-                Tipp: Auf dem iPad im Querformat sieht das Dashboard am besten aus.
               </div>
             </div>
           </>
@@ -391,7 +452,6 @@ export default function Onboarding() {
 
         {error && <p style={{color:"#E24B4A",fontSize:"13px",marginTop:"12px"}}>{error}</p>}
 
-        {/* Navigation */}
         <div style={{display:"flex",gap:"10px",marginTop:"32px"}}>
           {step > 0 && (
             <button onClick={()=>setStep(step-1)} style={outlineBtn}>← Zurück</button>
@@ -425,11 +485,11 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 const wrap: React.CSSProperties = { minHeight:"100vh",background:"#F0EBE3",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px",fontFamily:"'DM Sans',sans-serif" };
-const card: React.CSSProperties = { background:"#FFFAF5",borderRadius:"20px",padding:"40px",width:"100%",maxWidth:"520px",boxShadow:"0 8px 40px rgba(26,26,46,0.08)" };
+const card: React.CSSProperties = { background:"#FFFAF5",borderRadius:"20px",padding:"40px",width:"100%",maxWidth:"560px",boxShadow:"0 8px 40px rgba(26,26,46,0.08)" };
 const logo: React.CSSProperties = { fontFamily:"'Playfair Display',serif",fontSize:"24px",fontWeight:700,color:"#1A1A2E",textDecoration:"none",display:"block",marginBottom:"28px" };
 const title: React.CSSProperties = { fontFamily:"'Playfair Display',serif",fontSize:"24px",fontWeight:700,color:"#1A1A2E",letterSpacing:"-0.5px",marginBottom:"8px" };
 const sub: React.CSSProperties = { fontSize:"14px",color:"#6B6B80",marginBottom:"24px",lineHeight:1.6,fontWeight:300 };
 const form: React.CSSProperties = { display:"flex",flexDirection:"column",gap:"16px" };
 const input: React.CSSProperties = { padding:"12px 14px",border:"1.5px solid #F0EBE3",borderRadius:"10px",fontSize:"14px",fontFamily:"inherit",background:"#fff",color:"#1A1A2E",outline:"none",width:"100%" };
 const btn: React.CSSProperties = { background:"#FF5C35",color:"#fff",border:"none",padding:"14px",borderRadius:"10px",fontSize:"15px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",transition:"all .2s" };
-const outlineBtn: React.CSSProperties = { background:"transparent",color:"#1A1A2E",border:"1.5px solid #F0EBE3",padding:"14px 20px",borderRadius:"10px",fontSize:"14px",fontWeight:500,cursor:"pointer",fontFamily:"inherit" };
+const outlineBtn: React.CSSProperties = { background:"transparent",color:"#1A1A2E",border:"1.5px solid #F0EBE3",padding:"12px 18px",borderRadius:"10px",fontSize:"13px",fontWeight:500,cursor:"pointer",fontFamily:"inherit" };
