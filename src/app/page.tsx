@@ -150,7 +150,7 @@ export default function Home() {
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:"22px",fontWeight:700,color:"var(--dark)"}}>table<span style={{color:"var(--orange)"}}>ly</span></div>
         <div style={{display:"flex",alignItems:"center",gap:"24px"}}>
           <div className="nav-links-hide" style={{display:"flex",gap:"24px",alignItems:"center"}}>
-            {[["#features","Funktionen"],["#screenshots","App"]].map(([h,l])=>(
+            {[["#features","Funktionen"],["#screenshots","App"],["/presse","Presse"]].map(([h,l])=>(
               <a key={h} href={h} style={{textDecoration:"none",color:"var(--muted)",fontSize:"14px"}}>{l}</a>
             ))}
             <a href="/demo" className="nav-demo" style={{textDecoration:"none",color:"var(--dark)",fontSize:"14px",fontWeight:600,display:"flex",alignItems:"center",gap:"6px",transition:"color .2s"}}>
@@ -546,7 +546,7 @@ export default function Home() {
       <footer style={{padding:"24px 32px",borderTop:"1px solid var(--border)",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:"12px"}}>
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:"18px",fontWeight:700,color:"var(--dark)"}}>table<span style={{color:"var(--orange)"}}>ly</span></div>
         <div style={{display:"flex",gap:"20px"}}>
-          {[["Impressum","/impressum"],["Datenschutz","/datenschutz"],["AGB","/agb"]].map(([l,h])=>(
+          {[["Presse","/presse"],["Impressum","/impressum"],["Datenschutz","/datenschutz"],["AGB","/agb"]].map(([l,h])=>(
             <a key={h} href={h} style={{fontSize:"12px",color:"var(--muted)",textDecoration:"none"}}>{l}</a>
           ))}
         </div>
