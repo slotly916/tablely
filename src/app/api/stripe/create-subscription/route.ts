@@ -2,12 +2,18 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+// Lazy-Init: Stripe wird erst beim Request erstellt, nicht beim Build.
+// Verhindert "Neither apiKey nor config.authenticator provided" beim Build.
+function getStripe() {
+  return new Stripe(process.env.STRIPE_SECRET_KEY!);
+}
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!
-);
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_KEY!
+  );
+}
 
 const PRICE_IDS: Record<string, string | undefined> = {
   standard: process.env.STRIPE_PRICE_STANDARD,
@@ -17,6 +23,9 @@ const PRICE_IDS: Record<string, string | undefined> = {
 
 export async function POST(req: Request) {
   try {
+    const stripe = getStripe();
+    const supabase = getSupabase();
+
     const { restaurantId, email, plan } = await req.json();
 
     if (!restaurantId || !email || !plan) {
