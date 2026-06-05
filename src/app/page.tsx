@@ -110,21 +110,22 @@ export default function Home() {
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
         @keyframes float3d{0%,100%{transform:perspective(1000px) rotateX(2deg) rotateY(-2deg) translateY(0)}50%{transform:perspective(1000px) rotateX(-1deg) rotateY(2deg) translateY(-8px)}}
         @keyframes shimmer{0%{background-position:200% center}100%{background-position:-200% center}}
-        @keyframes spin3d{0%{transform:perspective(600px) rotateY(0deg)}100%{transform:perspective(600px) rotateY(360deg)}}
+        @keyframes pulse-ring{0%{box-shadow:0 0 0 0 rgba(255,92,53,.5)}70%{box-shadow:0 0 0 14px rgba(255,92,53,0)}100%{box-shadow:0 0 0 0 rgba(255,92,53,0)}}
         .card-3d{transform-style:preserve-3d;transition:transform .4s ease;}
         .card-3d:hover{transform:perspective(1000px) rotateX(-3deg) rotateY(5deg) scale(1.02);}
         .btn-3d{transform-style:preserve-3d;box-shadow:0 8px 0 rgba(200,60,20,.8),0 12px 20px rgba(255,92,53,.3);transition:all .15s;}
         .btn-3d:hover{transform:translateY(-3px);box-shadow:0 11px 0 rgba(200,60,20,.8),0 16px 24px rgba(255,92,53,.4)!important;}
         .btn-3d:active{transform:translateY(4px);box-shadow:0 4px 0 rgba(200,60,20,.8),0 6px 12px rgba(255,92,53,.2)!important;}
-        .number-badge{background:linear-gradient(135deg,#1A1A2E 0%,#2A2A4E 50%,#1A1A2E 100%);border:1px solid rgba(255,92,53,.3);box-shadow:0 20px 40px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.08),0 0 0 1px rgba(255,92,53,.1);}
         .feat-card:hover{transform:perspective(800px) rotateX(-2deg) translateY(-4px);box-shadow:0 20px 40px rgba(26,26,46,.15)!important;}
         @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
         .nav-cta:hover{background:var(--orange)!important;color:#fff!important;}
-        .btn-main:hover{background:#FF7A5A!important;transform:translateY(-2px);}
+        .nav-demo:hover{color:var(--orange)!important;}
         .feat-card:hover{transform:translateY(-3px);}
         .stress-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
         .stress-item:last-child{border:none;padding-bottom:0;}
         .demo-btn:hover{background:#FF7A5A!important;transform:translateY(-2px);}
+        .hero-demo-btn:hover{background:rgba(255,255,255,.12)!important;border-color:rgba(255,255,255,.4)!important;}
+        .demo-big-btn:hover{transform:translateY(-3px);box-shadow:0 16px 40px rgba(255,92,53,.45)!important;}
         @media(max-width:768px){
           .hero-grid{grid-template-columns:1fr!important;gap:32px!important;padding:40px 20px 0!important;}
           .hero-mockup{display:none!important;}
@@ -137,6 +138,10 @@ export default function Home() {
           .wa-mockup{display:none!important;}
           .booking-grid{grid-template-columns:1fr!important;gap:32px!important;}
           .iphone-col{width:200px!important;}
+          .demo-steps-grid{grid-template-columns:1fr!important;}
+          .demo-split{grid-template-columns:1fr!important;gap:32px!important;text-align:center!important;}
+          .demo-split-left{text-align:center!important;}
+          .nav-links-hide{display:none!important;}
         }
       `}</style>
 
@@ -144,10 +149,14 @@ export default function Home() {
       <nav style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 32px",position:"sticky",top:0,background:"rgba(255,250,245,0.97)",backdropFilter:"blur(16px)",zIndex:100,borderBottom:"1px solid var(--border)"}}>
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:"22px",fontWeight:700,color:"var(--dark)"}}>table<span style={{color:"var(--orange)"}}>ly</span></div>
         <div style={{display:"flex",alignItems:"center",gap:"24px"}}>
-          <div style={{display:"flex",gap:"24px"}}>
+          <div className="nav-links-hide" style={{display:"flex",gap:"24px",alignItems:"center"}}>
             {[["#features","Funktionen"],["#screenshots","App"]].map(([h,l])=>(
               <a key={h} href={h} style={{textDecoration:"none",color:"var(--muted)",fontSize:"14px"}}>{l}</a>
             ))}
+            <a href="/demo" className="nav-demo" style={{textDecoration:"none",color:"var(--dark)",fontSize:"14px",fontWeight:600,display:"flex",alignItems:"center",gap:"6px",transition:"color .2s"}}>
+              <span style={{width:"6px",height:"6px",borderRadius:"50%",background:"var(--orange)",animation:"pulse 2s infinite"}}/>
+              Live Demo
+            </a>
           </div>
           <button className="nav-cta" onClick={()=>setShowModal(true)} style={{background:"var(--dark)",color:"#fff",border:"none",padding:"10px 20px",borderRadius:"8px",fontSize:"13px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",transition:"all .2s"}}>
             Jetzt gratis testen
@@ -158,7 +167,7 @@ export default function Home() {
       {/* HERO */}
       <div style={{background:"var(--dark)",overflow:"hidden",position:"relative"}}>
         <div style={{position:"absolute",top:"-200px",right:"-100px",width:"500px",height:"500px",background:"radial-gradient(circle,rgba(255,92,53,.15) 0%,transparent 70%)",pointerEvents:"none"}}/>
-        <div className="hero-grid" style={{maxWidth:"1200px",margin:"0 auto",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"80px",alignItems:"center"}}>
+        <div className="hero-grid" style={{maxWidth:"1200px",margin:"0 auto",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"80px",alignItems:"center",padding:"80px 32px"}}>
           <div>
             <div style={{display:"inline-flex",alignItems:"center",gap:"8px",background:"rgba(255,92,53,.15)",border:"1px solid rgba(255,92,53,.25)",borderRadius:"20px",padding:"6px 14px",marginBottom:"20px"}}>
               <div style={{width:"6px",height:"6px",borderRadius:"50%",background:"#FF5C35",animation:"pulse 2s infinite",flexShrink:0}}/>
@@ -170,12 +179,18 @@ export default function Home() {
             <p style={{color:"rgba(255,255,255,.5)",fontSize:"17px",lineHeight:1.75,fontWeight:300,marginBottom:"36px",maxWidth:"440px"}}>
               Stoßzeit. Küche brennt. Telefon klingelt. Dein Kellner blättert im Reservierungsbuch — 3 Minuten für eine Reservierung. <strong style={{color:"rgba(255,255,255,.8)",fontWeight:500}}>Tablely macht das in 3 Sekunden.</strong>
             </p>
-            <div style={{display:"flex",alignItems:"center",gap:"16px",flexWrap:"wrap"}}>
+            <div style={{display:"flex",alignItems:"center",gap:"14px",flexWrap:"wrap"}}>
               <button className="btn-3d" onClick={()=>setShowModal(true)} style={{background:"#FF5C35",color:"#fff",border:"none",padding:"16px 28px",borderRadius:"10px",fontSize:"16px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}>
                 Jetzt 30 Tage kostenlos testen →
               </button>
-              <span style={{fontSize:"13px",color:"rgba(255,255,255,.3)"}}>Keine Kreditkarte</span>
+              <a href="/demo" className="hero-demo-btn" style={{display:"inline-flex",alignItems:"center",gap:"9px",background:"rgba(255,255,255,.06)",color:"#FFFAF5",border:"1px solid rgba(255,255,255,.2)",padding:"15px 24px",borderRadius:"10px",fontSize:"15px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",textDecoration:"none",transition:"all .2s"}}>
+                <span style={{width:"20px",height:"20px",borderRadius:"50%",background:"#FF5C35",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M2 1.5l5 3-5 3v-6z" fill="#fff"/></svg>
+                </span>
+                Live Demo ansehen
+              </a>
             </div>
+            <div style={{fontSize:"13px",color:"rgba(255,255,255,.3)",marginTop:"14px"}}>Keine Kreditkarte · Demo ohne Anmeldung</div>
           </div>
           <div className="hero-mockup" style={{animation:"float3d 6s ease-in-out infinite"}}>
             <div style={{background:"#1E1E2E",borderRadius:"14px",overflow:"hidden",boxShadow:"0 40px 80px rgba(0,0,0,.6)",border:"1px solid rgba(255,255,255,.08)"}}>
@@ -227,6 +242,48 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ===== DEMO HIGHLIGHT (NEU, prominent direkt nach dem Problem) ===== */}
+      <section style={{background:"var(--dark)",padding:"90px 32px",position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",top:"-150px",left:"-100px",width:"450px",height:"450px",background:"radial-gradient(circle,rgba(255,92,53,.18) 0%,transparent 70%)",pointerEvents:"none"}}/>
+        <div className="demo-split" style={{maxWidth:"1100px",margin:"0 auto",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"60px",alignItems:"center",position:"relative",zIndex:1}}>
+          <div className="demo-split-left">
+            <div style={{display:"inline-flex",alignItems:"center",gap:"8px",background:"rgba(255,92,53,.15)",border:"1px solid rgba(255,92,53,.3)",borderRadius:"20px",padding:"6px 14px",marginBottom:"20px"}}>
+              <div style={{width:"7px",height:"7px",borderRadius:"50%",background:"#FF5C35",animation:"pulse 1.5s infinite"}}/>
+              <span style={{fontSize:"12px",color:"#FF5C35",fontWeight:600}}>Live Demo · keine Anmeldung nötig</span>
+            </div>
+            <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(28px,4vw,42px)",fontWeight:700,color:"#FFFAF5",letterSpacing:"-1.5px",lineHeight:1.1,marginBottom:"18px"}}>
+              Sieh in <span style={{color:"#FF5C35",fontStyle:"italic"}}>30 Sekunden</span> wie es funktioniert.
+            </h2>
+            <p style={{color:"rgba(255,255,255,.55)",fontSize:"16px",lineHeight:1.75,fontWeight:300,marginBottom:"28px"}}>
+              Reserviere selbst als Gast — und beobachte wie die Reservierung in Echtzeit im Dashboard auftaucht. Kein Konto, keine E-Mail, einfach ausprobieren.
+            </p>
+            <a href="/demo" className="demo-big-btn" style={{display:"inline-flex",alignItems:"center",gap:"10px",background:"#FF5C35",color:"#fff",padding:"17px 34px",borderRadius:"12px",fontSize:"17px",fontWeight:600,textDecoration:"none",transition:"all .2s",boxShadow:"0 10px 30px rgba(255,92,53,.35)",animation:"pulse-ring 2.5s infinite"}}>
+              <span style={{width:"24px",height:"24px",borderRadius:"50%",background:"rgba(255,255,255,.25)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2.5 1.5l6 4-6 4v-8z" fill="#fff"/></svg>
+              </span>
+              Demo jetzt starten
+            </a>
+          </div>
+
+          {/* Steps Preview */}
+          <div className="demo-steps-grid" style={{display:"grid",gridTemplateColumns:"1fr",gap:"12px"}}>
+            {[
+              {n:"1",t:"Du buchst als Gast",d:"Datum, Uhrzeit, Personen — wie ein echter Gast auf der Buchungsseite."},
+              {n:"2",t:"Tablely verarbeitet alles",d:"Tisch wird automatisch zugewiesen, Bestätigung sofort."},
+              {n:"3",t:"Erscheint live im Dashboard",d:"Du siehst die Reservierung in Echtzeit im Restaurant-Dashboard."},
+            ].map((s,i)=>(
+              <div key={i} style={{display:"flex",alignItems:"flex-start",gap:"16px",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:"14px",padding:"18px 20px"}}>
+                <div style={{width:"32px",height:"32px",borderRadius:"50%",background:"rgba(255,92,53,.15)",border:"1px solid rgba(255,92,53,.3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontFamily:"'Playfair Display',serif",fontSize:"15px",fontWeight:700,color:"#FF5C35"}}>{s.n}</div>
+                <div>
+                  <div style={{fontSize:"15px",fontWeight:600,color:"#FFFAF5",marginBottom:"3px"}}>{s.t}</div>
+                  <div style={{fontSize:"13px",color:"rgba(255,255,255,.45)",lineHeight:1.5,fontWeight:300}}>{s.d}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* FEATURES */}
       <section id="features" style={{background:"#F5F0EB",padding:"100px 32px"}}>
         <div style={{maxWidth:"1100px",margin:"0 auto"}}>
@@ -238,11 +295,11 @@ export default function Home() {
           <div className="feat-big-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"20px",marginBottom:"20px"}}>
             <div className="feat-card" style={{background:"var(--dark)",borderRadius:"20px",padding:"32px",transition:"all .25s"}}>
               <div style={{background:"rgba(255,92,53,.15)",border:"1px solid rgba(255,92,53,.2)",borderRadius:"8px",padding:"3px 10px",fontSize:"10px",fontWeight:600,textTransform:"uppercase",letterSpacing:".8px",color:"#FF5C35",display:"inline-block",marginBottom:"20px"}}>WhatsApp KI</div>
-              <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:"22px",fontWeight:700,color:"#FFFAF5",marginBottom:"12px"}}>Gäste schreiben — KI antwortet & bucht</h3>
+              <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:"22px",fontWeight:700,color:"#FFFAF5",marginBottom:"12px"}}>Gäste schreiben — KI antwortet und bucht</h3>
               <p style={{color:"rgba(255,255,255,.45)",fontSize:"14px",lineHeight:1.7,fontWeight:300,marginBottom:"24px"}}>Deine Gäste schreiben per WhatsApp. Die KI versteht alles, antwortet in Sekunden und trägt die Reservierung automatisch ein.</p>
               <div style={{background:"rgba(255,255,255,.05)",borderRadius:"12px",padding:"16px",border:"1px solid rgba(255,255,255,.08)"}}>
-                <div style={{fontSize:"11px",padding:"8px 12px",borderRadius:"10px 10px 10px 2px",background:"rgba(255,255,255,.1)",color:"rgba(255,255,255,.8)",maxWidth:"80%",marginBottom:"8px",lineHeight:1.5}}>Hallo! Tisch für 3 am Freitag um 19:30? 🙏</div>
-                <div style={{fontSize:"11px",padding:"8px 12px",borderRadius:"10px 10px 2px 10px",background:"#25D366",color:"#fff",maxWidth:"80%",marginLeft:"auto",lineHeight:1.5}}>Perfekt! Tisch für 3 am Fr. 20.03. um 19:30 ✅ Wir freuen uns auf euch!</div>
+                <div style={{fontSize:"11px",padding:"8px 12px",borderRadius:"10px 10px 10px 2px",background:"rgba(255,255,255,.1)",color:"rgba(255,255,255,.8)",maxWidth:"80%",marginBottom:"8px",lineHeight:1.5}}>Hallo! Tisch für 3 am Freitag um 19:30?</div>
+                <div style={{fontSize:"11px",padding:"8px 12px",borderRadius:"10px 10px 2px 10px",background:"#25D366",color:"#fff",maxWidth:"80%",marginLeft:"auto",lineHeight:1.5}}>Perfekt! Tisch für 3 am Fr. 20.03. um 19:30 reserviert. Wir freuen uns auf euch!</div>
               </div>
             </div>
             <div className="feat-card" style={{background:"var(--orange)",borderRadius:"20px",padding:"32px",transition:"all .25s"}}>
@@ -264,7 +321,7 @@ export default function Home() {
               {icon:<svg viewBox="0 0 28 28" fill="none" width="28" height="28"><rect x="3" y="5" width="22" height="18" rx="3" stroke="#FF5C35" strokeWidth="1.4"/><path d="M3 11h22M9 4v3M19 4v3" stroke="#FF5C35" strokeWidth="1.4" strokeLinecap="round"/></svg>,t:"Online Buchung",d:"Eigene Booking Page — Gäste buchen direkt rund um die Uhr."},
               {icon:<svg viewBox="0 0 28 28" fill="none" width="28" height="28"><rect x="2" y="2" width="24" height="24" rx="4" stroke="#FF5C35" strokeWidth="1.4"/><path d="M2 11h24" stroke="#FF5C35" strokeWidth="1.4"/><rect x="6" y="15" width="7" height="5" rx="1.5" fill="#FF5C35" fillOpacity=".2" stroke="#FF5C35" strokeWidth="1.2"/></svg>,t:"Alles im Dashboard",d:"WhatsApp, Telefon, Online — alles an einem Ort."},
               {icon:<svg viewBox="0 0 28 28" fill="none" width="28" height="28"><path d="M14 3v3M14 3a8 8 0 0 1 8 8c0 4-1.5 5.5-1.5 5.5H7.5S6 15 6 11A8 8 0 0 1 14 3Z" stroke="#FF5C35" strokeWidth="1.4" strokeLinejoin="round"/><path d="M10 19s0 4 4 4 4-4 4-4" stroke="#FF5C35" strokeWidth="1.4" strokeLinecap="round"/></svg>,t:"Auto-Erinnerungen",d:"Gäste werden 24h und 2h vorher erinnert. No-Shows sinken auf fast null."},
-              {icon:<svg viewBox="0 0 28 28" fill="none" width="28" height="28"><path d="M14 2C8.48 2 4 6.48 4 12c0 1.9.5 3.7 1.4 5.3L4 22l4.9-1.4C10.3 21.5 12.1 22 14 22c5.52 0 10-4.48 10-10S19.52 2 14 2zm4.6 13.7c-.3.8-1.5 1.5-2.1 1.6-.5.1-1.2.1-3.8-.8s-4.2-3-4.7-3.9c-.5-.9-1.5-2.4-1.5-3.9s.8-2.1 1.1-2.4c.3-.3.6-.4.9-.4h.6c.3 0 .5.1.7.7l1.2 3c.1.3.1.6 0 .8l-.5.6c-.2.2-.3.5-.1.8.7 1.1 1.6 2 2.8 2.7.3.2.6.1.8-.1l.7-.9c.2-.3.5-.3.8-.1l2.9 1.4c.3.1.5.3.5.6-.1.6-.3 1.3-.8 1.8z" fill="#FF5C35" opacity=".2"/><path d="M14 2C8.48 2 4 6.48 4 12c0 1.9.5 3.7 1.4 5.3L4 22l4.9-1.4C10.3 21.5 12.1 22 14 22c5.52 0 10-4.48 10-10S19.52 2 14 2z" stroke="#FF5C35" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>,t:"Eigene Nummer inklusive",d:"Wir stellen dir eine österreichische WhatsApp Nummer — kein Setup, einfach loslegen."},
+              {icon:<svg viewBox="0 0 28 28" fill="none" width="28" height="28"><path d="M14 2C8.48 2 4 6.48 4 12c0 1.9.5 3.7 1.4 5.3L4 22l4.9-1.4C10.3 21.5 12.1 22 14 22c5.52 0 10-4.48 10-10S19.52 2 14 2z" stroke="#FF5C35" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>,t:"Eigene Nummer inklusive",d:"Wir stellen dir eine österreichische WhatsApp Nummer — kein Setup, einfach loslegen."},
             ].map((f,i)=>(
               <div key={i} className="feat-card" style={{background:"#fff",borderRadius:"16px",padding:"24px",border:"1.5px solid var(--border)",transition:"all .25s"}}>
                 <div style={{marginBottom:"14px"}}>{f.icon}</div>
@@ -310,11 +367,9 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Right — WhatsApp Chat Mockup */}
           <div style={{position:"relative"}}>
             <div style={{position:"absolute",inset:"-30px",background:"radial-gradient(ellipse,rgba(37,211,102,.15) 0%,transparent 70%)",filter:"blur(20px)",zIndex:0}}/>
             <div className="card-3d wa-mockup" style={{position:"relative",zIndex:1,background:"#111B21",borderRadius:"16px",overflow:"hidden",boxShadow:"0 40px 80px rgba(0,0,0,.6)",border:"1px solid rgba(255,255,255,.06)"}}>
-              {/* WhatsApp Header */}
               <div style={{background:"#202C33",padding:"12px 16px",display:"flex",alignItems:"center",gap:"10px",borderBottom:"1px solid rgba(255,255,255,.06)"}}>
                 <div style={{width:"36px",height:"36px",borderRadius:"50%",background:"#25D366",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 1.5C5.3 1.5 1.5 5.3 1.5 10c0 1.5.4 2.9 1.1 4.2L1.5 18.5l4.4-1.1C7.1 18.1 8.5 18.5 10 18.5c4.7 0 8.5-3.8 8.5-8.5S14.7 1.5 10 1.5z" fill="white"/></svg>
@@ -324,19 +379,14 @@ export default function Home() {
                   <div style={{fontSize:"11px",color:"#8696A0"}}>+43 720 123 456 · Online</div>
                 </div>
               </div>
-              {/* Chat Messages */}
               <div style={{padding:"16px",display:"flex",flexDirection:"column",gap:"10px",background:"#0B141A",minHeight:"280px"}}>
                 <div style={{alignSelf:"flex-end",background:"#005C4B",padding:"8px 12px",borderRadius:"10px 10px 2px 10px",maxWidth:"75%"}}>
                   <div style={{fontSize:"13px",color:"#E9EDEF",lineHeight:1.5}}>Hallo! Ich möchte für Freitag 20. Mai einen Tisch für 4 Personen um 19 Uhr reservieren. Mein Name ist Maria Huber.</div>
-                  <div style={{fontSize:"10px",color:"rgba(255,255,255,.4)",textAlign:"right",marginTop:"4px"}}>18:42 ✓✓</div>
-                </div>
-                <div style={{alignSelf:"flex-start",background:"#202C33",padding:"8px 12px",borderRadius:"10px 10px 10px 2px",maxWidth:"75%"}}>
-                  <div style={{fontSize:"13px",color:"#E9EDEF",lineHeight:1.5}}>Hallo Frau Huber! 😊 Perfekt — ich habe einen Tisch für 4 Personen am Freitag, 20. Mai um 19:00 Uhr für Sie reserviert. ✅ Wir freuen uns auf Sie!</div>
                   <div style={{fontSize:"10px",color:"rgba(255,255,255,.4)",textAlign:"right",marginTop:"4px"}}>18:42</div>
                 </div>
-                <div style={{alignSelf:"flex-end",background:"#005C4B",padding:"8px 12px",borderRadius:"10px 10px 2px 10px",maxWidth:"75%"}}>
-                  <div style={{fontSize:"13px",color:"#E9EDEF",lineHeight:1.5}}>Vielen Dank! 🙏</div>
-                  <div style={{fontSize:"10px",color:"rgba(255,255,255,.4)",textAlign:"right",marginTop:"4px"}}>18:43 ✓✓</div>
+                <div style={{alignSelf:"flex-start",background:"#202C33",padding:"8px 12px",borderRadius:"10px 10px 10px 2px",maxWidth:"75%"}}>
+                  <div style={{fontSize:"13px",color:"#E9EDEF",lineHeight:1.5}}>Hallo Frau Huber! Perfekt — ich habe einen Tisch für 4 Personen am Freitag, 20. Mai um 19:00 Uhr für Sie reserviert. Wir freuen uns auf Sie!</div>
+                  <div style={{fontSize:"10px",color:"rgba(255,255,255,.4)",textAlign:"right",marginTop:"4px"}}>18:42</div>
                 </div>
                 <div style={{alignSelf:"flex-start",background:"#202C33",padding:"8px 12px",borderRadius:"10px 10px 10px 2px",maxWidth:"60%"}}>
                   <div style={{fontSize:"11px",color:"#8696A0",fontStyle:"italic"}}>Tablely KI · automatisch geantwortet</div>
@@ -350,8 +400,6 @@ export default function Home() {
       {/* BUCHUNGSWEGE SEKTION */}
       <section style={{background:"#F5F0EB",padding:"100px 32px"}}>
         <div style={{maxWidth:"1100px",margin:"0 auto"}}>
-
-          {/* Mission Header */}
           <div style={{textAlign:"center",marginBottom:"72px"}}>
             <div style={{fontSize:"11px",fontWeight:600,textTransform:"uppercase",letterSpacing:"1px",color:"var(--orange)",marginBottom:"12px"}}>Unsere Mission</div>
             <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(28px,5vw,48px)",fontWeight:700,color:"#1A1A2E",letterSpacing:"-2px",lineHeight:1.05,marginBottom:"20px"}}>
@@ -362,7 +410,6 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Unique Selling Point Banner */}
           <div style={{background:"#1A1A2E",borderRadius:"20px",padding:"28px 36px",marginBottom:"72px",display:"flex",alignItems:"center",gap:"20px",flexWrap:"wrap"}}>
             <div style={{width:"44px",height:"44px",borderRadius:"12px",background:"rgba(255,92,53,.15)",border:"1px solid rgba(255,92,53,.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
               <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 2l2.4 7.4H21l-6.2 4.5 2.4 7.4L11 17l-6.2 3.8 2.4-7.4L1 9.4h7.6z" stroke="#FF5C35" strokeWidth="1.5" strokeLinejoin="round"/></svg>
@@ -373,10 +420,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* 3 Buchungswege */}
           <div className="booking-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"32px",alignItems:"start"}}>
-
-            {/* WhatsApp */}
             <div style={{display:"flex",flexDirection:"column",alignItems:"center",textAlign:"center"}}>
               <div style={{background:"#1A1A2E",borderRadius:"40px",padding:"10px",boxShadow:"0 40px 60px rgba(0,0,0,.25)",marginBottom:"28px",width:"280px"}}>
                 <img src="/iphone_whatsapp.png" alt="WhatsApp KI" style={{width:"100%",borderRadius:"32px",display:"block"}}/>
@@ -389,7 +433,6 @@ export default function Home() {
               <p style={{fontSize:"13px",color:"#6B6B80",lineHeight:1.7,fontWeight:300}}>Deine Gäste schreiben per WhatsApp wie mit einem Freund. Die KI versteht auch wenn jemand nicht perfekt schreibt — fragt nach was fehlt und bestätigt die Reservierung in Sekunden. Auch um Mitternacht.</p>
             </div>
 
-            {/* Online Booking */}
             <div style={{display:"flex",flexDirection:"column",alignItems:"center",textAlign:"center"}}>
               <div style={{background:"#1A1A2E",borderRadius:"40px",padding:"10px",boxShadow:"0 40px 60px rgba(0,0,0,.25)",marginBottom:"28px",width:"280px"}}>
                 <img src="/iphone_bookingpage.png" alt="Online Buchung" style={{width:"100%",borderRadius:"32px",display:"block"}}/>
@@ -402,7 +445,6 @@ export default function Home() {
               <p style={{fontSize:"13px",color:"#6B6B80",lineHeight:1.7,fontWeight:300}}>Jedes Restaurant bekommt eine eigene Buchungsseite — deinen Link teilst du auf Instagram, Google oder deiner Website. Gäste wählen Datum, Uhrzeit und Personenzahl. Fertig in 30 Sekunden.</p>
             </div>
 
-            {/* Telefon KI */}
             <div style={{display:"flex",flexDirection:"column",alignItems:"center",textAlign:"center",position:"relative"}}>
               <div style={{position:"relative",marginBottom:"28px",width:"280px"}}>
                 <div style={{background:"#1A1A2E",borderRadius:"40px",padding:"10px",boxShadow:"0 40px 60px rgba(0,0,0,.25)",width:"280px"}}>
@@ -410,7 +452,7 @@ export default function Home() {
                 </div>
                 <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:"40px"}}>
                   <div style={{background:"rgba(26,26,46,.9)",border:"1px solid rgba(255,255,255,.1)",borderRadius:"12px",padding:"8px 14px",fontSize:"11px",fontWeight:600,color:"rgba(255,255,255,.6)"}}>
-                    ⏳ In Entwicklung
+                    In Entwicklung
                   </div>
                 </div>
               </div>
@@ -439,15 +481,15 @@ export default function Home() {
         </div>
       </section>
 
-      {/* DEMO CTA */}
+      {/* DEMO CTA (zweiter, am Ende — als Erinnerung) */}
       <section style={{background:"var(--cream)",padding:"64px 20px"}}>
         <div style={{maxWidth:"700px",margin:"0 auto",textAlign:"center",padding:"48px 32px",background:"var(--dark)",borderRadius:"20px"}}>
-          <div style={{fontSize:"11px",fontWeight:600,textTransform:"uppercase",letterSpacing:"1px",color:"var(--orange)",marginBottom:"12px"}}>Live Demo</div>
-          <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(22px,4vw,28px)",fontWeight:700,color:"#FFFAF5",letterSpacing:"-0.5px",marginBottom:"12px"}}>Probier es selbst aus.</h3>
+          <div style={{fontSize:"11px",fontWeight:600,textTransform:"uppercase",letterSpacing:"1px",color:"var(--orange)",marginBottom:"12px"}}>Noch nicht überzeugt?</div>
+          <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(22px,4vw,28px)",fontWeight:700,color:"#FFFAF5",letterSpacing:"-0.5px",marginBottom:"12px"}}>Dann probier es einfach aus.</h3>
           <p style={{fontSize:"15px",color:"rgba(255,255,255,.45)",fontWeight:300,marginBottom:"28px",lineHeight:1.7}}>
-            Reserviere als Gast — sieh wie es sofort im Dashboard erscheint.
+            Reserviere als Gast — sieh wie es sofort im Dashboard erscheint. Keine Anmeldung, kostenlos.
           </p>
-          <a href="/demo" className="demo-btn" style={{display:"inline-flex",alignItems:"center",gap:"8px",background:"#FF5C35",color:"#fff",padding:"13px 28px",borderRadius:"10px",fontSize:"15px",fontWeight:500,textDecoration:"none",transition:"all .2s"}}>
+          <a href="/demo" className="demo-btn" style={{display:"inline-flex",alignItems:"center",gap:"8px",background:"#FF5C35",color:"#fff",padding:"14px 30px",borderRadius:"10px",fontSize:"15px",fontWeight:600,textDecoration:"none",transition:"all .2s"}}>
             Demo starten →
           </a>
         </div>
@@ -460,7 +502,7 @@ export default function Home() {
           <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(26px,4vw,40px)",fontWeight:700,color:"#FFFAF5",letterSpacing:"-1px",marginBottom:"40px"}}>Zahlen die sprechen.</h2>
           <div className="numbers-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",border:"1px solid rgba(255,255,255,.07)",borderRadius:"16px",overflow:"hidden"}}>
             {[
-              {v:"–60%",l:"weniger No-Shows durch automatische Erinnerungen"},
+              {v:"-60%",l:"weniger No-Shows durch automatische Erinnerungen"},
               {v:"2h",l:"täglich gespart — keine Reservierungsanrufe mehr"},
               {v:"24/7",l:"Buchungen annehmen — auch wenn du schläfst"},
             ].map((n,i)=>(
@@ -487,9 +529,11 @@ export default function Home() {
             Die ersten 10 Restaurants testen alle Features 30 Tage kostenlos — danach 3 Monate mit <strong style={{color:"rgba(255,255,255,.7)"}}>10% Rabatt</strong>. Ab dem 11. Restaurant gibt es nur noch 14 Tage ohne Vergünstigung.
           </p>
           <div style={{display:"flex",flexWrap:"wrap",gap:"8px",justifyContent:"center",marginBottom:"32px"}}>
-            {["✓ Online Buchungsseite","✓ WhatsApp KI","✓ Erinnerungen","✓ Dashboard","✓ Walk-in Assistent","⏳ KI Telefon (bald)"].map((f,i)=>(
-              <div key={i} style={{fontSize:"12px",fontWeight:500,padding:"5px 12px",borderRadius:"20px",background:f.startsWith("⏳")?"rgba(255,255,255,.05)":"rgba(255,92,53,.12)",color:f.startsWith("⏳")?"rgba(255,255,255,.3)":"#FF5C35",border:`1px solid ${f.startsWith("⏳")?"rgba(255,255,255,.08)":"rgba(255,92,53,.2)"}`}}>{f}</div>
-            ))}
+            {["Online Buchungsseite","WhatsApp KI","Erinnerungen","Dashboard","Walk-in Assistent","KI Telefon (bald)"].map((f,i)=>{
+              const isDev=f.includes("bald");
+              return (
+              <div key={i} style={{fontSize:"12px",fontWeight:500,padding:"5px 12px",borderRadius:"20px",background:isDev?"rgba(255,255,255,.05)":"rgba(255,92,53,.12)",color:isDev?"rgba(255,255,255,.3)":"#FF5C35",border:`1px solid ${isDev?"rgba(255,255,255,.08)":"rgba(255,92,53,.2)"}`}}>{isDev?"⏳ ":"✓ "}{f}</div>
+            );})}
           </div>
           <button onClick={()=>setShowModal(true)} className="btn-3d" style={{background:"#FF5C35",color:"#fff",border:"none",padding:"16px 36px",borderRadius:"10px",fontSize:"16px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",marginBottom:"12px"}}>
             Jetzt 30 Tage kostenlos testen →
