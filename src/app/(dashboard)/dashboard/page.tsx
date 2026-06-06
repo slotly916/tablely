@@ -93,6 +93,7 @@ export default function Dashboard() {
   const [savingWalkin, setSavingWalkin] = useState(false);
   const [selectedRes, setSelectedRes] = useState<Reservation | null>(null);
   const [newPendingRes, setNewPendingRes] = useState<Reservation | null>(null);
+  const [cancelledNotice, setCancelledRes] = useState<Reservation | null>(null);
   const [confirmingRes, setConfirmingRes] = useState(false);
 
   const stayDuration = restaurant?.stay_duration || 150;
@@ -165,18 +166,34 @@ export default function Dashboard() {
   useEffect(() => {
     if (!restaurant?.id) return;
     const supabase = createClient();
-    const channel = supabase
-      .channel(`dashboard-${restaurant.id}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "reservations" },
-        (payload: {new: Reservation}) => {
-          const newRes = payload.new;
-          if (newRes.restaurant_id !== restaurant?.id) return;
-          setReservations(prev => [...prev, newRes]);
-          if (newRes.party_size >= (restaurant?.large_group_threshold || 15)) {
-            setNewPendingRes(newRes);
+    const channel = supabase.channel(`dashboard-${restaurant.id}`);
+    // channel als any casten, damit TypeScript nicht an den .on() Überladungen scheitert
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (channel as any).on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "reservations" },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (payload: { eventType: string; new: Reservation; old: Reservation }) => {
+        const row = payload.new;
+        if (!row || row.restaurant_id !== restaurant?.id) return;
+
+        if (payload.eventType === "INSERT") {
+          setReservations(prev => prev.some(r => r.id === row.id) ? prev : [...prev, row]);
+          if (row.party_size >= (restaurant?.large_group_threshold || 15)) {
+            setNewPendingRes(row);
           }
-        })
-      .subscribe();
+        } else if (payload.eventType === "UPDATE") {
+          setReservations(prev => prev.map(r => r.id === row.id ? row : r));
+          if (row.status === "cancelled" && row.channel === "whatsapp") {
+            setCancelledRes(row);
+          }
+        } else if (payload.eventType === "DELETE") {
+          const oldRow = payload.old;
+          if (oldRow) setReservations(prev => prev.filter(r => r.id !== oldRow.id));
+        }
+      }
+    );
+    channel.subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [restaurant?.id, restaurant?.large_group_threshold]);
 
@@ -232,6 +249,21 @@ export default function Dashboard() {
     const supabase = createClient();
     await supabase.from("reservations").update({ status }).eq("id", id);
     setReservations(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+  }
+
+  async function deleteReservation(id: string): Promise<void> {
+    const supabase = createClient();
+    await supabase.from("reservations").delete().eq("id", id);
+    setReservations(prev => prev.filter(r => r.id !== id));
+    setSelectedRes(null);
+  }
+
+  async function deleteAllCancelled(): Promise<void> {
+    const supabase = createClient();
+    const cancelledIds = reservations.filter(r => r.status === "cancelled").map(r => r.id);
+    if (cancelledIds.length === 0) return;
+    await supabase.from("reservations").delete().in("id", cancelledIds);
+    setReservations(prev => prev.filter(r => r.status !== "cancelled"));
   }
 
   function suggestTable() {
@@ -338,8 +370,10 @@ export default function Dashboard() {
     pending: reservations.filter(r => r.status === "pending").length,
   };
 
+  const cancelledCount = reservations.filter(r => r.status === "cancelled").length;
+
   function getTableReservations(tableId: string) {
-    return filteredRes.filter(r => getTableIdsFromRes(r).includes(tableId));
+    return filteredRes.filter(r => r.status !== "cancelled" && getTableIdsFromRes(r).includes(tableId));
   }
 
   function getTableNamesForRes(r: Reservation): string {
@@ -506,6 +540,16 @@ export default function Dashboard() {
                   borderColor: filterChannel===c.key ? "#FF5C35" : border,
                 }}>{c.label}</button>
               ))}
+              {cancelledCount > 0 && (
+                <button onClick={deleteAllCancelled} style={{
+                  padding:"5px 12px",borderRadius:"6px",fontSize:"12px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
+                  border:"1px solid rgba(239,68,68,.25)",background:"rgba(239,68,68,.08)",color:"#F87171",
+                  display:"flex",alignItems:"center",gap:"5px",
+                }}>
+                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 3h7M4.2 3V2h2.6v1M3 3l.4 6h4.2L8 3" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  Stornierte löschen ({cancelledCount})
+                </button>
+              )}
             </div>
           </div>
 
@@ -521,42 +565,57 @@ export default function Dashboard() {
                 <div style={{padding:"48px",textAlign:"center",color:muted,fontSize:"14px",fontWeight:300}}>
                   Keine Reservierungen für diesen Tag / Filter.
                 </div>
-              ) : filteredRes.map((r,i) => (
+              ) : filteredRes.map((r,i) => {
+                const isCancelled = r.status === "cancelled";
+                return (
                 <div key={r.id} className="res-row" onClick={() => setSelectedRes(r)} style={{
                   display:"grid",gridTemplateColumns:"1fr 70px 90px 70px 110px 100px 150px",gap:"10px",
                   padding:"12px 18px",borderBottom:i<filteredRes.length-1?`1px solid ${border}`:"none",
                   alignItems:"center",cursor:"pointer",
+                  opacity: isCancelled ? 0.55 : 1,
+                  background: isCancelled ? "rgba(239,68,68,.03)" : "transparent",
                 }}>
                   <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-                    <div style={{width:"30px",height:"30px",borderRadius:"50%",background:"rgba(255,92,53,.15)",border:"1px solid rgba(255,92,53,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"12px",fontWeight:600,color:"#FF5C35",flexShrink:0}}>
+                    <div style={{width:"30px",height:"30px",borderRadius:"50%",background:isCancelled?"rgba(239,68,68,.12)":"rgba(255,92,53,.15)",border:`1px solid ${isCancelled?"rgba(239,68,68,.2)":"rgba(255,92,53,.2)"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"12px",fontWeight:600,color:isCancelled?"#F87171":"#FF5C35",flexShrink:0}}>
                       {r.guest_name.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <div style={{fontSize:"13px",fontWeight:500,color:text}}>{r.guest_name}</div>
+                      <div style={{fontSize:"13px",fontWeight:500,color:text,textDecoration:isCancelled?"line-through":"none"}}>{r.guest_name}</div>
                       {r.guest_phone && <div style={{fontSize:"11px",color:muted}}>{r.guest_phone}</div>}
                       {r.notes && <div style={{fontSize:"10px",color:muted,fontStyle:"italic"}}>{r.notes}</div>}
                     </div>
                   </div>
-                  <div style={{fontSize:"13px",color:muted}}>{r.party_size} Pers.</div>
+                  <div style={{fontSize:"13px",color:muted,textDecoration:isCancelled?"line-through":"none"}}>{r.party_size} Pers.</div>
                   <div style={{fontSize:"12px",color:muted}}>{new Date(r.date).toLocaleDateString("de-AT",{day:"numeric",month:"short"})}</div>
-                  <div style={{fontSize:"13px",fontWeight:500,color:text}}>{r.time.slice(0,5)}</div>
+                  <div style={{fontSize:"13px",fontWeight:500,color:text,textDecoration:isCancelled?"line-through":"none"}}>{r.time.slice(0,5)}</div>
                   <div style={{fontSize:"12px",color:muted}}>
                     {getTableNamesForRes(r) || <span style={{color:"#D1D5DB",fontSize:"11px"}}>—</span>}
                   </div>
                   <div style={{...CHANNEL_COLORS[r.channel]||{bg:"rgba(0,0,0,.05)",color:muted},fontSize:"11px",fontWeight:600,padding:"3px 8px",borderRadius:"5px",width:"fit-content"}}>
                     {r.channel==="online"?"Online":r.channel==="whatsapp"?"WhatsApp":r.channel==="phone"?"Telefon":"Walk-in"}
                   </div>
-                  <select value={r.status} onClick={e => e.stopPropagation()} onChange={(e: React.ChangeEvent<HTMLSelectElement>)=>updateStatus(r.id,e.target.value)} style={{
-                    fontSize:"11px",fontWeight:600,padding:"4px 8px",borderRadius:"6px",cursor:"pointer",fontFamily:"inherit",
-                    outline:"none",...STATUS_COLORS[r.status],border:`1px solid ${STATUS_COLORS[r.status]?.border||border}`,
-                  }}>
-                    <option value="confirmed">✓ Bestätigt</option>
-                    <option value="pending">◐ Ausstehend</option>
-                    <option value="cancelled">✕ Storniert</option>
-                    <option value="completed">● Abgeschlossen</option>
-                  </select>
+                  {isCancelled ? (
+                    <button onClick={e=>{e.stopPropagation();deleteReservation(r.id);}} style={{
+                      fontSize:"11px",fontWeight:600,padding:"5px 8px",borderRadius:"6px",cursor:"pointer",fontFamily:"inherit",
+                      background:"rgba(239,68,68,.1)",color:"#F87171",border:"1px solid rgba(239,68,68,.2)",
+                      display:"flex",alignItems:"center",justifyContent:"center",gap:"5px",
+                    }}>
+                      <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 3h7M4.2 3V2h2.6v1M3 3l.4 6h4.2L8 3" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      Löschen
+                    </button>
+                  ) : (
+                    <select value={r.status} onClick={e => e.stopPropagation()} onChange={(e: React.ChangeEvent<HTMLSelectElement>)=>updateStatus(r.id,e.target.value)} style={{
+                      fontSize:"11px",fontWeight:600,padding:"4px 8px",borderRadius:"6px",cursor:"pointer",fontFamily:"inherit",
+                      outline:"none",...STATUS_COLORS[r.status],border:`1px solid ${STATUS_COLORS[r.status]?.border||border}`,
+                    }}>
+                      <option value="confirmed">✓ Bestätigt</option>
+                      <option value="pending">◐ Ausstehend</option>
+                      <option value="cancelled">✕ Storniert</option>
+                      <option value="completed">● Abgeschlossen</option>
+                    </select>
+                  )}
                 </div>
-              ))}
+              );})}
             </div>
           )}
 
@@ -666,6 +725,53 @@ export default function Dashboard() {
                 opacity:confirmingRes?0.6:1,minWidth:"140px",
               }}>
                 {confirmingRes?"Wird gespeichert...":"✓ Bestätigen"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* WHATSAPP STORNO POPUP */}
+      {cancelledNotice && (
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.6)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:"24px"}}>
+          <div style={{background:"#fff",borderRadius:"20px",padding:"32px",width:"100%",maxWidth:"460px",boxShadow:"0 40px 80px rgba(0,0,0,.3)",animation:"slideIn .3s ease"}}>
+            <div style={{textAlign:"center",marginBottom:"24px"}}>
+              <div style={{width:"56px",height:"56px",borderRadius:"50%",background:"rgba(239,68,68,.12)",border:"2px solid rgba(239,68,68,.25)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" stroke="#F87171" strokeWidth="1.6"/><path d="M15 9l-6 6M9 9l6 6" stroke="#F87171" strokeWidth="1.6" strokeLinecap="round"/></svg>
+              </div>
+              <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:"22px",fontWeight:700,color:"#1A1A2E",marginBottom:"6px"}}>
+                Stornierung per WhatsApp
+              </h3>
+              <p style={{fontSize:"13px",color:"#6B6B80",fontWeight:300}}>
+                Ein Gast hat seine Reservierung selbst storniert
+              </p>
+            </div>
+            <div style={{background:"#F5F0EB",borderRadius:"12px",padding:"16px 20px",marginBottom:"24px"}}>
+              {[
+                {l:"Name", v:cancelledNotice.guest_name},
+                {l:"Datum", v:new Date(cancelledNotice.date).toLocaleDateString("de-AT",{weekday:"long",day:"numeric",month:"long"})},
+                {l:"Uhrzeit", v:`${cancelledNotice.time.slice(0,5)} Uhr`},
+                {l:"Personen", v:`${cancelledNotice.party_size} Personen`},
+                ...(cancelledNotice.guest_phone ? [{l:"Telefon", v:cancelledNotice.guest_phone}] : []),
+              ].map((r,i,arr)=>(
+                <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:i<arr.length-1?"1px solid #EDE8E3":"none",fontSize:"14px"}}>
+                  <span style={{color:"#6B6B80"}}>{r.l}</span>
+                  <span style={{fontWeight:500,color:"#1A1A2E"}}>{r.v}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{display:"flex",gap:"8px"}}>
+              <button onClick={()=>{ if(cancelledNotice) deleteReservation(cancelledNotice.id); setCancelledRes(null); }} style={{
+                flex:1,padding:"12px",borderRadius:"10px",background:"rgba(239,68,68,.1)",border:"1px solid rgba(239,68,68,.2)",
+                color:"#F87171",fontSize:"13px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
+              }}>
+                Löschen
+              </button>
+              <button onClick={()=>setCancelledRes(null)} style={{
+                flex:2,padding:"12px",borderRadius:"10px",background:"#1A1A2E",border:"none",
+                color:"#fff",fontSize:"13px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
+              }}>
+                Verstanden
               </button>
             </div>
           </div>
