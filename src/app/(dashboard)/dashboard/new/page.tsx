@@ -43,8 +43,14 @@ export default function NewReservation() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.push("/login"); return; }
 
-    const { data: rest } = await supabase
-      .from("restaurants").select("*").eq("email", user.email).single();
+    // Restaurant suchen — tolerant gegen mehrere/keine Treffer (kein .single()).
+    const { data: rests } = await supabase
+      .from("restaurants")
+      .select("*")
+      .eq("email", user.email)
+      .order("created_at", { ascending: true })
+      .limit(1);
+    const rest = rests && rests.length > 0 ? rests[0] : null;
     if (!rest) { router.push("/onboarding"); return; }
 
     setRestaurantId(rest.id);
@@ -59,7 +65,7 @@ export default function NewReservation() {
       });
     }
     setTables(tbls || []);
-    
+
   }
 
   async function handleSubmit() {

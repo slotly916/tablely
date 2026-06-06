@@ -13,6 +13,7 @@ export default function Settings() {
   const router = useRouter();
   const [tab, setTab] = useState<"restaurant"|"tables"|"groups"|"hours">("restaurant");
   const [restaurantId, setRestaurantId] = useState("");
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -45,8 +46,17 @@ export default function Settings() {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.push("/login"); return; }
-    const { data: rest } = await supabase.from("restaurants").select("*").eq("email", user.email).single();
+
+    // Restaurant suchen — tolerant gegen mehrere/keine Treffer (kein .single()).
+    const { data: rests } = await supabase
+      .from("restaurants")
+      .select("*")
+      .eq("email", user.email)
+      .order("created_at", { ascending: true })
+      .limit(1);
+    const rest = rests && rests.length > 0 ? rests[0] : null;
     if (!rest) { router.push("/onboarding"); return; }
+
     setRestaurantId(rest.id);
     setName(rest.name || "");
     setPhone(rest.phone || "");
@@ -70,6 +80,8 @@ export default function Settings() {
     const { data: hrs } = await supabase.from("opening_hours").select("*").eq("restaurant_id", rest.id).order("day_of_week");
     if (hrs && hrs.length > 0) setHours(hrs);
     else setHours(DAYS.map((_,i) => ({ id: "", day_of_week: i, open_time: "11:00", close_time: "22:00", is_closed: i === 6 })));
+
+    setLoading(false);
   }
 
   async function saveRestaurant() {
@@ -202,6 +214,14 @@ export default function Settings() {
 
   const tablesInGroups = new Set<string>();
   getGroups().forEach(g => g.tables.forEach(t => tablesInGroups.add(t.id)));
+
+  if (loading) return (
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#F5F0EB",fontFamily:"'DM Sans',sans-serif",flexDirection:"column",gap:"12px"}}>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <div style={{width:"24px",height:"24px",borderRadius:"50%",border:"2px solid rgba(0,0,0,.1)",borderTopColor:"#FF5C35",animation:"spin 0.7s linear infinite"}}/>
+      <div style={{color:"#6B6B80",fontSize:"13px"}}>Wird geladen...</div>
+    </div>
+  );
 
   return (
     <div style={{minHeight:"100vh",background:bg,fontFamily:"'DM Sans',sans-serif",display:"flex"}}>
