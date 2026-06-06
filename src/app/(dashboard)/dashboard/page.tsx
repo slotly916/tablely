@@ -130,7 +130,16 @@ export default function Dashboard() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.push("/login"); return; }
 
-    const { data: rest } = await supabase.from("restaurants").select("*").eq("email", user.email).single();
+    // Restaurant suchen — tolerant gegen mehrere/keine Treffer (kein .single()).
+    // .single() würde bei doppelten Restaurants mit gleicher Mail einen Fehler
+    // werfen und eine Onboarding-Schleife auslösen. Wir nehmen das älteste.
+    const { data: rests } = await supabase
+      .from("restaurants")
+      .select("*")
+      .eq("email", user.email)
+      .order("created_at", { ascending: true })
+      .limit(1);
+    const rest = rests && rests.length > 0 ? rests[0] : null;
     if (!rest) { router.push("/onboarding"); return; }
     setRestaurant(rest);
 

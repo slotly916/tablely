@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 
@@ -36,6 +36,26 @@ export default function Onboarding() {
 
   const [waPhoneId, setWaPhoneId] = useState("");
   const [skipWa, setSkipWa] = useState(false);
+
+  // GUARD: Wenn der User schon ein Restaurant hat, direkt ins Dashboard.
+  // Verhindert die Onboarding-Schleife und doppelte Restaurants beim
+  // erneuten Google-Login (der immer auf /onboarding leitet).
+  useEffect(() => {
+    async function checkExisting() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: existing } = await supabase
+        .from("restaurants")
+        .select("id")
+        .eq("email", user.email)
+        .limit(1);
+      if (existing && existing.length > 0) {
+        router.replace("/dashboard");
+      }
+    }
+    checkExisting();
+  }, [router]);
 
   function addTable() {
     setTables([...tables, { name: `Tisch ${tables.length + 1}`, capacity: 2 }]);
@@ -75,6 +95,17 @@ export default function Onboarding() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
+
+      // Doppel-Check: existiert schon ein Restaurant für diese Mail? Dann nicht nochmal anlegen.
+      const { data: alreadyExists } = await supabase
+        .from("restaurants")
+        .select("id")
+        .eq("email", user.email)
+        .limit(1);
+      if (alreadyExists && alreadyExists.length > 0) {
+        router.push("/dashboard");
+        return;
+      }
 
       const slug = restaurantName.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-") + "-";
 

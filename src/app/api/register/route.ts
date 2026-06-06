@@ -18,12 +18,30 @@ export async function POST(req: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
-  // Willkommensmail
+  const base = process.env.NEXT_PUBLIC_SITE_URL || "https://www.tablely.at";
+
+  // Willkommensmail an den neuen Nutzer
   try {
-    await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || "https://www.tablely.at"}/api/welcome-email`, {
+    await fetch(`${base}/api/welcome-email`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, name, restaurantName: "dein Restaurant" }),
+    });
+  } catch {}
+
+  // NEU: Admin-Benachrichtigung sofort bei Registrierung
+  // (vorher nur beim Onboarding-Abschluss -> Anmeldungen ohne Onboarding blieben unbemerkt)
+  try {
+    await fetch(`${base}/api/notify-admin`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        restaurantName: name || "Unbekannt",
+        email,
+        phone: "",
+        address: "",
+        event: "Neue Registrierung (noch kein Onboarding)",
+      }),
     });
   } catch {}
 
