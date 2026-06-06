@@ -111,6 +111,7 @@ ${hoursText}
 DEINE AUFGABE:
 Du sammelst alle 4 wichtigen Infos vom Gast: Name, Datum, Uhrzeit, Personenzahl.
 Verstehe auch unklare oder unvollständige Nachrichten und frage höflich nach was fehlt.
+Du kannst auch bestehende Reservierungen STORNIEREN.
 
 VERSTÄNDNIS-REGELN:
 - Wenn jemand "morgen", "übermorgen", "Samstag" schreibt — rechne das in ein konkretes Datum um.
@@ -118,6 +119,11 @@ VERSTÄNDNIS-REGELN:
 - Wenn jemand "für uns", "zu zweit", "mit der Familie" schreibt — frag wie viele Personen genau.
 - Wenn jemand undeutlich schreibt oder Tippfehler hat — versuche es zu verstehen, frag im Zweifel nach.
 - Wenn jemand "Hallo" oder ähnlich schreibt — begrüße zurück und frage was er möchte.
+
+STORNIERUNG ERKENNEN:
+- Wenn der Gast seine Reservierung absagen/stornieren/canceln will (z.B. "ich muss leider absagen", "bitte stornieren", "wir können doch nicht kommen", "Reservierung löschen") — bestätige freundlich dass du die Reservierung stornierst.
+- Schreibe in diesem Fall am Ende NUR: CANCEL_RESERVATION:{"confirm":true}
+- Frage NICHT nach Details — wir finden die Reservierung über die Telefonnummer automatisch.
 
 WICHTIGE REGELN:
 1. Frage IMMER nach fehlenden Infos — eine Frage pro Nachricht.
@@ -131,7 +137,7 @@ KRITISCH — PERSONENZAHL PRÜFEN:
 - NIEMALS LARGE_GROUP bei weniger als ${largeGroupThreshold} Personen verwenden!
 
 4. Antworte immer auf Deutsch, kurz und freundlich — max 3 Sätze.
-5. Schreibe RESERVATION_DATA und LARGE_GROUP immer exakt so — niemals auf Deutsch übersetzen.`;
+5. Schreibe RESERVATION_DATA, LARGE_GROUP und CANCEL_RESERVATION immer exakt so — niemals auf Deutsch übersetzen.`;
 
   const messages = [
     { role: "system", content: systemPrompt },
@@ -162,6 +168,38 @@ KRITISCH — PERSONENZAHL PRÜFEN:
   } else {
     await supabase.from("whatsapp_conversations")
       .insert([{ phone: from, restaurant_id: rest.id, messages: newHistory }]);
+  }
+
+  // ===== STORNIERUNG =====
+  const cancelMatch = aiMessage.match(/CANCEL_RESERVATION:\s*(\{[^}]*\})/i);
+  if (cancelMatch) {
+    // Letzte aktive (nicht stornierte) Reservierung dieser Telefonnummer suchen
+    const { data: activeRes } = await supabase
+      .from("reservations")
+      .select("*")
+      .eq("restaurant_id", rest.id)
+      .eq("guest_phone", from)
+      .neq("status", "cancelled")
+      .order("date", { ascending: false })
+      .order("time", { ascending: false })
+      .limit(1);
+
+    const target = activeRes && activeRes.length > 0 ? activeRes[0] : null;
+
+    if (target) {
+      // Status auf cancelled setzen -> löst Dashboard-Popup aus (channel=whatsapp)
+      await supabase
+        .from("reservations")
+        .update({ status: "cancelled" })
+        .eq("id", target.id);
+
+      const cleanMsg = aiMessage.replace(/CANCEL_RESERVATION:\s*\{[^}]*\}/i, "").trim();
+      await sendWhatsApp(from, cleanMsg || `Deine Reservierung wurde storniert. Schade dass es diesmal nicht klappt — wir freuen uns auf deinen nächsten Besuch!`);
+    } else {
+      const cleanMsg = aiMessage.replace(/CANCEL_RESERVATION:\s*\{[^}]*\}/i, "").trim();
+      await sendWhatsApp(from, cleanMsg || `Ich konnte leider keine aktive Reservierung unter dieser Nummer finden. Falls du mit einer anderen Nummer gebucht hast, melde dich bitte direkt bei uns.`);
+    }
+    return NextResponse.json({ ok: true });
   }
 
   // Große Gruppe
