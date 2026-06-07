@@ -16,7 +16,7 @@ export async function POST() {
       welcomeGreeting="Grüß Gott, schön dass Sie anrufen. Ich helfe Ihnen gerne bei Ihrer Reservierung. Für wann möchten Sie einen Tisch?"
       language="de-AT"
       ttsProvider="ElevenLabs"
-      voice="ruSJRhA64v8HAqiqKXVw"
+      voice="h1IssowVS2h4nL5ZbkkK"
       transcriptionProvider="Deepgram"
       speechModel="nova-2-general"
     />
