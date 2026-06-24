@@ -221,12 +221,12 @@ function RegisterModal({ onClose }: { onClose: () => void }) {
         ) : (
           <>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"8px"}}>
-              <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"23px",fontWeight:700,color:"#1A1A2E",letterSpacing:"-0.3px"}}>30 Tage gratis testen</h2>
+              <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"23px",fontWeight:700,color:"#1A1A2E",letterSpacing:"-0.3px"}}>3 Monate gratis sichern</h2>
               <button onClick={onClose} style={{background:"transparent",border:"none",color:"#6B6B80",cursor:"pointer",fontSize:"20px",lineHeight:1}}>✕</button>
             </div>
             <div style={{display:"inline-flex",alignItems:"center",gap:"6px",background:"rgba(255,92,53,.07)",borderRadius:"100px",padding:"5px 13px",marginBottom:"22px"}}>
               <div style={{width:"5px",height:"5px",borderRadius:"50%",background:"#FF5C35"}}/>
-              <span style={{fontSize:"11px",color:"#FF5C35",fontWeight:600}}>Noch 5 von 10 Plätzen frei</span>
+              <span style={{fontSize:"11px",color:"#FF5C35",fontWeight:600}}>Nur die ersten 3 Restaurants</span>
             </div>
             <button onClick={handleGoogleLogin} className="btn-hover-light" style={{
               width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:"10px",
@@ -257,7 +257,7 @@ function RegisterModal({ onClose }: { onClose: () => void }) {
               {status==="loading" ? "Wird registriert..." : "Kostenlos starten"}
             </button>
             <p style={{fontSize:"11px",color:"#6B6B80",textAlign:"center",lineHeight:1.6}}>
-              Erste 10 Restaurants: 30 Tage gratis + 3 Monate 10% Rabatt.<br/>
+              Die ersten 3 Restaurants: 3 Monate gratis + persönliche Betreuung.<br/>
               Alle Features außer KI Telefon (in Entwicklung).
             </p>
           </>
@@ -331,10 +331,99 @@ function CookieBanner() {
   );
 }
 
+/* ============ PILOT-POPUP (automatisch beim Betreten) ============ */
+
+function PilotPopup({ onClose, onRegister }: { onClose: () => void; onRegister: () => void }) {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setShow(true), 600);
+    return () => clearTimeout(t);
+  }, []);
+
+  return (
+    <div onClick={e=>{if(e.target===e.currentTarget)onClose();}} style={{
+      position:"fixed",inset:0,zIndex:700,
+      background:"rgba(26,26,46,.5)",backdropFilter:"blur(8px)",
+      display:"flex",alignItems:"center",justifyContent:"center",padding:"20px",
+      fontFamily:"'DM Sans',sans-serif",
+      opacity:show?1:0,transition:"opacity .4s ease",
+    }}>
+      <div style={{
+        position:"relative",background:"var(--dark)",borderRadius:"26px",
+        padding:"clamp(34px,5vw,52px)",width:"100%",maxWidth:"520px",
+        boxShadow:"0 40px 100px rgba(0,0,0,.5)",overflow:"hidden",textAlign:"center",
+        transform:show?"translateY(0) scale(1)":"translateY(16px) scale(.96)",
+        transition:"transform .5s cubic-bezier(.16,1,.3,1)",
+      }}>
+        {/* Schließen-Button oben links */}
+        <button onClick={onClose} aria-label="Schließen" style={{
+          position:"absolute",top:"18px",left:"18px",zIndex:2,
+          width:"32px",height:"32px",borderRadius:"50%",
+          background:"rgba(255,255,255,.08)",border:"1px solid rgba(255,255,255,.12)",
+          color:"rgba(255,255,255,.7)",cursor:"pointer",
+          display:"flex",alignItems:"center",justifyContent:"center",
+          fontFamily:"inherit",transition:"background .2s ease",
+        }}
+        onMouseEnter={e=>(e.currentTarget.style.background="rgba(255,255,255,.16)")}
+        onMouseLeave={e=>(e.currentTarget.style.background="rgba(255,255,255,.08)")}>
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+        </button>
+
+        <div style={{position:"absolute",top:"-160px",right:"-120px",width:"420px",height:"420px",background:"radial-gradient(circle,rgba(255,92,53,.16) 0%,transparent 65%)",pointerEvents:"none"}}/>
+
+        <div style={{position:"relative"}}>
+          <div style={{display:"inline-flex",alignItems:"center",gap:"7px",background:"rgba(255,92,53,.12)",borderRadius:"100px",padding:"6px 15px",marginBottom:"22px"}}>
+            <div style={{width:"6px",height:"6px",borderRadius:"50%",background:"#FF5C35",flexShrink:0}}/>
+            <span style={{fontSize:"12px",color:"#FF5C35",fontWeight:600}}>Nur die ersten 3 Restaurants</span>
+          </div>
+
+          <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(26px,4vw,36px)",fontWeight:700,color:"#FFFAF5",letterSpacing:"-1.2px",lineHeight:1.12,marginBottom:"18px"}}>
+            3 Monate gratis —<br/><span style={{color:"#FF5C35",fontStyle:"italic"}}>persönlich betreut.</span>
+          </h2>
+
+          <p style={{color:"rgba(255,255,255,.6)",fontSize:"15.5px",lineHeight:1.75,fontWeight:300,maxWidth:"400px",margin:"0 auto 28px"}}>
+            Die ersten 3 Restaurants, die sich anmelden, bekommen Tablely 3 Monate komplett kostenlos — inklusive vollständiger Betreuung und Einrichtung österreichweit durch mich persönlich.
+          </p>
+
+          <div style={{display:"flex",flexDirection:"column",gap:"11px",marginBottom:"30px",textAlign:"left",maxWidth:"340px",marginLeft:"auto",marginRight:"auto"}}>
+            {[
+              "3 Monate Tablely komplett gratis",
+              "Persönliche Einrichtung & Betreuung",
+              "Österreichweit — direkt vom Gründer",
+            ].map((t,i)=>(
+              <div key={i} style={{display:"flex",alignItems:"center",gap:"11px"}}>
+                <div style={{width:"20px",height:"20px",borderRadius:"50%",background:"rgba(255,92,53,.15)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="#FF5C35" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </div>
+                <span style={{fontSize:"14px",color:"rgba(255,255,255,.85)",fontWeight:500}}>{t}</span>
+              </div>
+            ))}
+          </div>
+
+          <button onClick={onRegister} className="btn-hover-primary" style={{
+            width:"100%",background:"#FF5C35",color:"#fff",border:"none",
+            padding:"16px",borderRadius:"100px",fontSize:"16px",fontWeight:500,
+            cursor:"pointer",fontFamily:"inherit",marginBottom:"14px",
+          }}>
+            Jetzt Platz sichern
+          </button>
+          <button onClick={onClose} style={{
+            background:"transparent",border:"none",color:"rgba(255,255,255,.4)",
+            fontSize:"13px",cursor:"pointer",fontFamily:"inherit",
+          }}>
+            Vielleicht später
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ============ PAGE ============ */
 
 export default function Home() {
   const [showModal, setShowModal] = useState(false);
+  const [showPilot, setShowPilot] = useState(true);
   const scrollY = useScrollY();
   const navScrolled = scrollY > 8;
   // Sanfte Parallaxe für das Hero-Mockup
@@ -421,7 +510,7 @@ export default function Home() {
           <Reveal y={20}>
             <div style={{display:"inline-flex",alignItems:"center",gap:"8px",background:"rgba(255,92,53,.1)",borderRadius:"100px",padding:"7px 16px",marginBottom:"30px"}}>
               <div style={{width:"6px",height:"6px",borderRadius:"50%",background:"#FF5C35",flexShrink:0}}/>
-              <span style={{fontSize:"12px",color:"#FF5C35",fontWeight:600,letterSpacing:"0.2px"}}>Noch 5 Plätze — 30 Tage gratis + 3 Monate 10% Rabatt</span>
+              <span style={{fontSize:"12px",color:"#FF5C35",fontWeight:600,letterSpacing:"0.2px"}}>Die ersten 3 Restaurants — 3 Monate gratis, persönlich betreut</span>
             </div>
           </Reveal>
           <Reveal y={26} delay={80}>
@@ -780,6 +869,47 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ===== PILOTPROGRAMM OSTTIROL ===== */}
+      <section style={{background:"#F5F0EB",padding:"130px 32px"}}>
+        <div style={{maxWidth:"880px",margin:"0 auto"}}>
+          <Reveal>
+            <div style={{background:"var(--dark)",borderRadius:"28px",padding:"clamp(40px,6vw,64px)",position:"relative",overflow:"hidden",textAlign:"center"}}>
+              <div style={{position:"absolute",top:"-180px",right:"-140px",width:"480px",height:"480px",background:"radial-gradient(circle,rgba(255,92,53,.14) 0%,transparent 65%)",pointerEvents:"none"}}/>
+              <div style={{position:"relative"}}>
+                <div style={{display:"inline-flex",alignItems:"center",gap:"7px",background:"rgba(255,92,53,.1)",borderRadius:"100px",padding:"6px 15px",marginBottom:"24px"}}>
+                  <div style={{width:"6px",height:"6px",borderRadius:"50%",background:"#FF5C35",flexShrink:0}}/>
+                  <span style={{fontSize:"12px",color:"#FF5C35",fontWeight:600}}>Noch 3 von 3 Plätzen frei</span>
+                </div>
+                <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(30px,4.5vw,46px)",fontWeight:700,color:"#FFFAF5",letterSpacing:"-1.5px",lineHeight:1.1,marginBottom:"20px"}}>
+                  Die ersten 3 —<br/><span style={{color:"#FF5C35",fontStyle:"italic"}}>Pilotprogramm Osttirol.</span>
+                </h2>
+                <p style={{color:"rgba(255,255,255,.6)",fontSize:"16px",lineHeight:1.8,fontWeight:300,maxWidth:"560px",margin:"0 auto 34px"}}>
+                  Bevor Tablely in ganz Österreich durchstartet, gebe ich zuerst meiner Heimat etwas zurück. Ich suche die ersten 3 Restaurants Osttirols, die nie wieder einen Anruf verpassen.
+                </p>
+                <div style={{display:"flex",flexWrap:"wrap",gap:"12px",justifyContent:"center",marginBottom:"38px"}}>
+                  {[
+                    "6 Monate Tablely komplett gratis",
+                    "Persönliche Einrichtung von mir",
+                    "Direkter Draht zum Gründer",
+                  ].map((t,i)=>(
+                    <div key={i} style={{display:"inline-flex",alignItems:"center",gap:"9px",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.09)",borderRadius:"100px",padding:"10px 18px"}}>
+                      <div style={{width:"18px",height:"18px",borderRadius:"50%",background:"rgba(255,92,53,.15)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                        <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="#FF5C35" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </div>
+                      <span style={{fontSize:"13.5px",color:"rgba(255,255,255,.85)",fontWeight:500}}>{t}</span>
+                    </div>
+                  ))}
+                </div>
+                <a href="mailto:michael@tablely.at?subject=Pilotprogramm%20Osttirol%20%E2%80%94%20Platz%20sichern" className="btn-hover-primary link-arrow" style={{display:"inline-flex",alignItems:"center",gap:"10px",background:"#FF5C35",color:"#fff",padding:"16px 34px",borderRadius:"100px",fontSize:"16px",fontWeight:500,textDecoration:"none"}}>
+                  Jetzt Platz sichern
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3.5 8h9M8.5 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </a>
+              </div>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
       {/* ===== FINAL CTA ===== */}
       <section id="cta" style={{background:"var(--dark)",padding:"140px 24px",position:"relative",overflow:"hidden"}}>
         <div style={{position:"absolute",top:"-220px",left:"50%",transform:"translateX(-50%)",width:"800px",height:"600px",background:"radial-gradient(ellipse at center,rgba(255,92,53,.12) 0%,transparent 65%)",pointerEvents:"none"}}/>
@@ -787,13 +917,13 @@ export default function Home() {
           <div style={{maxWidth:"680px",margin:"0 auto",textAlign:"center",position:"relative"}}>
             <div style={{display:"inline-flex",alignItems:"center",gap:"7px",background:"rgba(255,92,53,.1)",borderRadius:"100px",padding:"6px 15px",marginBottom:"26px"}}>
               <div style={{width:"6px",height:"6px",borderRadius:"50%",background:"#FF5C35",flexShrink:0}}/>
-              <span style={{fontSize:"12px",color:"#FF5C35",fontWeight:600}}>Noch 5 von 10 Plätzen frei</span>
+              <span style={{fontSize:"12px",color:"#FF5C35",fontWeight:600}}>Nur die ersten 3 Restaurants</span>
             </div>
             <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(36px,6vw,58px)",fontWeight:700,color:"#FFFAF5",letterSpacing:"-2px",lineHeight:1.06,marginBottom:"20px"}}>
-              30 Tage gratis.<br/><span style={{color:"#FF5C35",fontStyle:"italic"}}>Nur für die ersten 10.</span>
+              3 Monate gratis.<br/><span style={{color:"#FF5C35",fontStyle:"italic"}}>Nur für die ersten 3.</span>
             </h2>
             <p style={{color:"rgba(255,255,255,.5)",fontSize:"16px",lineHeight:1.8,fontWeight:300,marginBottom:"28px",maxWidth:"540px",marginLeft:"auto",marginRight:"auto"}}>
-              Die ersten 10 Restaurants testen alle Features 30 Tage kostenlos — danach 3 Monate mit <strong style={{color:"rgba(255,255,255,.8)",fontWeight:600}}>10% Rabatt</strong>. Ab dem 11. Restaurant gibt es nur noch 14 Tage ohne Vergünstigung.
+              Die ersten 3 Restaurants, die sich anmelden, bekommen Tablely 3 Monate komplett kostenlos — inklusive vollständiger Einrichtung und persönlicher Betreuung österreichweit durch mich.
             </p>
             <div style={{display:"flex",flexWrap:"wrap",gap:"8px",justifyContent:"center",marginBottom:"38px"}}>
               {["Online Buchungsseite","WhatsApp KI","Erinnerungen","Dashboard","Walk-in Assistent","KI Telefon (bald)"].map((f,i)=>{
@@ -803,7 +933,7 @@ export default function Home() {
               );})}
             </div>
             <button onClick={()=>setShowModal(true)} className="btn-hover-primary" style={{background:"#FF5C35",color:"#fff",border:"none",padding:"17px 40px",borderRadius:"100px",fontSize:"16px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",marginBottom:"16px"}}>
-              30 Tage kostenlos testen
+              Jetzt Platz sichern
             </button>
             <p style={{fontSize:"12px",color:"rgba(255,255,255,.3)"}}>Keine Kreditkarte. Keine Verpflichtung.</p>
           </div>
@@ -824,6 +954,12 @@ export default function Home() {
       </footer>
 
       {showModal && <RegisterModal onClose={()=>setShowModal(false)}/>}
+      {showPilot && !showModal && (
+        <PilotPopup
+          onClose={()=>setShowPilot(false)}
+          onRegister={()=>{ setShowPilot(false); setShowModal(true); }}
+        />
+      )}
       <CookieBanner />
     </>
   );
