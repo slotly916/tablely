@@ -221,7 +221,7 @@ function RegisterModal({ onClose }: { onClose: () => void }) {
         ) : (
           <>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"8px"}}>
-              <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"23px",fontWeight:700,color:"#1A1A2E",letterSpacing:"-0.3px"}}>3 Monate gratis sichern</h2>
+              <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"23px",fontWeight:700,color:"#1A1A2E",letterSpacing:"-0.3px"}}>6 Monate gratis sichern</h2>
               <button onClick={onClose} style={{background:"transparent",border:"none",color:"#6B6B80",cursor:"pointer",fontSize:"20px",lineHeight:1}}>✕</button>
             </div>
             <div style={{display:"inline-flex",alignItems:"center",gap:"6px",background:"rgba(255,92,53,.07)",borderRadius:"100px",padding:"5px 13px",marginBottom:"22px"}}>
@@ -257,7 +257,7 @@ function RegisterModal({ onClose }: { onClose: () => void }) {
               {status==="loading" ? "Wird registriert..." : "Kostenlos starten"}
             </button>
             <p style={{fontSize:"11px",color:"#6B6B80",textAlign:"center",lineHeight:1.6}}>
-              Die ersten 3 Restaurants: 3 Monate gratis + persönliche Betreuung.<br/>
+              Die ersten 3 Restaurants: 6 Monate gratis + persönliche Betreuung.<br/>
               Alle Features außer KI Telefon (in Entwicklung).
             </p>
           </>
@@ -378,16 +378,16 @@ function PilotPopup({ onClose, onRegister }: { onClose: () => void; onRegister: 
           </div>
 
           <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(26px,4vw,36px)",fontWeight:700,color:"#FFFAF5",letterSpacing:"-1.2px",lineHeight:1.12,marginBottom:"18px"}}>
-            3 Monate gratis —<br/><span style={{color:"#FF5C35",fontStyle:"italic"}}>persönlich betreut.</span>
+            6 Monate gratis —<br/><span style={{color:"#FF5C35",fontStyle:"italic"}}>persönlich betreut.</span>
           </h2>
 
           <p style={{color:"rgba(255,255,255,.6)",fontSize:"15.5px",lineHeight:1.75,fontWeight:300,maxWidth:"400px",margin:"0 auto 28px"}}>
-            Die ersten 3 Restaurants, die sich anmelden, bekommen Tablely 3 Monate komplett kostenlos — inklusive vollständiger Betreuung und Einrichtung österreichweit durch mich persönlich.
+            Die ersten 3 Restaurants, die sich anmelden, bekommen Tablely 6 Monate komplett kostenlos — inklusive vollständiger Betreuung und Einrichtung österreichweit durch mich persönlich.
           </p>
 
           <div style={{display:"flex",flexDirection:"column",gap:"11px",marginBottom:"30px",textAlign:"left",maxWidth:"340px",marginLeft:"auto",marginRight:"auto"}}>
             {[
-              "3 Monate Tablely komplett gratis",
+              "6 Monate Tablely komplett gratis",
               "Persönliche Einrichtung & Betreuung",
               "Österreichweit — direkt vom Gründer",
             ].map((t,i)=>(
@@ -510,7 +510,7 @@ export default function Home() {
           <Reveal y={20}>
             <div style={{display:"inline-flex",alignItems:"center",gap:"8px",background:"rgba(255,92,53,.1)",borderRadius:"100px",padding:"7px 16px",marginBottom:"30px"}}>
               <div style={{width:"6px",height:"6px",borderRadius:"50%",background:"#FF5C35",flexShrink:0}}/>
-              <span style={{fontSize:"12px",color:"#FF5C35",fontWeight:600,letterSpacing:"0.2px"}}>Die ersten 3 Restaurants — 3 Monate gratis, persönlich betreut</span>
+              <span style={{fontSize:"12px",color:"#FF5C35",fontWeight:600,letterSpacing:"0.2px"}}>Die ersten 3 Restaurants — 6 Monate gratis, persönlich betreut</span>
             </div>
           </Reveal>
           <Reveal y={26} delay={80}>
@@ -920,10 +920,10 @@ export default function Home() {
               <span style={{fontSize:"12px",color:"#FF5C35",fontWeight:600}}>Nur die ersten 3 Restaurants</span>
             </div>
             <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(36px,6vw,58px)",fontWeight:700,color:"#FFFAF5",letterSpacing:"-2px",lineHeight:1.06,marginBottom:"20px"}}>
-              3 Monate gratis.<br/><span style={{color:"#FF5C35",fontStyle:"italic"}}>Nur für die ersten 3.</span>
+              6 Monate gratis.<br/><span style={{color:"#FF5C35",fontStyle:"italic"}}>Nur für die ersten 3.</span>
             </h2>
             <p style={{color:"rgba(255,255,255,.5)",fontSize:"16px",lineHeight:1.8,fontWeight:300,marginBottom:"28px",maxWidth:"540px",marginLeft:"auto",marginRight:"auto"}}>
-              Die ersten 3 Restaurants, die sich anmelden, bekommen Tablely 3 Monate komplett kostenlos — inklusive vollständiger Einrichtung und persönlicher Betreuung österreichweit durch mich.
+              Die ersten 3 Restaurants, die sich anmelden, bekommen Tablely 6 Monate komplett kostenlos — inklusive vollständiger Einrichtung und persönlicher Betreuung österreichweit durch mich.
             </p>
             <div style={{display:"flex",flexWrap:"wrap",gap:"8px",justifyContent:"center",marginBottom:"38px"}}>
               {["Online Buchungsseite","WhatsApp KI","Erinnerungen","Dashboard","Walk-in Assistent","KI Telefon (bald)"].map((f,i)=>{
