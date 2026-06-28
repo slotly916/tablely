@@ -112,7 +112,19 @@ export default function Settings() {
 
   async function deleteTable(id: string) {
     const supabase = createClient();
-    await supabase.from("tables").delete().eq("id", id);
+    console.log("LÖSCHE TISCH ID:", id);
+    const { data, error, count } = await supabase.from("tables").delete().eq("id", id).select();
+    console.log("LÖSCH-ERGEBNIS:", { data, error, count });
+    if (error) {
+      alert("Löschen fehlgeschlagen: " + error.message + " | Code: " + error.code + " | Details: " + (error.details || "keine"));
+      console.error("DELETE TABLE ERROR:", error);
+      return;
+    }
+    if (!data || data.length === 0) {
+      alert("Kein Tisch gelöscht — die Datenbank hat 0 Zeilen entfernt. (RLS blockiert vermutlich still, oder die ID stimmt nicht: " + id + ")");
+      console.warn("DELETE returned no rows for id:", id);
+      return;
+    }
     for (const t of tables) {
       if (t.combinable_with?.includes(id)) {
         const newCombine = t.combinable_with.filter(x => x !== id);
