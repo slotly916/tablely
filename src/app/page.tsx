@@ -31,6 +31,51 @@ function useScrollY() {
   return y;
 }
 
+type PilotStatus = { loading: boolean; count: number; spotsLeft: number; phase: "pilot"|"flash"|"normal"; deadline: string|null };
+
+function usePilotStatus(): PilotStatus {
+  const [status, setStatus] = useState<PilotStatus>({ loading: true, count: 0, spotsLeft: 3, phase: "pilot", deadline: null });
+  useEffect(() => {
+    let active = true;
+    fetch("/api/pilot-status")
+      .then(r => r.json())
+      .then(d => {
+        if (!active || d.error) { if (active) setStatus((s: PilotStatus) => ({ ...s, loading: false })); return; }
+        setStatus({ loading: false, count: d.count, spotsLeft: d.spotsLeft, phase: d.phase, deadline: d.deadline });
+      })
+      .catch(() => { if (active) setStatus((s: PilotStatus) => ({ ...s, loading: false })); });
+    return () => { active = false; };
+  }, []);
+  return status;
+}
+
+// Live tickender Countdown bis zu einem Enddatum (zeigt Stunden:Minuten:Sekunden)
+function Countdown({ deadline, compact = false }: { deadline: string; compact?: boolean }) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const iv = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(iv);
+  }, []);
+  const end = new Date(deadline).getTime();
+  let diff = Math.max(0, end - now);
+  const h = Math.floor(diff / (1000 * 60 * 60));
+  const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const s = Math.floor((diff % (1000 * 60)) / 1000);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const text = `${pad(h)}:${pad(m)}:${pad(s)}`;
+  if (compact) return <span style={{fontVariantNumeric:"tabular-nums",fontWeight:700}}>{text}</span>;
+  return (
+    <span style={{display:"inline-flex",gap:"6px",alignItems:"center"}}>
+      {[["Std",pad(h)],["Min",pad(m)],["Sek",pad(s)]].map(([label,val],i)=>(
+        <span key={i} style={{display:"inline-flex",flexDirection:"column",alignItems:"center",background:"rgba(255,255,255,.1)",borderRadius:"8px",padding:"6px 9px",minWidth:"42px"}}>
+          <span style={{fontSize:"18px",fontWeight:700,color:"#fff",fontVariantNumeric:"tabular-nums",lineHeight:1}}>{val}</span>
+          <span style={{fontSize:"9px",color:"rgba(255,255,255,.5)",marginTop:"3px",letterSpacing:"0.5px"}}>{label}</span>
+        </span>
+      ))}
+    </span>
+  );
+}
+
 /* ============ APPLE-STYLE REVEAL (Blur + Scale + Rise) ============ */
 
 function Reveal({ children, delay = 0, y = 28 }: { children: React.ReactNode; delay?: number; y?: number }) {
@@ -333,7 +378,7 @@ function CookieBanner() {
 
 /* ============ PILOT-POPUP (automatisch beim Betreten) ============ */
 
-function PilotPopup({ onClose, onRegister }: { onClose: () => void; onRegister: () => void }) {
+function PilotPopup({ onClose, onRegister, status }: { onClose: () => void; onRegister: () => void; status: PilotStatus }) {
   const [show, setShow] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setShow(true), 600);
@@ -372,47 +417,78 @@ function PilotPopup({ onClose, onRegister }: { onClose: () => void; onRegister: 
         <div style={{position:"absolute",top:"-160px",right:"-120px",width:"420px",height:"420px",background:"radial-gradient(circle,rgba(255,92,53,.16) 0%,transparent 65%)",pointerEvents:"none"}}/>
 
         <div style={{position:"relative"}}>
-          <div style={{display:"inline-flex",alignItems:"center",gap:"7px",background:"rgba(255,92,53,.12)",borderRadius:"100px",padding:"6px 15px",marginBottom:"22px"}}>
-            <div style={{width:"6px",height:"6px",borderRadius:"50%",background:"#FF5C35",flexShrink:0}}/>
-            <span style={{fontSize:"12px",color:"#FF5C35",fontWeight:600}}>Nur die ersten 3 Restaurants</span>
-          </div>
-
-          <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(26px,4vw,36px)",fontWeight:700,color:"#FFFAF5",letterSpacing:"-1.2px",lineHeight:1.12,marginBottom:"18px"}}>
-            6 Monate gratis —<br/><span style={{color:"#FF5C35",fontStyle:"italic"}}>persönlich betreut.</span>
-          </h2>
-
-          <p style={{color:"rgba(255,255,255,.6)",fontSize:"15.5px",lineHeight:1.75,fontWeight:300,maxWidth:"400px",margin:"0 auto 28px"}}>
-            Die ersten 3 Restaurants, die sich anmelden, bekommen Tablely 6 Monate komplett kostenlos — inklusive vollständiger Betreuung und Einrichtung österreichweit durch mich persönlich.
-          </p>
-
-          <div style={{display:"flex",flexDirection:"column",gap:"11px",marginBottom:"30px",textAlign:"left",maxWidth:"340px",marginLeft:"auto",marginRight:"auto"}}>
-            {[
-              "6 Monate Tablely komplett gratis",
-              "Persönliche Einrichtung & Betreuung",
-              "Österreichweit — direkt vom Gründer",
-            ].map((t,i)=>(
-              <div key={i} style={{display:"flex",alignItems:"center",gap:"11px"}}>
-                <div style={{width:"20px",height:"20px",borderRadius:"50%",background:"rgba(255,92,53,.15)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="#FF5C35" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                </div>
-                <span style={{fontSize:"14px",color:"rgba(255,255,255,.85)",fontWeight:500}}>{t}</span>
+          {status.phase === "flash" && status.deadline ? (
+            <>
+              <div style={{display:"inline-flex",alignItems:"center",gap:"7px",background:"rgba(255,92,53,.12)",borderRadius:"100px",padding:"6px 15px",marginBottom:"22px"}}>
+                <div style={{width:"6px",height:"6px",borderRadius:"50%",background:"#FF5C35",flexShrink:0}}/>
+                <span style={{fontSize:"12px",color:"#FF5C35",fontWeight:600}}>Die 3 Pilotplätze sind vergeben</span>
               </div>
-            ))}
-          </div>
-
-          <button onClick={onRegister} className="btn-hover-primary" style={{
-            width:"100%",background:"#FF5C35",color:"#fff",border:"none",
-            padding:"16px",borderRadius:"100px",fontSize:"16px",fontWeight:500,
-            cursor:"pointer",fontFamily:"inherit",marginBottom:"14px",
-          }}>
-            Jetzt Platz sichern
-          </button>
-          <button onClick={onClose} style={{
-            background:"transparent",border:"none",color:"rgba(255,255,255,.4)",
-            fontSize:"13px",cursor:"pointer",fontFamily:"inherit",
-          }}>
-            Vielleicht später
-          </button>
+              <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(26px,4vw,36px)",fontWeight:700,color:"#FFFAF5",letterSpacing:"-1.2px",lineHeight:1.12,marginBottom:"16px"}}>
+                6 Monate gratis sind weg —<br/><span style={{color:"#FF5C35",fontStyle:"italic"}}>aber jetzt noch schnell.</span>
+              </h2>
+              <p style={{color:"rgba(255,255,255,.6)",fontSize:"15.5px",lineHeight:1.75,fontWeight:300,maxWidth:"410px",margin:"0 auto 22px"}}>
+                Die 6 Monate sind vergeben. Aber nur für die nächsten 48 Stunden gibt es noch <strong style={{color:"rgba(255,255,255,.9)"}}>30 Tage Tablely gratis</strong> — danach nur noch die normalen 14 Tage.
+              </p>
+              <div style={{marginBottom:"26px"}}>
+                <div style={{fontSize:"11px",color:"rgba(255,255,255,.4)",textTransform:"uppercase",letterSpacing:"1px",marginBottom:"12px"}}>Angebot endet in</div>
+                <Countdown deadline={status.deadline}/>
+              </div>
+              <button onClick={onRegister} className="btn-hover-primary" style={{width:"100%",background:"#FF5C35",color:"#fff",border:"none",padding:"16px",borderRadius:"100px",fontSize:"16px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",marginBottom:"14px"}}>
+                Jetzt 30 Tage sichern
+              </button>
+              <button onClick={onClose} style={{background:"transparent",border:"none",color:"rgba(255,255,255,.4)",fontSize:"13px",cursor:"pointer",fontFamily:"inherit"}}>Vielleicht später</button>
+            </>
+          ) : status.phase === "normal" ? (
+            <>
+              <div style={{display:"inline-flex",alignItems:"center",gap:"7px",background:"rgba(255,92,53,.12)",borderRadius:"100px",padding:"6px 15px",marginBottom:"22px"}}>
+                <div style={{width:"6px",height:"6px",borderRadius:"50%",background:"#FF5C35",flexShrink:0}}/>
+                <span style={{fontSize:"12px",color:"#FF5C35",fontWeight:600}}>Jetzt kostenlos testen</span>
+              </div>
+              <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(26px,4vw,36px)",fontWeight:700,color:"#FFFAF5",letterSpacing:"-1.2px",lineHeight:1.12,marginBottom:"18px"}}>
+                14 Tage gratis —<br/><span style={{color:"#FF5C35",fontStyle:"italic"}}>ohne Risiko.</span>
+              </h2>
+              <p style={{color:"rgba(255,255,255,.6)",fontSize:"15.5px",lineHeight:1.75,fontWeight:300,maxWidth:"400px",margin:"0 auto 28px"}}>
+                Teste Tablely 14 Tage komplett kostenlos — alle Funktionen, keine Kreditkarte, keine Verpflichtung.
+              </p>
+              <button onClick={onRegister} className="btn-hover-primary" style={{width:"100%",background:"#FF5C35",color:"#fff",border:"none",padding:"16px",borderRadius:"100px",fontSize:"16px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",marginBottom:"14px"}}>
+                Kostenlos starten
+              </button>
+              <button onClick={onClose} style={{background:"transparent",border:"none",color:"rgba(255,255,255,.4)",fontSize:"13px",cursor:"pointer",fontFamily:"inherit"}}>Vielleicht später</button>
+            </>
+          ) : (
+            <>
+              <div style={{display:"inline-flex",alignItems:"center",gap:"7px",background:"rgba(255,92,53,.12)",borderRadius:"100px",padding:"6px 15px",marginBottom:"22px"}}>
+                <div style={{width:"6px",height:"6px",borderRadius:"50%",background:"#FF5C35",flexShrink:0}}/>
+                <span style={{fontSize:"12px",color:"#FF5C35",fontWeight:600}}>
+                  {status.spotsLeft <= 1 ? "Nur mehr 1 Platz frei — schnell!" : status.spotsLeft === 2 ? "Nur mehr 2 Plätze frei" : "Nur die ersten 3 Restaurants"}
+                </span>
+              </div>
+              <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(26px,4vw,36px)",fontWeight:700,color:"#FFFAF5",letterSpacing:"-1.2px",lineHeight:1.12,marginBottom:"18px"}}>
+                6 Monate gratis —<br/><span style={{color:"#FF5C35",fontStyle:"italic"}}>persönlich betreut.</span>
+              </h2>
+              <p style={{color:"rgba(255,255,255,.6)",fontSize:"15.5px",lineHeight:1.75,fontWeight:300,maxWidth:"400px",margin:"0 auto 28px"}}>
+                Die ersten 3 Restaurants, die sich anmelden, bekommen Tablely 6 Monate komplett kostenlos — inklusive vollständiger Betreuung und Einrichtung österreichweit durch mich persönlich.
+              </p>
+              <div style={{display:"flex",flexDirection:"column",gap:"11px",marginBottom:"30px",textAlign:"left",maxWidth:"340px",marginLeft:"auto",marginRight:"auto"}}>
+                {[
+                  "6 Monate Tablely komplett gratis",
+                  "Persönliche Einrichtung & Betreuung",
+                  "Österreichweit — direkt vom Gründer",
+                ].map((t,i)=>(
+                  <div key={i} style={{display:"flex",alignItems:"center",gap:"11px"}}>
+                    <div style={{width:"20px",height:"20px",borderRadius:"50%",background:"rgba(255,92,53,.15)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="#FF5C35" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </div>
+                    <span style={{fontSize:"14px",color:"rgba(255,255,255,.85)",fontWeight:500}}>{t}</span>
+                  </div>
+                ))}
+              </div>
+              <button onClick={onRegister} className="btn-hover-primary" style={{width:"100%",background:"#FF5C35",color:"#fff",border:"none",padding:"16px",borderRadius:"100px",fontSize:"16px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",marginBottom:"14px"}}>
+                Jetzt Platz sichern
+              </button>
+              <button onClick={onClose} style={{background:"transparent",border:"none",color:"rgba(255,255,255,.4)",fontSize:"13px",cursor:"pointer",fontFamily:"inherit"}}>Vielleicht später</button>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -424,6 +500,7 @@ function PilotPopup({ onClose, onRegister }: { onClose: () => void; onRegister: 
 export default function Home() {
   const [showModal, setShowModal] = useState(false);
   const [showPilot, setShowPilot] = useState(true);
+  const pilot = usePilotStatus();
   const scrollY = useScrollY();
   const navScrolled = scrollY > 8;
   // Sanfte Parallaxe für das Hero-Mockup
@@ -510,7 +587,13 @@ export default function Home() {
           <Reveal y={20}>
             <div style={{display:"inline-flex",alignItems:"center",gap:"8px",background:"rgba(255,92,53,.1)",borderRadius:"100px",padding:"7px 16px",marginBottom:"30px"}}>
               <div style={{width:"6px",height:"6px",borderRadius:"50%",background:"#FF5C35",flexShrink:0}}/>
-              <span style={{fontSize:"12px",color:"#FF5C35",fontWeight:600,letterSpacing:"0.2px"}}>Die ersten 3 Restaurants — 6 Monate gratis, persönlich betreut</span>
+              <span style={{fontSize:"12px",color:"#FF5C35",fontWeight:600,letterSpacing:"0.2px"}}>
+                {pilot.phase === "flash" ? "Pilotplätze vergeben — jetzt 48h-Aktion"
+                  : pilot.phase === "normal" ? "14 Tage kostenlos testen"
+                  : pilot.spotsLeft <= 1 ? "Nur mehr 1 Platz frei — schnell sein!"
+                  : pilot.spotsLeft === 2 ? "Nur mehr 2 Plätze frei — 6 Monate gratis"
+                  : "Die ersten 3 Restaurants — 6 Monate gratis, persönlich betreut"}
+              </span>
             </div>
           </Reveal>
           <Reveal y={26} delay={80}>
@@ -518,6 +601,23 @@ export default function Home() {
               Kein Anruf. Kein Buch.<br/><span style={{color:"#FF5C35",fontStyle:"italic"}}>Kein Chaos.</span>
             </h1>
           </Reveal>
+
+          {pilot.phase === "flash" && pilot.deadline && (
+            <Reveal y={20} delay={120}>
+              <button onClick={()=>setShowModal(true)} className="btn-hover-primary" style={{
+                display:"inline-flex",alignItems:"center",gap:"14px",flexWrap:"wrap",justifyContent:"center",
+                background:"rgba(255,92,53,.12)",border:"1px solid rgba(255,92,53,.3)",
+                borderRadius:"100px",padding:"10px 12px 10px 22px",marginBottom:"30px",
+                cursor:"pointer",fontFamily:"inherit",
+              }}>
+                <span style={{fontSize:"14px",fontWeight:600,color:"#FFFAF5"}}>Noch schnell 30 Tage testen</span>
+                <span style={{display:"inline-flex",alignItems:"center",gap:"8px",background:"#FF5C35",borderRadius:"100px",padding:"7px 16px"}}>
+                  <span style={{fontSize:"15px",color:"#fff"}}><Countdown deadline={pilot.deadline} compact/></span>
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3.5 8h9M8.5 4l4 4-4 4" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </span>
+              </button>
+            </Reveal>
+          )}
           <Reveal y={24} delay={160}>
             <p className="hero-sub" style={{color:"rgba(255,255,255,.6)",fontSize:"18px",lineHeight:1.75,fontWeight:300,margin:"0 auto 40px",maxWidth:"560px"}}>
               Stoßzeit. Küche brennt. Telefon klingelt. Dein Kellner blättert im Reservierungsbuch — 3 Minuten für eine Reservierung. <strong style={{color:"rgba(255,255,255,.9)",fontWeight:500}}>Tablely macht das in 3 Sekunden.</strong>
@@ -954,8 +1054,9 @@ export default function Home() {
       </footer>
 
       {showModal && <RegisterModal onClose={()=>setShowModal(false)}/>}
-      {showPilot && !showModal && (
+      {showPilot && !showModal && !pilot.loading && (
         <PilotPopup
+          status={pilot}
           onClose={()=>setShowPilot(false)}
           onRegister={()=>{ setShowPilot(false); setShowModal(true); }}
         />
