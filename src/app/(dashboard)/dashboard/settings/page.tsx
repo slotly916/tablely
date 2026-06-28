@@ -16,6 +16,7 @@ export default function Settings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [blockedTable, setBlockedTable] = useState<string | null>(null);
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -112,25 +113,35 @@ export default function Settings() {
 
   async function deleteTable(id: string) {
     const supabase = createClient();
-    console.log("LÖSCHE TISCH ID:", id);
-    const { data, error, count } = await supabase.from("tables").delete().eq("id", id).select();
-    console.log("LÖSCH-ERGEBNIS:", { data, error, count });
-    if (error) {
-      alert("Löschen fehlgeschlagen: " + error.message + " | Code: " + error.code + " | Details: " + (error.details || "keine"));
-      console.error("DELETE TABLE ERROR:", error);
+
+    // Prüfen ob dieser Tisch noch Reservierungen hat (einzeln ODER in Kombination)
+    const { data: single } = await supabase
+      .from("reservations").select("id").eq("table_id", id).limit(1);
+    const { data: combo } = await supabase
+      .from("reservations").select("id").contains("table_ids", [id]).limit(1);
+
+    const hasReservations = (single && single.length > 0) || (combo && combo.length > 0);
+    if (hasReservations) {
+      const t = tables.find(t => t.id === id);
+      setBlockedTable(t ? t.name : "Dieser Tisch");
       return;
     }
-    if (!data || data.length === 0) {
-      alert("Kein Tisch gelöscht — die Datenbank hat 0 Zeilen entfernt. (RLS blockiert vermutlich still, oder die ID stimmt nicht: " + id + ")");
-      console.warn("DELETE returned no rows for id:", id);
-      return;
-    }
+
+    // Tisch aus Kombinations-Listen anderer Tische entfernen
     for (const t of tables) {
       if (t.combinable_with?.includes(id)) {
         const newCombine = t.combinable_with.filter(x => x !== id);
         await supabase.from("tables").update({ combinable_with: newCombine }).eq("id", t.id);
       }
     }
+
+    // Tisch löschen
+    const { error } = await supabase.from("tables").delete().eq("id", id);
+    if (error) {
+      alert("Tisch konnte nicht gelöscht werden: " + error.message);
+      return;
+    }
+
     setTables(tables.filter(t => t.id !== id).map(t => ({...t, combinable_with: (t.combinable_with || []).filter(x => x !== id)})));
   }
 
@@ -518,6 +529,33 @@ export default function Settings() {
           )}
         </div>
       </main>
+
+      {blockedTable && (
+        <div onClick={e=>{if(e.target===e.currentTarget)setBlockedTable(null);}} style={{
+          position:"fixed",inset:0,zIndex:600,
+          background:"rgba(26,26,46,.55)",backdropFilter:"blur(6px)",
+          display:"flex",alignItems:"center",justifyContent:"center",padding:"20px",
+        }}>
+          <div style={{
+            background:"#fff",borderRadius:"20px",padding:"32px",maxWidth:"400px",width:"100%",
+            boxShadow:"0 30px 80px rgba(26,26,46,.25)",textAlign:"center",
+          }}>
+            <div style={{width:"52px",height:"52px",borderRadius:"50%",background:"rgba(248,113,113,.12)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px"}}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 8v5M12 16.5v.5" stroke="#E24B4A" strokeWidth="2" strokeLinecap="round"/><circle cx="12" cy="12" r="9" stroke="#E24B4A" strokeWidth="1.6"/></svg>
+            </div>
+            <h3 style={{fontSize:"19px",fontWeight:600,color:"#1A1A2E",marginBottom:"10px"}}>Tisch kann nicht gelöscht werden</h3>
+            <p style={{fontSize:"14px",color:muted,lineHeight:1.65,marginBottom:"24px"}}>
+              <strong style={{color:"#1A1A2E"}}>{blockedTable}</strong> hat noch aktive Reservierungen. Lösche oder verschiebe zuerst alle Reservierungen auf diesem Tisch, dann kannst du ihn entfernen.
+            </p>
+            <button onClick={()=>setBlockedTable(null)} style={{
+              background:"#FF5C35",color:"#fff",border:"none",padding:"12px 28px",borderRadius:"10px",
+              fontSize:"14px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
+            }}>
+              Verstanden
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
