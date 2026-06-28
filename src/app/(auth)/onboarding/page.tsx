@@ -36,6 +36,9 @@ export default function Onboarding() {
 
   const [waPhoneId, setWaPhoneId] = useState("");
   const [skipWa, setSkipWa] = useState(false);
+  const [reqName, setReqName] = useState("");
+  const [reqPhone, setReqPhone] = useState("");
+  const [reqStatus, setReqStatus] = useState<"idle"|"loading"|"sent"|"error">("idle");
 
   // GUARD: Wenn der User schon ein Restaurant hat, direkt ins Dashboard.
   // Verhindert die Onboarding-Schleife und doppelte Restaurants beim
@@ -86,6 +89,25 @@ export default function Onboarding() {
 
   function deleteGroup(idx: number) {
     setGroups(groups.filter((_, i) => i !== idx));
+  }
+
+  async function requestNumber() {
+    if (!reqName.trim() || !reqPhone.trim()) {
+      setReqStatus("error");
+      return;
+    }
+    setReqStatus("loading");
+    try {
+      const res = await fetch("/api/request-number", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: reqName, phone: reqPhone, restaurantName }),
+      });
+      if (!res.ok) { setReqStatus("error"); return; }
+      setReqStatus("sent");
+    } catch {
+      setReqStatus("error");
+    }
   }
 
   async function handleFinish() {
@@ -409,41 +431,58 @@ export default function Onboarding() {
         {/* STEP 6 — WhatsApp */}
         {step === 5 && (
           <>
-            <h1 style={title}>WhatsApp KI verbinden</h1>
-            <p style={sub}>Verbinde deine WhatsApp Business Nummer in wenigen Klicks — direkt über Meta.</p>
+            <h1 style={title}>Eigene WhatsApp Nummer</h1>
+            <p style={sub}>Wir stellen dir eine eigene österreichische WhatsApp Business Nummer zur Verfügung — vollständig eingerichtet. Trag kurz deinen Namen und deine Telefonnummer ein, dann melden wir uns bei dir.</p>
             <div style={{display:"flex",flexDirection:"column",gap:"16px"}}>
-              <div style={{background:"#F5F0EB",borderRadius:"16px",padding:"24px",border:"1px solid #F0EBE3",textAlign:"center"}}>
-                <div style={{width:"48px",height:"48px",borderRadius:"12px",background:"#25D366",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px"}}>
-                  <svg width="26" height="26" viewBox="0 0 26 26" fill="none"><path d="M13 2C7 2 2 7 2 13c0 1.9.5 3.7 1.4 5.3L2 24l5.9-1.4C9.3 23.5 11.1 24 13 24c6 0 11-5 11-11S19 2 13 2z" fill="white"/></svg>
-                </div>
-                <div style={{fontSize:"15px",fontWeight:600,color:"#1A1A2E",marginBottom:"6px"}}>Mit Meta verbinden</div>
-                <p style={{fontSize:"13px",color:"#6B6B80",lineHeight:1.6,marginBottom:"16px",fontWeight:300}}>
-                  Klicke den Button und melde dich mit deinem Facebook Konto an. Wähle deine WhatsApp Business Nummer aus — fertig.
-                </p>
-                <a
-                  href="https://business.facebook.com/messaging/whatsapp/onboard/?app_id=2357064618049055&config_id=1240740414802290&extras=%7B%22sessionInfoVersion%22%3A%223%22%2C%22version%22%3A%22v4%22%7D"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{display:"inline-flex",alignItems:"center",gap:"8px",background:"#1877F2",color:"#fff",padding:"12px 24px",borderRadius:"10px",fontSize:"14px",fontWeight:500,textDecoration:"none"}}
-                >
-                  Mit Facebook / Meta verbinden →
-                </a>
-              </div>
-
-              <div style={{background:"#F5F0EB",borderRadius:"12px",padding:"18px",border:"1px solid #F0EBE3"}}>
-                <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"10px"}}>
-                  <div style={{width:"32px",height:"32px",borderRadius:"8px",background:"#25D366",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 1.5C5 1.5 1.5 5 1.5 9c0 1.3.3 2.6 1 3.7L1.5 16.5l3.9-1C6.4 16.1 7.7 16.5 9 16.5c4 0 7.5-3.5 7.5-7.5S13 1.5 9 1.5z" fill="white"/></svg>
+              {reqStatus === "sent" ? (
+                <div style={{background:"#E8F8F1",borderRadius:"16px",padding:"28px",border:"1px solid #C8EDD9",textAlign:"center"}}>
+                  <div style={{width:"48px",height:"48px",borderRadius:"50%",background:"#25C281",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px"}}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </div>
-                  <div style={{fontSize:"13px",fontWeight:600,color:"#1A1A2E"}}>Wir stellen dir eine Nummer zur Verfügung</div>
+                  <div style={{fontSize:"16px",fontWeight:600,color:"#1A1A2E",marginBottom:"6px"}}>Anfrage gesendet!</div>
+                  <p style={{fontSize:"13px",color:"#6B6B80",lineHeight:1.6,fontWeight:300}}>
+                    Wir melden uns innerhalb von 12–24 Stunden bei dir und richten deine WhatsApp Business Nummer ein.
+                  </p>
                 </div>
-                <p style={{fontSize:"12px",color:"#6B6B80",lineHeight:1.6,marginBottom:"12px",fontWeight:300}}>
-                  Du bekommst eine eigene österreichische WhatsApp Business Nummer von uns — vollständig eingerichtet. Deine Nummer ist innerhalb von <strong style={{color:"#1A1A2E"}}>12–24 Stunden</strong> einsatzbereit.
-                </p>
-                <a href="mailto:info@tablely.at?subject=WhatsApp Nummer für mein Restaurant" style={{display:"inline-flex",alignItems:"center",gap:"6px",background:"#FF5C35",color:"#fff",padding:"9px 16px",borderRadius:"8px",fontSize:"13px",fontWeight:500,textDecoration:"none"}}>
-                  Nummer anfordern → info@tablely.at
-                </a>
-              </div>
+              ) : (
+                <div style={{background:"#F5F0EB",borderRadius:"16px",padding:"24px",border:"1px solid #F0EBE3"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"16px"}}>
+                    <div style={{width:"40px",height:"40px",borderRadius:"10px",background:"#25D366",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 1.5C5.7 1.5 1.5 5.7 1.5 11c0 1.6.4 3.1 1.1 4.4L1.5 20.5l5.3-1.1C8 20.1 9.5 20.5 11 20.5c5.3 0 9.5-4.2 9.5-9.5S16.3 1.5 11 1.5z" fill="white"/></svg>
+                    </div>
+                    <div>
+                      <div style={{fontSize:"15px",fontWeight:600,color:"#1A1A2E"}}>Nummer anfordern</div>
+                      <div style={{fontSize:"12px",color:"#6B6B80"}}>Einsatzbereit in 12–24 Stunden</div>
+                    </div>
+                  </div>
+                  <div style={{display:"flex",flexDirection:"column",gap:"10px",marginBottom:"14px"}}>
+                    <input
+                      style={input}
+                      type="text"
+                      placeholder="Dein Name"
+                      value={reqName}
+                      onChange={e=>{setReqName(e.target.value); if(reqStatus==="error")setReqStatus("idle");}}
+                    />
+                    <input
+                      style={input}
+                      type="tel"
+                      placeholder="Deine Telefonnummer"
+                      value={reqPhone}
+                      onChange={e=>{setReqPhone(e.target.value); if(reqStatus==="error")setReqStatus("idle");}}
+                    />
+                  </div>
+                  {reqStatus === "error" && (
+                    <p style={{fontSize:"12px",color:"#E24B4A",marginBottom:"12px"}}>Bitte Name und Telefonnummer eingeben.</p>
+                  )}
+                  <button
+                    onClick={requestNumber}
+                    disabled={reqStatus==="loading"}
+                    style={{width:"100%",background:"#FF5C35",color:"#fff",border:"none",padding:"13px",borderRadius:"10px",fontSize:"14px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",opacity:reqStatus==="loading"?0.7:1}}
+                  >
+                    {reqStatus==="loading" ? "Wird gesendet..." : "Anfrage absenden"}
+                  </button>
+                </div>
+              )}
 
               <label style={{display:"flex",alignItems:"center",gap:"10px",cursor:"pointer",fontSize:"13px",color:"#6B6B80"}}>
                 <input type="checkbox" checked={skipWa} onChange={e=>setSkipWa(e.target.checked)}/>
