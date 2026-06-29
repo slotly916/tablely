@@ -626,7 +626,9 @@ export default function Home() {
           <Reveal y={22} delay={240}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:"14px",flexWrap:"wrap",marginBottom:"14px"}}>
               <button className="btn-hover-primary" onClick={()=>setShowModal(true)} style={{background:"#FF5C35",color:"#fff",border:"none",padding:"16px 34px",borderRadius:"100px",fontSize:"16px",fontWeight:500,cursor:"pointer",fontFamily:"inherit"}}>
-                30 Tage kostenlos testen
+                {pilot.phase === "flash" ? "30 Tage gratis sichern"
+                  : pilot.phase === "normal" ? "14 Tage kostenlos testen"
+                  : "6 Monate gratis sichern"}
               </button>
               <a href="/demo" className="btn-ghost link-arrow" style={{display:"inline-flex",alignItems:"center",gap:"9px",background:"transparent",color:"#FFFAF5",border:"1px solid rgba(255,255,255,.25)",padding:"15px 28px",borderRadius:"100px",fontSize:"15px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",textDecoration:"none"}}>
                 Live Demo ansehen
