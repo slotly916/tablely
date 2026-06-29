@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 
 // ===== EINSTELLUNGEN PILOTAKTION =====
 const PILOT_TOTAL = 3;                          // wie viele Pilot-Plätze (6 Monate gratis)
-const PILOT_START = "2026-06-29T04:00:00Z";     // ab diesem Datum zählen Anmeldungen (= 29.6.2026 06:00 Uhr Österreich). Alte Test-Restaurants davor zählen NICHT
+const PILOT_START = "2026-06-29T20:00:00Z";     // ab diesem Datum zählen Anmeldungen (= 29.6.2026 06:00 Uhr Österreich). Alte Test-Restaurants davor zählen NICHT
 const FLASH_HOURS = 48;                          // Dauer des 30-Tage-Blitzangebots nachdem die Plätze voll sind
 // =====================================
 
