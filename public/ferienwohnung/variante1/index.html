@@ -1,1315 +1,1453 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ferienwohnungen Haus Egger – Gemütlich wohnen in Oberdrauburg</title>
-  <meta name="description" content="Ferienwohnungen Haus Egger in Oberdrauburg – gemütliche Wohnungen umgeben von Natur, Bergen und Erholung. Ideal für Familien, Paare und Aktivurlauber." />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ferienhaus Veider – Urlaub in Osttirol. Ruhig. Gemütlich. Echt.</title>
+  <meta name="description" content="Ferienhaus Veider in Osttirol – drei liebevoll eingerichtete Ferienwohnungen für Paare, Familien und Gäste, die Ruhe, Natur und echte Gastfreundschaft suchen.">
 
-  <!-- Schriften: Fraunces (Display, warme Serife) + Mulish (Fließtext, freundlich) -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Ferienhaus Veider – Urlaub in Osttirol">
+  <meta property="og:description" content="Drei gemütliche Ferienwohnungen inmitten der Bergwelt Osttirols. Ruhig. Gemütlich. Echt.">
+  <meta property="og:image" content="https://impro.usercontent.one/appid/oneComWsb/domain/ferienhaus-veider.at/media/ferienhaus-veider.at/onewebmedia/Homepage%20neu.jpg?etag=%22d1352-56d6fd23%22&sourceContentType=image%2Fjpeg&ignoreAspectRatio&resize=1000,820&quality=85">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Mulish:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Mulish:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="preload" as="image" href="https://impro.usercontent.one/appid/oneComWsb/domain/ferienhaus-veider.at/media/ferienhaus-veider.at/onewebmedia/Homepage%20neu.jpg?etag=%22d1352-56d6fd23%22&sourceContentType=image%2Fjpeg&ignoreAspectRatio&resize=1000,820&quality=85">
 
   <style>
-    /* =========================================================
-       DESIGN-TOKENS
-       ========================================================= */
-    :root{
-      /* Farben – Grün & Weiß, naturnah und warm */
-      --forest:   #1C3A2C;   /* tiefes Tannengrün – Überschriften, Dunkelflächen */
-      --pine:     #2F5E45;   /* Primärgrün – Buttons, Links */
-      --pine-600: #27513B;   /* Hover */
-      --sage:     #6E927A;   /* gedämpftes Sekundärgrün */
-      --moss:     #9CBBA4;   /* helles Akzentgrün */
-      --mist:     #EAF1E9;   /* zarter Grünschleier – Sektionen */
-      --mist-2:   #DEE9DC;   /* etwas kräftiger */
-      --paper:    #FAFCF8;   /* Seitenhintergrund (warmes Weiß) */
-      --white:    #FFFFFF;
-      --ink:      #283129;   /* Fließtext (dunkles Grüngrau) */
-      --muted:    #5D6E63;   /* Sekundärtext */
-      --line:     #E1E9DF;   /* Linien & Rahmen */
-      --honey:    #C49A4B;   /* warmer Akzent – sehr sparsam eingesetzt */
-      --honey-soft:#E7D6AE;
+/* =================================================================
+   Ferienhaus Veider — style.css
+   Warm · alpin · hochwertig. Creme, Bordeaux (Logo), Tiefgrün, Braun.
+   ================================================================= */
 
-      /* Schrift */
-      --font-display: "Fraunces", Georgia, "Times New Roman", serif;
-      --font-body: "Mulish", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+:root {
+  /* Farben */
+  --paper:        #F5F1E9;   /* warmes Off-White, Hauptfläche       */
+  --paper-deep:   #ECE4D6;   /* leicht dunkleres Creme               */
+  --ink:          #26221E;   /* warmes Fast-Schwarz, Fließtext       */
+  --ink-soft:     #3C362F;   /* etwas weicher                        */
+  --bordeaux:     #7A1F1F;   /* Akzent aus dem Logo                  */
+  --bordeaux-deep:#5E1717;   /* Hover                                */
+  --pine:         #283A30;   /* Tiefgrün, Anfrage-Band               */
+  --pine-deep:    #1E2C25;
+  --stone:        #978B79;   /* warmes Taupe, Sekundärtext           */
+  --line:         #DED2BE;   /* feine Linien                         */
+  --cream:        #F3EAD6;   /* Logo-Creme                           */
 
-      /* Radien */
-      --r-sm: 12px;
-      --r:    20px;
-      --r-lg: 30px;
-      --r-pill: 999px;
+  /* Typografie */
+  --serif: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --sans:  "Mulish", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
-      /* Schatten – weich und leicht grünstichig */
-      --shadow-sm: 0 1px 2px rgba(28,58,44,.05), 0 3px 8px rgba(28,58,44,.05);
-      --shadow:    0 14px 34px -16px rgba(28,58,44,.22), 0 5px 14px -8px rgba(28,58,44,.12);
-      --shadow-lg: 0 36px 70px -24px rgba(28,58,44,.30), 0 10px 24px -12px rgba(28,58,44,.16);
+  /* Maße */
+  --container: 1240px;
+  --pad: clamp(1.25rem, 5vw, 4rem);
+  --section-y: clamp(4.5rem, 11vh, 8.5rem);
+  --header-h: 84px;
 
-      --ease: cubic-bezier(.22,.61,.36,1);
-      --header-h: 78px;
-      --container: 1200px;
-    }
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
 
-    /* =========================================================
-       BASIS / RESET
-       ========================================================= */
-    *,*::before,*::after{ box-sizing:border-box; }
-    html{ scroll-behavior:smooth; -webkit-text-size-adjust:100%; }
-    body{
-      margin:0;
-      font-family:var(--font-body);
-      color:var(--ink);
-      background:var(--paper);
-      line-height:1.7;
-      font-size:1.05rem;
-      font-weight:400;
-      -webkit-font-smoothing:antialiased;
-      overflow-x:hidden;
-    }
-    img{ max-width:100%; display:block; }
-    a{ color:inherit; text-decoration:none; }
-    button{ font-family:inherit; cursor:pointer; border:none; background:none; }
-    ul{ margin:0; padding:0; list-style:none; }
-    section{ scroll-margin-top:calc(var(--header-h) + 14px); }
+/* ---------- Reset / Basis ---------- */
+*, *::before, *::after { box-sizing: border-box; }
 
-    /* Schrift-Hierarchie */
-    h1,h2,h3,h4{
-      font-family:var(--font-display);
-      color:var(--forest);
-      font-weight:500;
-      line-height:1.1;
-      letter-spacing:-.01em;
-      margin:0;
-    }
-    h1{ font-size:clamp(2.6rem, 6vw, 4.4rem); font-weight:500; }
-    h2{ font-size:clamp(2rem, 4.2vw, 3.1rem); }
-    h3{ font-size:clamp(1.3rem, 2.2vw, 1.6rem); }
-    p{ margin:0 0 1rem; }
-    p:last-child{ margin-bottom:0; }
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
 
-    /* Layout-Helfer */
-    .container{ width:100%; max-width:var(--container); margin-inline:auto; padding-inline:clamp(20px, 5vw, 48px); }
-    .section{ padding-block:clamp(72px, 11vw, 130px); position:relative; }
-    .section--mist{ background:var(--mist); }
-    .narrow{ max-width:760px; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink-soft);
+  font-family: var(--sans);
+  font-weight: 400;
+  font-size: clamp(1rem, 0.95rem + 0.25vw, 1.1rem);
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
 
-    /* Augenbraue / Kicker über Überschriften */
-    .eyebrow{
-      display:inline-flex; align-items:center; gap:.7rem;
-      font-size:.78rem; font-weight:700; letter-spacing:.18em; text-transform:uppercase;
-      color:var(--pine); margin-bottom:1.1rem;
-    }
-    .eyebrow::before{
-      content:""; width:30px; height:2px; border-radius:2px;
-      background:linear-gradient(90deg, var(--honey), var(--moss));
-    }
-    .section-head{ max-width:620px; margin-bottom:clamp(40px, 6vw, 64px); }
-    .section-head.center{ margin-inline:auto; text-align:center; }
-    .section-head.center .eyebrow{ justify-content:center; }
-    .lead{ font-size:1.12rem; color:var(--muted); }
+img { display: block; max-width: 100%; height: auto; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; cursor: pointer; }
 
-    /* =========================================================
-       BUTTONS
-       ========================================================= */
-    .btn{
-      display:inline-flex; align-items:center; justify-content:center; gap:.6rem;
-      padding:.95rem 1.7rem; border-radius:var(--r-pill);
-      font-weight:700; font-size:1rem; letter-spacing:.01em;
-      transition:transform .35s var(--ease), box-shadow .35s var(--ease), background-color .3s var(--ease), color .3s var(--ease);
-      will-change:transform;
-    }
-    .btn .ic{ width:18px; height:18px; }
-    .btn--primary{ background:var(--pine); color:#fff; box-shadow:0 12px 26px -12px rgba(47,94,69,.7); }
-    .btn--primary:hover{ background:var(--pine-600); transform:translateY(-3px); box-shadow:0 20px 34px -14px rgba(47,94,69,.75); }
-    .btn--ghost{ background:rgba(255,255,255,.12); color:#fff; border:1.5px solid rgba(255,255,255,.55); backdrop-filter:blur(4px); }
-    .btn--ghost:hover{ background:rgba(255,255,255,.22); transform:translateY(-3px); }
-    .btn--outline{ background:#fff; color:var(--pine); border:1.5px solid var(--line); box-shadow:var(--shadow-sm); }
-    .btn--outline:hover{ border-color:var(--moss); color:var(--pine-600); transform:translateY(-3px); box-shadow:var(--shadow); }
-    .btn--light{ background:#fff; color:var(--forest); box-shadow:var(--shadow); }
-    .btn--light:hover{ transform:translateY(-3px); box-shadow:var(--shadow-lg); }
-    .btn--block{ width:100%; }
+h1, h2, h3 {
+  font-family: var(--serif);
+  font-weight: 500;
+  color: var(--ink);
+  margin: 0;
+  letter-spacing: -0.005em;
+  line-height: 1.04;
+}
 
-    /* Textlink mit animierter Höhenlinie als Unterstrich */
-    .link-arrow{
-      display:inline-flex; align-items:center; gap:.5rem;
-      color:var(--pine); font-weight:700; position:relative;
-    }
-    .link-arrow .ic{ width:16px; height:16px; transition:transform .3s var(--ease); }
-    .link-arrow::after{
-      content:""; position:absolute; left:0; bottom:-3px; height:2px; width:100%;
-      background:var(--honey); border-radius:2px;
-      transform:scaleX(0); transform-origin:left; transition:transform .35s var(--ease);
-    }
-    .link-arrow:hover::after{ transform:scaleX(1); }
-    .link-arrow:hover .ic{ transform:translateX(4px); }
+::selection { background: var(--bordeaux); color: var(--cream); }
 
-    /* =========================================================
-       HEADER / NAVIGATION
-       ========================================================= */
-    .header{
-      position:fixed; inset:0 0 auto 0; z-index:100;
-      height:var(--header-h);
-      display:flex; align-items:center;
-      transition:background-color .4s var(--ease), box-shadow .4s var(--ease), border-color .4s var(--ease);
-      border-bottom:1px solid transparent;
-    }
-    .header .container{ display:flex; align-items:center; justify-content:space-between; gap:1.5rem; }
-    .header.scrolled{
-      background:rgba(250,252,248,.88);
-      backdrop-filter:saturate(1.4) blur(12px);
-      box-shadow:0 6px 24px -18px rgba(28,58,44,.5);
-      border-bottom-color:var(--line);
-    }
+:focus-visible {
+  outline: 2px solid var(--bordeaux);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
 
-    /* Logo */
-    .brand{ display:inline-flex; align-items:center; gap:.7rem; color:#fff; transition:color .4s var(--ease); }
-    .header.scrolled .brand{ color:var(--forest); }
-    .brand__mark{
-      width:42px; height:42px; flex:none; border-radius:13px;
-      display:grid; place-items:center;
-      background:linear-gradient(150deg, var(--pine), var(--forest));
-      box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.18);
-    }
-    .brand__mark svg{ width:24px; height:24px; }
-    .brand__text{ line-height:1.05; }
-    .brand__name{ font-family:var(--font-display); font-weight:600; font-size:1.18rem; letter-spacing:-.01em; }
-    .brand__sub{ display:block; font-size:.66rem; letter-spacing:.22em; text-transform:uppercase; font-weight:700; opacity:.7; }
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 0.75rem 1.25rem;
+  z-index: 1000;
+}
+.skip-link:focus { left: 1rem; top: 1rem; }
 
-    /* Desktop-Navigation */
-    .nav{ display:flex; align-items:center; gap:2.2rem; }
-    .nav-links{ display:flex; align-items:center; gap:2rem; }
-    .nav-links a{
-      position:relative; font-weight:600; font-size:.98rem; color:rgba(255,255,255,.9);
-      transition:color .3s var(--ease); padding-block:.3rem;
-    }
-    .header.scrolled .nav-links a{ color:var(--muted); }
-    .nav-links a::after{
-      content:""; position:absolute; left:0; right:0; bottom:-2px; height:2px; border-radius:2px;
-      background:var(--honey); transform:scaleX(0); transform-origin:left; transition:transform .35s var(--ease);
-    }
-    .nav-links a:hover, .nav-links a.active{ color:#fff; }
-    .header.scrolled .nav-links a:hover, .header.scrolled .nav-links a.active{ color:var(--pine); }
-    .nav-links a:hover::after, .nav-links a.active::after{ transform:scaleX(1); }
+/* ---------- Layout-Helfer ---------- */
+.container {
+  width: 100%;
+  max-width: var(--container);
+  margin-inline: auto;
+  padding-inline: var(--pad);
+}
 
-    /* Hamburger */
-    .nav-toggle{
-      display:none; width:46px; height:46px; border-radius:13px;
-      align-items:center; justify-content:center; color:#fff;
-      background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.35);
-      transition:background-color .3s var(--ease), color .3s var(--ease), border-color .3s var(--ease);
-    }
-    .nav-toggle .ic{ width:24px; height:24px; }
-    .header.scrolled .nav-toggle{ color:var(--forest); background:var(--mist); border-color:var(--line); }
+.section { padding-block: var(--section-y); }
 
-    /* Mobile-Drawer */
-    .backdrop{
-      position:fixed; inset:0; z-index:110; background:rgba(28,58,44,.45);
-      backdrop-filter:blur(2px); opacity:0; visibility:hidden; transition:opacity .35s var(--ease), visibility .35s;
-    }
-    .backdrop.open{ opacity:1; visibility:visible; }
-    .mobile-nav{
-      position:fixed; top:0; right:0; z-index:120; height:100%;
-      width:min(330px, 86vw); background:var(--paper);
-      transform:translateX(100%); transition:transform .45s var(--ease);
-      box-shadow:-30px 0 60px -30px rgba(28,58,44,.5);
-      display:flex; flex-direction:column; padding:1.4rem 1.5rem 2rem;
-      overflow-y:auto;
-    }
-    .mobile-nav.open{ transform:translateX(0); }
-    .mobile-nav__top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:1.6rem; }
-    .mobile-nav__top .brand{ color:var(--forest); }
-    .m-close{ width:44px; height:44px; border-radius:12px; display:grid; place-items:center; background:var(--mist); color:var(--forest); }
-    .m-close .ic{ width:22px; height:22px; }
-    .mobile-nav a.m-link{
-      display:flex; align-items:center; justify-content:space-between;
-      padding:1rem .25rem; font-family:var(--font-display); font-size:1.35rem; color:var(--forest);
-      border-bottom:1px solid var(--line); font-weight:500;
-    }
-    .mobile-nav a.m-link .ic{ width:18px; height:18px; color:var(--moss); }
-    .mobile-nav .btn{ margin-top:1.6rem; }
-    .mobile-nav__contact{ margin-top:auto; padding-top:1.6rem; font-size:.92rem; color:var(--muted); }
-    .mobile-nav__contact a{ color:var(--pine); font-weight:700; }
+section[id] { scroll-margin-top: var(--header-h); }
 
-    /* =========================================================
-       HERO
-       ========================================================= */
-    .hero{
-      position:relative; min-height:clamp(640px, 100svh, 940px);
-      display:flex; align-items:center;
-      color:#fff; overflow:hidden;
-      background-image:
-        linear-gradient(180deg, rgba(20,40,30,.55) 0%, rgba(20,40,30,.25) 35%, rgba(20,40,30,.62) 100%),
-        url("https://gasthofpost.at/wp-content/uploads/2024/08/Oberdrauburg-Gasthof-Post-Sommer-04.webp");
-      background-size:cover;
-      background-position:center 40%;
-    }
-    .hero__inner{ position:relative; z-index:3; padding-top:var(--header-h); width:100%; }
-    .hero__eyebrow{
-      display:inline-flex; align-items:center; gap:.65rem;
-      font-size:.8rem; font-weight:700; letter-spacing:.2em; text-transform:uppercase;
-      color:rgba(255,255,255,.92); margin-bottom:1.4rem;
-      background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.28);
-      padding:.5rem 1rem; border-radius:var(--r-pill); backdrop-filter:blur(4px);
-    }
-    .hero__eyebrow .dot{ width:7px; height:7px; border-radius:50%; background:var(--honey-soft); }
-    .hero h1{ color:#fff; max-width:13ch; text-shadow:0 2px 30px rgba(0,0,0,.25); }
-    .hero__sub{
-      font-size:clamp(1.1rem, 2vw, 1.4rem); max-width:46ch; margin:1.4rem 0 2.4rem;
-      color:rgba(255,255,255,.94); font-weight:400; line-height:1.6;
-      text-shadow:0 1px 16px rgba(0,0,0,.3);
-    }
-    .hero__cta{ display:flex; flex-wrap:wrap; gap:1rem; }
+/* ---------- Eyebrow / Labels ---------- */
+.eyebrow {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--stone);
+  margin: 0 0 1.4rem;
+}
+.eyebrow--accent { color: var(--bordeaux); }
+.eyebrow--light  { color: rgba(243, 234, 214, 0.75); }
 
-    /* Höhenlinien-Signatur in der Hero-Ecke */
-    .hero__contour{
-      position:absolute; right:-4%; bottom:-8%; width:min(560px, 60%); z-index:2;
-      color:rgba(255,255,255,.16); pointer-events:none;
-    }
-    /* Scroll-Hinweis */
-    .hero__scroll{
-      position:absolute; left:50%; bottom:26px; transform:translateX(-50%); z-index:3;
-      display:flex; flex-direction:column; align-items:center; gap:.5rem;
-      color:rgba(255,255,255,.8); font-size:.72rem; letter-spacing:.18em; text-transform:uppercase; font-weight:700;
-    }
-    .hero__mouse{ width:26px; height:42px; border:2px solid rgba(255,255,255,.7); border-radius:14px; position:relative; }
-    .hero__mouse::after{
-      content:""; position:absolute; top:7px; left:50%; transform:translateX(-50%);
-      width:4px; height:8px; border-radius:4px; background:#fff;
-      animation:wheel 1.8s var(--ease) infinite;
-    }
-    @keyframes wheel{ 0%{opacity:0; transform:translate(-50%,0);} 30%{opacity:1;} 70%{opacity:1; transform:translate(-50%,12px);} 100%{opacity:0; transform:translate(-50%,12px);} }
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  padding: 0.95em 2em;
+  border-radius: 100px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  transition: background-color 0.4s var(--ease),
+              color 0.4s var(--ease),
+              border-color 0.4s var(--ease),
+              transform 0.4s var(--ease),
+              box-shadow 0.4s var(--ease);
+}
 
-    /* =========================================================
-       ÜBER UNS
-       ========================================================= */
-    .about__grid{ display:grid; grid-template-columns:1.1fr .9fr; gap:clamp(36px, 6vw, 84px); align-items:center; }
-    .about__text p + p{ margin-top:1.1rem; }
-    .signature{ margin-top:1.8rem; display:flex; align-items:center; gap:1rem; }
-    .signature__name{ font-family:var(--font-display); font-style:italic; font-size:1.5rem; color:var(--pine); }
-    .signature__role{ font-size:.85rem; color:var(--muted); letter-spacing:.04em; }
+.btn--primary {
+  background: var(--bordeaux);
+  color: var(--cream);
+}
+.btn--primary:hover {
+  background: var(--bordeaux-deep);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px -16px rgba(94, 23, 23, 0.7);
+}
 
-    /* Merkmal-Chips */
-    .about__aside{
-      background:var(--white); border:1px solid var(--line); border-radius:var(--r-lg);
-      padding:clamp(26px, 4vw, 40px); box-shadow:var(--shadow); position:relative; overflow:hidden;
-    }
-    .about__aside::before{
-      content:""; position:absolute; inset:auto -30% -50% auto; width:280px; height:280px; border-radius:50%;
-      background:radial-gradient(circle, var(--mist) 0%, transparent 70%); z-index:0;
-    }
-    .feature-row{ display:flex; gap:1rem; padding:1.05rem 0; border-bottom:1px solid var(--line); position:relative; z-index:1; }
-    .feature-row:last-child{ border-bottom:none; padding-bottom:0; }
-    .feature-row:first-child{ padding-top:0; }
-    .feature-row__ic{
-      width:46px; height:46px; flex:none; border-radius:14px; display:grid; place-items:center;
-      background:var(--mist); color:var(--pine);
-    }
-    .feature-row__ic .ic{ width:23px; height:23px; }
-    .feature-row__title{ font-weight:700; color:var(--forest); }
-    .feature-row__desc{ font-size:.92rem; color:var(--muted); }
+/* helle Variante über dunklen Bildern */
+.btn--light {
+  background: var(--cream);
+  color: var(--bordeaux);
+}
+.btn--light:hover {
+  background: #fff;
+  color: var(--bordeaux-deep);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px -16px rgba(0,0,0,0.5);
+}
 
-    /* =========================================================
-       FERIENWOHNUNGEN
-       ========================================================= */
-    .apt-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:30px; }
-    .apt-card{
-      background:#fff; border:1px solid var(--line); border-radius:var(--r-lg); overflow:hidden;
-      display:flex; flex-direction:column; box-shadow:var(--shadow-sm);
-      transition:transform .45s var(--ease), box-shadow .45s var(--ease), border-color .45s var(--ease);
-    }
-    .apt-card:hover{ transform:translateY(-8px); box-shadow:var(--shadow-lg); border-color:transparent; }
-    .apt-card__media{ position:relative; aspect-ratio:16/10; overflow:hidden; }
-    .apt-card__media svg{ width:100%; height:100%; display:block; }
-    .apt-card__tag{
-      position:absolute; top:14px; left:14px; z-index:2;
-      background:rgba(255,255,255,.92); color:var(--pine); font-weight:700; font-size:.78rem;
-      padding:.35rem .8rem; border-radius:var(--r-pill); box-shadow:var(--shadow-sm);
-      display:inline-flex; align-items:center; gap:.4rem;
-    }
-    .apt-card__tag .ic{ width:15px; height:15px; }
-    .apt-card__body{ padding:1.6rem 1.6rem 1.7rem; display:flex; flex-direction:column; flex:1; }
-    .apt-card__body h3{ margin-bottom:.5rem; }
-    .apt-card__desc{ color:var(--muted); font-size:.98rem; margin-bottom:1.2rem; }
-    .amenities{ display:flex; flex-wrap:wrap; gap:.5rem; margin-bottom:1.5rem; }
-    .amenities li{
-      display:inline-flex; align-items:center; gap:.45rem;
-      font-size:.84rem; color:var(--ink); background:var(--mist);
-      padding:.4rem .75rem; border-radius:var(--r-pill); font-weight:600;
-    }
-    .amenities .ic{ width:15px; height:15px; color:var(--pine); }
-    .apt-card__foot{ margin-top:auto; display:flex; align-items:center; justify-content:space-between; gap:1rem; padding-top:1.1rem; border-top:1px solid var(--line); }
-    .apt-card__price{ font-size:.9rem; color:var(--muted); }
-    .apt-card__price strong{ display:block; font-family:var(--font-display); font-size:1.25rem; color:var(--forest); font-weight:600; }
+/* Bordeaux-Button auf dunklem Band */
+.btn--on-dark:hover {
+  box-shadow: 0 14px 30px -16px rgba(0,0,0,0.6);
+}
 
-    /* =========================================================
-       UMGEBUNG
-       ========================================================= */
-    .env__grid{ display:grid; grid-template-columns:.95fr 1.05fr; gap:clamp(40px, 6vw, 80px); align-items:center; }
-    .env__gallery{ position:relative; padding:0 0 46px 46px; }
-    .env__gallery::before{ /* zarte Höhenlinien hinter den Bildern */
-      content:""; position:absolute; inset:0 -8% -8% 0; z-index:0;
-      background:
-        radial-gradient(circle at 80% 20%, var(--mist) 0%, transparent 55%);
-      border-radius:var(--r-lg);
-    }
-    .env__img{ position:relative; border-radius:var(--r-lg); overflow:hidden; box-shadow:var(--shadow); border:5px solid #fff; }
-    .env__img--main{ aspect-ratio:4/3; z-index:1; }
-    .env__img--main img{ width:100%; height:100%; object-fit:cover; }
-    .env__img--sub{
-      position:absolute; left:0; bottom:0; width:54%; aspect-ratio:1/1; z-index:2;
-      box-shadow:var(--shadow-lg);
-    }
-    .env__img--sub img{ width:100%; height:100%; object-fit:cover; }
-    .env__badge{
-      position:absolute; top:18px; right:18px; z-index:3;
-      background:rgba(255,255,255,.94); border-radius:var(--r); padding:.7rem 1rem; box-shadow:var(--shadow);
-      display:flex; align-items:center; gap:.6rem; font-weight:700; color:var(--forest); font-size:.9rem;
-    }
-    .env__badge .ic{ width:20px; height:20px; color:var(--honey); }
+/* ---------- Pfeil-Link ---------- */
+.link-arrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55em;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bordeaux);
+  position: relative;
+}
+.link-arrow::after {
+  content: "→";
+  font-size: 1em;
+  transition: transform 0.4s var(--ease);
+}
+.link-arrow::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -6px;
+  height: 1px;
+  width: 0;
+  background: currentColor;
+  transition: width 0.45s var(--ease);
+}
+.link-arrow:hover::after { transform: translateX(5px); }
+.link-arrow:hover::before { width: calc(100% - 2.1em); }
+.link-arrow--light { color: var(--cream); }
 
-    .chips{ display:flex; flex-wrap:wrap; gap:.7rem; margin-top:1.8rem; }
-    .chips li{
-      display:inline-flex; align-items:center; gap:.5rem;
-      background:#fff; border:1px solid var(--line); padding:.55rem 1rem; border-radius:var(--r-pill);
-      font-weight:600; font-size:.92rem; color:var(--ink); box-shadow:var(--shadow-sm);
-      transition:transform .3s var(--ease), border-color .3s var(--ease), color .3s var(--ease);
-    }
-    .chips li:hover{ transform:translateY(-3px); border-color:var(--moss); color:var(--pine); }
-    .chips .ic{ width:17px; height:17px; color:var(--pine); }
-    .section--mist .chips li{ background:#fff; }
+/* ===============================================================
+   HEADER
+   =============================================================== */
+.site-header {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 100;
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  transition: background-color 0.45s var(--ease),
+              box-shadow 0.45s var(--ease),
+              backdrop-filter 0.45s var(--ease);
+}
+.site-header__inner {
+  width: 100%;
+  max-width: var(--container);
+  margin-inline: auto;
+  padding-inline: var(--pad);
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
 
-    /* =========================================================
-       VORTEILE
-       ========================================================= */
-    .perks{ display:grid; grid-template-columns:repeat(3, 1fr); gap:24px; }
-    .perk{
-      background:#fff; border:1px solid var(--line); border-radius:var(--r); padding:1.9rem 1.7rem;
-      box-shadow:var(--shadow-sm); transition:transform .4s var(--ease), box-shadow .4s var(--ease);
-    }
-    .perk:hover{ transform:translateY(-6px); box-shadow:var(--shadow); }
-    .perk__ic{
-      width:54px; height:54px; border-radius:16px; display:grid; place-items:center; margin-bottom:1.1rem;
-      background:linear-gradient(150deg, var(--mist), #fff); color:var(--pine);
-      box-shadow:inset 0 0 0 1px var(--line);
-    }
-    .perk__ic .ic{ width:27px; height:27px; }
-    .perk h3{ font-size:1.18rem; margin-bottom:.45rem; }
-    .perk p{ color:var(--muted); font-size:.96rem; }
+/* Zustand über dem Hero (transparent, helle Schrift) */
+.site-header[data-state="top"] { color: var(--cream); }
+.site-header[data-state="top"] .nav a { color: rgba(243,234,214,0.92); }
 
-    /* =========================================================
-       PRE-FOOTER CTA-BAND
-       ========================================================= */
-    .cta-band{ position:relative; overflow:hidden; background:var(--forest); color:#fff; }
-    .cta-band .container{ position:relative; z-index:2; padding-block:clamp(56px, 8vw, 90px); text-align:center; }
-    .cta-band h2{ color:#fff; max-width:18ch; margin-inline:auto; }
-    .cta-band p{ color:rgba(255,255,255,.85); max-width:48ch; margin:1.1rem auto 2rem; font-size:1.1rem; }
-    .cta-band__contour{ position:absolute; inset:0; z-index:1; color:rgba(255,255,255,.07); pointer-events:none; }
-    .cta-band__contour svg{ width:100%; height:100%; }
+/* Zustand gescrollt (Creme-Fläche, dunkle Schrift) */
+.site-header[data-state="solid"] {
+  background: rgba(245, 241, 233, 0.92);
+  backdrop-filter: saturate(140%) blur(10px);
+  box-shadow: 0 1px 0 var(--line), 0 10px 30px -24px rgba(0,0,0,0.4);
+  color: var(--ink);
+}
+.site-header[data-state="solid"] .nav a { color: var(--ink-soft); }
 
-    /* =========================================================
-       KONTAKT / BUCHUNG
-       ========================================================= */
-    .contact__grid{ display:grid; grid-template-columns:1.25fr .75fr; gap:clamp(34px, 5vw, 60px); align-items:start; }
-    .form-card{ background:#fff; border:1px solid var(--line); border-radius:var(--r-lg); padding:clamp(26px, 4vw, 44px); box-shadow:var(--shadow); }
-    .form-grid{ display:grid; grid-template-columns:1fr 1fr; gap:1.1rem 1.3rem; }
-    .field{ display:flex; flex-direction:column; gap:.45rem; }
-    .field.full{ grid-column:1 / -1; }
-    .field label{ font-weight:700; font-size:.9rem; color:var(--forest); }
-    .field label .req{ color:var(--honey); }
-    .field input, .field textarea{
-      font-family:inherit; font-size:1rem; color:var(--ink);
-      padding:.85rem 1rem; border:1.5px solid var(--line); border-radius:var(--r-sm);
-      background:var(--paper); transition:border-color .25s var(--ease), box-shadow .25s var(--ease), background-color .25s var(--ease);
-      width:100%;
-    }
-    .field textarea{ resize:vertical; min-height:120px; }
-    .field input::placeholder, .field textarea::placeholder{ color:#9aa79e; }
-    .field input:focus, .field textarea:focus{
-      outline:none; border-color:var(--sage); background:#fff;
-      box-shadow:0 0 0 4px rgba(110,146,122,.16);
-    }
-    .field input:invalid:not(:placeholder-shown){ border-color:#cf7a6a; }
-    .form-note{ margin-top:1.3rem; font-size:.88rem; color:var(--muted); display:flex; align-items:flex-start; gap:.55rem; }
-    .form-note .ic{ width:18px; height:18px; color:var(--pine); flex:none; margin-top:2px; }
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-right: auto;
+}
+.brand__badge {
+  width: 46px;
+  height: 46px;
+  flex: none;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px -10px rgba(94,23,23,0.55);
+}
+.brand__word {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+  font-family: var(--serif);
+}
+.brand__line-1 {
+  font-size: 0.78rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  opacity: 0.85;
+  font-family: var(--sans);
+  font-weight: 600;
+}
+.brand__line-2 {
+  font-size: 1.55rem;
+  font-weight: 500;
+  margin-top: 2px;
+}
 
-    /* Erfolgs-Meldung */
-    .form-success{ display:none; text-align:center; padding:1.5rem .5rem; }
-    .form-success.show{ display:block; animation:pop .5s var(--ease); }
-    .form-success__ic{ width:74px; height:74px; border-radius:50%; background:var(--mist); color:var(--pine); display:grid; place-items:center; margin:0 auto 1.2rem; }
-    .form-success__ic .ic{ width:38px; height:38px; }
-    .form-success h3{ margin-bottom:.6rem; }
-    .form-success p{ color:var(--muted); max-width:40ch; margin-inline:auto; }
-    @keyframes pop{ 0%{ transform:scale(.94); opacity:0; } 100%{ transform:scale(1); opacity:1; } }
+.nav {
+  display: flex;
+  gap: clamp(1.4rem, 2.2vw, 2.6rem);
+  align-items: center;
+}
+.nav a {
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  position: relative;
+  padding-block: 0.4rem;
+  transition: color 0.3s var(--ease);
+}
+.nav a::after {
+  content: "";
+  position: absolute;
+  left: 0; bottom: 0;
+  height: 1px; width: 0;
+  background: currentColor;
+  transition: width 0.4s var(--ease);
+}
+.nav a:hover { color: var(--bordeaux); }
+.site-header[data-state="top"] .nav a:hover { color: #fff; }
+.nav a:hover::after { width: 100%; }
 
-    /* Kontaktbox */
-    .contact-aside{ display:flex; flex-direction:column; gap:1rem; }
-    .contact-box{
-      background:linear-gradient(160deg, var(--pine), var(--forest)); color:#fff;
-      border-radius:var(--r-lg); padding:clamp(26px, 4vw, 38px); position:relative; overflow:hidden;
-    }
-    .contact-box::after{ content:""; position:absolute; right:-40px; bottom:-40px; width:180px; height:180px; border-radius:50%; background:rgba(255,255,255,.06); }
-    .contact-box h3{ color:#fff; margin-bottom:1.4rem; }
-    .contact-item{ display:flex; align-items:flex-start; gap:1rem; padding:.9rem 0; border-bottom:1px solid rgba(255,255,255,.14); position:relative; z-index:1; }
-    .contact-item:last-child{ border-bottom:none; }
-    .contact-item__ic{ width:44px; height:44px; flex:none; border-radius:13px; background:rgba(255,255,255,.12); display:grid; place-items:center; }
-    .contact-item__ic .ic{ width:21px; height:21px; color:#fff; }
-    .contact-item__label{ font-size:.74rem; letter-spacing:.16em; text-transform:uppercase; opacity:.75; font-weight:700; }
-    .contact-item__value{ font-weight:700; font-size:1.05rem; }
-    .contact-item a:hover{ text-decoration:underline; }
-    .contact-hours{ background:var(--mist); border-radius:var(--r); padding:1.3rem 1.5rem; }
-    .contact-hours__title{ display:flex; align-items:center; gap:.6rem; font-weight:700; color:var(--forest); margin-bottom:.4rem; }
-    .contact-hours__title .ic{ width:20px; height:20px; color:var(--pine); }
-    .contact-hours p{ font-size:.94rem; color:var(--muted); }
+.nav__cta { padding: 0.7em 1.5em; }
+.site-header[data-state="top"] .nav__cta {
+  background: var(--cream);
+  color: var(--bordeaux);
+}
 
-    /* =========================================================
-       FOOTER
-       ========================================================= */
-    .footer{ background:#16261D; color:rgba(255,255,255,.7); padding-block:clamp(56px, 7vw, 80px) 28px; }
-    .footer .brand{ color:#fff; }
-    .footer__grid{ display:grid; grid-template-columns:1.5fr 1fr 1fr 1.2fr; gap:2.4rem; }
-    .footer__about{ max-width:34ch; font-size:.95rem; margin-top:1.2rem; }
-    .footer h4{ color:#fff; font-family:var(--font-body); font-size:.78rem; letter-spacing:.18em; text-transform:uppercase; margin-bottom:1.1rem; opacity:.85; }
-    .footer__links a{ display:block; padding:.4rem 0; color:rgba(255,255,255,.7); transition:color .25s var(--ease), padding-left .25s var(--ease); }
-    .footer__links a:hover{ color:#fff; padding-left:6px; }
-    .footer__contact p{ font-size:.95rem; margin-bottom:.7rem; }
-    .footer__contact a{ color:#fff; font-weight:600; }
-    .socials{ display:flex; gap:.7rem; margin-top:1.2rem; }
-    .socials a{ width:42px; height:42px; border-radius:12px; display:grid; place-items:center; background:rgba(255,255,255,.08); transition:background-color .3s var(--ease), transform .3s var(--ease); }
-    .socials a:hover{ background:var(--pine); transform:translateY(-3px); }
-    .socials .ic{ width:20px; height:20px; color:#fff; }
-    .footer__bottom{ margin-top:3rem; padding-top:1.6rem; border-top:1px solid rgba(255,255,255,.12); display:flex; flex-wrap:wrap; gap:1rem; justify-content:space-between; align-items:center; font-size:.85rem; }
-    .footer__bottom a:hover{ color:#fff; }
-    .footer__made{ display:inline-flex; align-items:center; gap:.45rem; }
-    .footer__made .ic{ width:15px; height:15px; color:var(--honey); }
+/* Hamburger */
+.nav-toggle {
+  display: none;
+  width: 44px; height: 44px;
+  background: none; border: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 0;
+}
+.nav-toggle span {
+  display: block;
+  height: 2px;
+  width: 26px;
+  background: currentColor;
+  margin-inline: auto;
+  transition: transform 0.4s var(--ease), opacity 0.3s var(--ease);
+}
 
-    /* =========================================================
-       SCROLL-ANIMATIONEN (REVEAL)
-       ========================================================= */
-    [data-reveal]{ opacity:0; transform:translateY(26px); transition:opacity .8s var(--ease), transform .8s var(--ease); }
-    [data-reveal].is-visible{ opacity:1; transform:none; }
+/* ---------- Mobile-Menü ---------- */
+.mobile-nav {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  background: var(--pine);
+  color: var(--cream);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2.5rem;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-12px);
+  transition: opacity 0.45s var(--ease), transform 0.45s var(--ease), visibility 0.45s;
+}
+.mobile-nav.is-open { opacity: 1; visibility: visible; transform: none; }
+.mobile-nav__links {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.4rem;
+}
+.mobile-nav__links a {
+  font-family: var(--serif);
+  font-size: clamp(1.9rem, 8vw, 2.6rem);
+  font-weight: 500;
+  color: var(--cream);
+}
+.mobile-nav__links a:active { color: var(--paper-deep); }
 
-    /* Icon-Grundgröße */
-    .ic{ width:24px; height:24px; display:inline-block; vertical-align:middle; }
+/* ===============================================================
+   HERO
+   =============================================================== */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  color: var(--cream);
+}
+.hero__media {
+  position: absolute;
+  inset: 0;
+  background-image: url("https://impro.usercontent.one/appid/oneComWsb/domain/ferienhaus-veider.at/media/ferienhaus-veider.at/onewebmedia/Homepage%20neu.jpg?etag=%22d1352-56d6fd23%22&sourceContentType=image%2Fjpeg&ignoreAspectRatio&resize=1000,820&quality=85");
+  background-size: cover;
+  background-position: center;
+  transform: scale(1.06);
+  will-change: transform;
+}
+.hero__scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom,
+      rgba(20,16,13,0.42) 0%,
+      rgba(20,16,13,0.18) 38%,
+      rgba(20,16,13,0.62) 100%),
+    radial-gradient(120% 90% at 50% 110%, rgba(20,16,13,0.5), transparent 60%);
+}
+.hero__content {
+  position: relative;
+  width: 100%;
+  max-width: var(--container);
+  margin-inline: auto;
+  padding-inline: var(--pad);
+  padding-bottom: clamp(5rem, 12vh, 9rem);
+}
+.hero__eyebrow {
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(243,234,214,0.85);
+  margin: 0 0 1.4rem;
+}
+.hero__title {
+  color: #fff;
+  font-weight: 500;
+  font-size: clamp(3.3rem, 9.5vw, 7.5rem);
+  line-height: 0.95;
+  letter-spacing: -0.015em;
+  text-shadow: 0 2px 40px rgba(0,0,0,0.35);
+}
+.hero__subtitle {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(1.3rem, 3vw, 2rem);
+  font-weight: 400;
+  color: rgba(255,255,255,0.94);
+  margin: 1.1rem 0 2.4rem;
+}
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.5rem 2rem;
+}
+.hero__scroll {
+  position: absolute;
+  left: 50%;
+  bottom: 1.6rem;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 50px;
+  display: grid;
+  place-items: start center;
+}
+.hero__scroll-line {
+  width: 1px;
+  height: 38px;
+  background: rgba(243,234,214,0.6);
+  position: relative;
+  overflow: hidden;
+}
+.hero__scroll-line::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--cream);
+  transform: translateY(-100%);
+  animation: scrollCue 2.4s var(--ease) infinite;
+}
+@keyframes scrollCue {
+  0%   { transform: translateY(-100%); }
+  55%  { transform: translateY(0); }
+  100% { transform: translateY(100%); }
+}
 
-    /* =========================================================
-       RESPONSIVE
-       ========================================================= */
-    @media (max-width: 1080px){
-      .footer__grid{ grid-template-columns:1.4fr 1fr 1.3fr; }
-      .footer__nav{ display:none; }
-    }
-    @media (max-width: 960px){
-      .nav-links{ display:none; }
-      .nav-toggle{ display:flex; }
-      .about__grid{ grid-template-columns:1fr; }
-      .about__aside{ order:-1; }
-      .apt-grid{ grid-template-columns:repeat(2, 1fr); }
-      .env__grid{ grid-template-columns:1fr; }
-      .env__gallery{ max-width:560px; }
-      .perks{ grid-template-columns:repeat(2, 1fr); }
-      .contact__grid{ grid-template-columns:1fr; }
-      .footer__grid{ grid-template-columns:1fr 1fr; gap:2rem; }
-    }
-    @media (max-width: 640px){
-      body{ font-size:1rem; }
-      .apt-grid{ grid-template-columns:1fr; }
-      .perks{ grid-template-columns:1fr; }
-      .form-grid{ grid-template-columns:1fr; }
-      .hero{ background-position:center 30%; }
-      .hero__cta{ flex-direction:column; }
-      .hero__cta .btn{ width:100%; }
-      .footer__grid{ grid-template-columns:1fr; }
-      .env__img--sub{ width:46%; }
-    }
+/* ===============================================================
+   WILLKOMMEN
+   =============================================================== */
+.welcome { text-align: center; }
+.welcome__inner {
+  max-width: 760px;
+}
+.welcome__title {
+  font-size: clamp(2.3rem, 5.5vw, 3.8rem);
+  margin-bottom: 1.8rem;
+}
+.welcome__lead {
+  font-size: clamp(1.12rem, 1.4vw, 1.3rem);
+  color: var(--ink-soft);
+  line-height: 1.8;
+  margin: 0 auto;
+  max-width: 660px;
+}
 
-    /* Reduzierte Bewegung respektieren */
-    @media (prefers-reduced-motion: reduce){
-      html{ scroll-behavior:auto; }
-      *{ animation:none !important; transition-duration:.01ms !important; }
-      [data-reveal]{ opacity:1; transform:none; }
-    }
+/* Divider mit Emblem */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  justify-content: center;
+  margin-top: 3.5rem;
+  color: var(--bordeaux);
+}
+.divider__rule {
+  height: 1px;
+  width: min(120px, 22vw);
+  background: linear-gradient(to right, transparent, var(--line));
+}
+.divider__rule:last-child { background: linear-gradient(to left, transparent, var(--line)); }
+.mark { width: 64px; height: auto; }
+
+/* ===============================================================
+   FEATURE / DAS FERIENHAUS  (Split: Bild + Panel)
+   =============================================================== */
+.feature {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  min-height: min(86vh, 760px);
+}
+.feature__media { position: relative; overflow: hidden; }
+.feature__media img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.feature__panel {
+  background: var(--paper-deep);
+  display: flex;
+  align-items: center;
+  padding: clamp(2.5rem, 6vw, 6rem);
+}
+.feature__panel-inner { max-width: 480px; }
+.feature__title {
+  font-size: clamp(2.1rem, 4vw, 3.2rem);
+  margin-bottom: 1.5rem;
+}
+.feature__text {
+  color: var(--ink-soft);
+  margin-bottom: 2rem;
+}
+.feature__list {
+  list-style: none;
+  margin: 0 0 2.4rem;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+.feature__list li {
+  padding: 0.95rem 0 0.95rem 1.7rem;
+  border-bottom: 1px solid var(--line);
+  position: relative;
+  font-size: 0.98rem;
+  color: var(--ink);
+}
+.feature__list li::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 1.5rem;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--bordeaux);
+}
+
+/* ===============================================================
+   WOHNUNGEN
+   =============================================================== */
+.section-head {
+  max-width: 640px;
+  margin-bottom: clamp(3rem, 6vw, 4.5rem);
+}
+.section-head__title {
+  font-size: clamp(2.3rem, 5vw, 3.6rem);
+  margin-bottom: 1.4rem;
+}
+.section-head__text { color: var(--stone); max-width: 540px; }
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+}
+.card { display: flex; flex-direction: column; }
+.card__frame {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--paper-deep);
+}
+.card__frame img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 1.1s var(--ease);
+}
+.card:hover .card__frame img { transform: scale(1.06); }
+.card__num {
+  position: absolute;
+  top: 1rem; left: 1.1rem;
+  z-index: 2;
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--cream);
+  letter-spacing: 0.05em;
+  text-shadow: 0 1px 12px rgba(0,0,0,0.4);
+}
+.card__body { padding: 1.6rem 0.2rem 0; }
+.card__title {
+  font-size: clamp(1.6rem, 2.4vw, 2rem);
+  margin-bottom: 0.7rem;
+}
+.card__text {
+  color: var(--ink-soft);
+  font-size: 1rem;
+  line-height: 1.7;
+  margin-bottom: 1.4rem;
+}
+
+/* ===============================================================
+   UMGEBUNG / AKTIVURLAUB  (Vollbild-Band)
+   =============================================================== */
+.surroundings { position: relative; }
+.surroundings__media {
+  position: relative;
+  min-height: min(88vh, 780px);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+.surroundings__media > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.surroundings__scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(20,22,18,0.78) 0%, rgba(20,22,18,0.5) 45%, rgba(20,22,18,0.15) 100%),
+    linear-gradient(to top, rgba(20,22,18,0.45), transparent 50%);
+}
+.surroundings__content {
+  position: relative;
+  color: var(--cream);
+  max-width: 620px;
+  padding-block: 4rem;
+}
+.surroundings__title {
+  color: #fff;
+  font-size: clamp(2.3rem, 5.5vw, 4rem);
+  margin-bottom: 1.5rem;
+}
+.surroundings__text {
+  color: rgba(243,234,214,0.92);
+  font-size: 1.1rem;
+  margin-bottom: 2.2rem;
+}
+.surroundings__tags {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin: 0;
+  padding: 0;
+}
+.surroundings__tags li {
+  border: 1px solid rgba(243,234,214,0.35);
+  border-radius: 100px;
+  padding: 0.5rem 1.2rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--cream);
+  backdrop-filter: blur(2px);
+}
+
+/* ===============================================================
+   PREISE & ANFRAGE  (Tiefgrünes Band)
+   =============================================================== */
+.inquiry {
+  background: var(--pine);
+  color: var(--cream);
+  text-align: center;
+}
+.inquiry__inner { max-width: 680px; }
+.inquiry__title {
+  color: #fff;
+  font-size: clamp(2.3rem, 5vw, 3.6rem);
+  margin-bottom: 1.4rem;
+}
+.inquiry__text {
+  color: rgba(243,234,214,0.88);
+  font-size: 1.15rem;
+  margin: 0 auto 2.4rem;
+  max-width: 520px;
+}
+
+/* ===============================================================
+   KONTAKT
+   =============================================================== */
+.contact__grid {
+  display: grid;
+  grid-template-columns: 1fr 1.05fr;
+  gap: clamp(2.5rem, 6vw, 5.5rem);
+  align-items: start;
+}
+.contact__title {
+  font-size: clamp(2.3rem, 4.5vw, 3.4rem);
+  margin-bottom: 1.2rem;
+}
+.contact__text { color: var(--ink-soft); max-width: 420px; margin-bottom: 2.6rem; }
+
+.contact__name {
+  font-family: var(--serif);
+  font-size: 1.5rem;
+  color: var(--ink);
+  margin: 0 0 1.2rem;
+}
+.contact__list { margin: 0 0 2.6rem; }
+.contact__list > div {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 1rem;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.contact__list > div:first-child { border-top: 1px solid var(--line); }
+.contact__list dt {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--stone);
+  padding-top: 2px;
+}
+.contact__list dd { margin: 0; color: var(--ink); }
+.contact__list a { transition: color 0.3s var(--ease); }
+.contact__list a:hover { color: var(--bordeaux); }
+
+.contact__image {
+  width: 100%;
+  aspect-ratio: 16 / 11;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+/* ---------- Formular ---------- */
+.contact__form-wrap {
+  background: var(--paper-deep);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: clamp(1.75rem, 4vw, 3rem);
+}
+.form__row { margin-bottom: 1.2rem; }
+.form__row--2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.2rem;
+}
+.form__field { display: flex; flex-direction: column; }
+.form__field label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--stone);
+  margin-bottom: 0.55rem;
+}
+.form__field input,
+.form__field textarea,
+.form__field select {
+  font-family: var(--sans);
+  font-size: 1rem;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.85rem 1rem;
+  width: 100%;
+  transition: border-color 0.3s var(--ease), box-shadow 0.3s var(--ease);
+}
+.form__field input::placeholder,
+.form__field textarea::placeholder { color: #b3a892; }
+.form__field input:focus,
+.form__field textarea:focus,
+.form__field select:focus {
+  outline: none;
+  border-color: var(--bordeaux);
+  box-shadow: 0 0 0 3px rgba(122,31,31,0.12);
+}
+.form__field textarea { resize: vertical; min-height: 120px; }
+
+.form__select { position: relative; }
+.form__select::after {
+  content: "";
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  width: 8px; height: 8px;
+  border-right: 1.5px solid var(--stone);
+  border-bottom: 1.5px solid var(--stone);
+  transform: translateY(-65%) rotate(45deg);
+  pointer-events: none;
+}
+.form__select select { appearance: none; -webkit-appearance: none; padding-right: 2.5rem; }
+
+.form__submit { width: 100%; margin-top: 0.6rem; }
+.form__field input:user-invalid,
+.form__field textarea:user-invalid {
+  border-color: var(--bordeaux);
+}
+.form__success {
+  margin: 1.2rem 0 0;
+  padding: 0.95rem 1.1rem;
+  background: rgba(40,58,48,0.08);
+  border: 1px solid var(--pine);
+  border-radius: 4px;
+  color: var(--pine-deep);
+  font-size: 0.95rem;
+}
+
+/* ===============================================================
+   FOOTER
+   =============================================================== */
+.site-footer {
+  background: #1C1A17;
+  color: rgba(243,234,214,0.72);
+  padding-top: clamp(4rem, 8vw, 6rem);
+}
+.site-footer__grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 3rem;
+  padding-bottom: 3.5rem;
+}
+.site-footer__mark { width: 70px; color: var(--cream); margin-bottom: 1.2rem; }
+.site-footer__name {
+  font-family: var(--serif);
+  font-size: 1.7rem;
+  color: var(--cream);
+  margin: 0 0 0.4rem;
+}
+.site-footer__tag { margin: 0; font-style: italic; font-family: var(--serif); font-size: 1.05rem; }
+
+.site-footer__nav { display: flex; flex-direction: column; gap: 0.9rem; }
+.site-footer h2, .site-footer__nav a, .site-footer__contact a { transition: color 0.3s var(--ease); }
+.site-footer__nav a { font-size: 0.92rem; }
+.site-footer__nav a:hover,
+.site-footer__contact a:hover { color: var(--cream); }
+
+.site-footer__contact p { margin: 0 0 0.55rem; font-size: 0.92rem; }
+.site-footer__contact p:first-child { color: var(--cream); }
+
+.site-footer__bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-block: 1.8rem;
+  border-top: 1px solid rgba(243,234,214,0.12);
+  font-size: 0.82rem;
+}
+.site-footer__top:hover { color: var(--cream); }
+
+/* ===============================================================
+   SCROLL-REVEAL
+   =============================================================== */
+.reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity 0.9s var(--ease), transform 0.9s var(--ease);
+}
+.reveal.is-visible { opacity: 1; transform: none; }
+
+/* ===============================================================
+   RESPONSIVE
+   =============================================================== */
+@media (max-width: 980px) {
+  .nav, .nav__cta { display: none; }
+  .nav-toggle { display: flex; }
+
+  .feature { grid-template-columns: 1fr; }
+  .feature__media { min-height: 60vh; }
+
+  .contact__grid { grid-template-columns: 1fr; }
+  .site-footer__grid { grid-template-columns: 1fr 1fr; }
+  .site-footer__brand { grid-column: 1 / -1; }
+}
+
+@media (max-width: 720px) {
+  .cards { grid-template-columns: 1fr; max-width: 440px; margin-inline: auto; }
+  .card__frame { aspect-ratio: 4 / 3; }
+}
+
+@media (max-width: 560px) {
+  .brand__line-2 { font-size: 1.3rem; }
+  .brand__line-1 { font-size: 0.7rem; }
+  .form__row--2 { grid-template-columns: 1fr; }
+  .contact__list > div { grid-template-columns: 1fr; gap: 0.2rem; }
+  .site-footer__grid { grid-template-columns: 1fr; }
+  .hero__actions { flex-direction: column; align-items: flex-start; gap: 1.4rem; }
+}
+
+/* Menü offen: Hamburger -> X */
+body.menu-open { overflow: hidden; }
+.nav-toggle[aria-expanded="true"] { color: var(--cream); }
+.nav-toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(8px) rotate(45deg); }
+.nav-toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+.nav-toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
+
+/* ===============================================================
+   REDUCED MOTION
+   =============================================================== */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .reveal { opacity: 1; transform: none; }
+  .hero__media { transform: none; }
+}
+
   </style>
 </head>
 <body>
 
-  <!-- =========================================================
-       ICON-SPRITE (einmal definiert, per <use> wiederverwendet)
-       ========================================================= -->
-  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
-    <defs>
-      <g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-        <symbol id="i-peak" viewBox="0 0 24 24"><path d="M3 19h18L14 6l-3 5-2-3-6 11Z"/><path d="m11 11 1.5-2.5"/></symbol>
-        <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M4 20c0-8 6-14 16-14 0 10-6 16-14 16-1 0-2 0-2-2Z"/><path d="M8 16c3-3 6-5 10-6"/></symbol>
-        <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11 12 4l8 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></symbol>
-        <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9.3-9.1C1 7.5 2.7 4.5 5.8 4.5c2 0 3.3 1.2 4.2 2.6.9-1.4 2.2-2.6 4.2-2.6 3.1 0 4.8 3 3.1 6.4C19 15.6 12 20 12 20Z"/></symbol>
-        <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3 3-4.5 5.5-4.5S14 16 14.5 19"/><path d="M16 5.2A3 3 0 0 1 16 11"/><path d="M17 14.6c2 .5 3.4 2 3.8 4.4"/></symbol>
-        <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M2.5 9c5.4-4.7 13.6-4.7 19 0"/><path d="M5.5 12.5c3.7-3.2 9.3-3.2 13 0"/><path d="M8.5 16c2-1.7 5-1.7 7 0"/><circle cx="12" cy="19.5" r="1.1" fill="currentColor" stroke="none"/></symbol>
-        <symbol id="i-kitchen" viewBox="0 0 24 24"><path d="M7 3v8M5 3v4a2 2 0 0 0 4 0V3M7 11v10"/><path d="M17 3c-1.7 0-3 2-3 4.5S15.3 12 17 12V3Zm0 9v9"/></symbol>
-        <symbol id="i-tv" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M8 21h8M9.5 6 12 3l2.5 3"/></symbol>
-        <symbol id="i-bed" viewBox="0 0 24 24"><path d="M3 18V8m0 6h18m0 4V11a2 2 0 0 0-2-2H9v5"/><path d="M3 20v-2M21 20v-2"/></symbol>
-        <symbol id="i-parking" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M10 16V8h2.5a2.2 2.2 0 0 1 0 4.5H10"/></symbol>
-        <symbol id="i-balcony" viewBox="0 0 24 24"><path d="M4 21V11h16v10M4 16h16M9 11V7a3 3 0 0 1 6 0v4M12 11v10"/></symbol>
-        <symbol id="i-dog" viewBox="0 0 24 24"><path d="M10 5 8 3v4l-3 2v5l3 3h6l3-3V9l-3-2V3l-2 2Z"/><circle cx="10" cy="11" r=".6" fill="currentColor" stroke="none"/><circle cx="14" cy="11" r=".6" fill="currentColor" stroke="none"/></symbol>
-        <symbol id="i-bath" viewBox="0 0 24 24"><path d="M4 12h16v3a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4v-3Z"/><path d="M6 12V6a2 2 0 0 1 4 0M7 19l-1 2M18 19l1 2"/></symbol>
-        <symbol id="i-quiet" viewBox="0 0 24 24"><path d="M5 9v6h3l5 4V5L8 9H5Z"/><path d="M16.5 9.5c1 1.6 1 3.4 0 5M19 7c2 3 2 7 0 10"/></symbol>
-        <symbol id="i-hike" viewBox="0 0 24 24"><circle cx="13" cy="4.5" r="1.6"/><path d="M11 9l2-1 2 2 1 4M11 9l-2 4 2 2v6M11 9 9 7M7 21l2-6"/></symbol>
-        <symbol id="i-bike" viewBox="0 0 24 24"><circle cx="6" cy="16" r="3.4"/><circle cx="18" cy="16" r="3.4"/><path d="M6 16 10 8h4l3 5M9 8h4l1 3M14 8h2"/></symbol>
-        <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19"/></symbol>
-        <symbol id="i-water" viewBox="0 0 24 24"><path d="M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11Z"/></symbol>
-        <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5 5-2Z"/></symbol>
-        <symbol id="i-phone" viewBox="0 0 24 24"><path d="M6 3h3l1.5 4.5L8 9.5a11 11 0 0 0 6.5 6.5l2-2.5L21 15v3a2 2 0 0 1-2 2A16 16 0 0 1 4 5a2 2 0 0 1 2-2Z"/></symbol>
-        <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></symbol>
-        <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-6 7-11a7 7 0 0 0-14 0c0 5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></symbol>
-        <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
-        <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
-        <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 13 4 4 10-11"/></symbol>
-        <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
-        <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
-        <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3Z"/><path d="m9 12 2 2 4-4"/></symbol>
-        <symbol id="i-insta" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="5"/><circle cx="12" cy="12" r="3.5"/><circle cx="17" cy="7" r=".6" fill="currentColor" stroke="none"/></symbol>
-        <symbol id="i-fb" viewBox="0 0 24 24"><path d="M14 8h2V5h-2c-2 0-3 1.3-3 3.2V10H9v3h2v7h3v-7h2.2l.5-3H14V8.6c0-.4.2-.6.6-.6Z"/></symbol>
-      </g>
-    </defs>
-  </svg>
+  <a class="skip-link" href="#willkommen">Zum Inhalt springen</a>
 
-  <!-- =========================================================
-       HEADER
-       ========================================================= -->
-  <header class="header" id="header">
-    <div class="container">
-      <a href="#hero" class="brand" aria-label="Haus Egger – Startseite">
-        <span class="brand__mark" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
-            <path d="M3 18h18L14 7l-3 4.5L9 9 3 18Z"/><path d="M3 21h18"/>
-          </svg>
-        </span>
-        <span class="brand__text">
-          <span class="brand__name">Haus Egger</span>
-          <span class="brand__sub">Oberdrauburg</span>
+  <!-- ============ HEADER ============ -->
+  <header class="site-header" id="siteHeader" data-state="top">
+    <div class="site-header__inner">
+      <a class="brand" href="#top" aria-label="Ferienhaus Veider – Startseite">
+        <svg class="brand__badge" viewBox="0 0 100 100" role="img" aria-label="Ferienhaus Veider Logo">
+          <rect width="100" height="100" rx="18" fill="#7A1F1F"></rect>
+          <g transform="translate(50 53) scale(0.155)" fill="none" stroke="#F3EAD6" stroke-linejoin="round" stroke-linecap="round">
+            <path d="M-225 120 L-90 -40 L0 70 L100 -60 L230 120" stroke="#E7D4B0" stroke-width="13" opacity="0.5"></path>
+            <path d="M-110 120 V-20 L0 -130 L110 -20 V120 Z" stroke-width="15"></path>
+            <path d="M-70 -55 L0 -125 L70 -55" stroke-width="12"></path>
+            <rect x="-26" y="42" width="52" height="78" fill="#F3EAD6" stroke="none"></rect>
+            <line x1="-175" y1="120" x2="175" y2="120" stroke-width="15"></line>
+          </g>
+        </svg>
+        <span class="brand__word">
+          <span class="brand__line-1">Ferienhaus</span>
+          <span class="brand__line-2">Veider</span>
         </span>
       </a>
 
       <nav class="nav" aria-label="Hauptnavigation">
-        <ul class="nav-links">
-          <li><a href="#ueber-uns">Über uns</a></li>
-          <li><a href="#wohnungen">Wohnungen</a></li>
-          <li><a href="#umgebung">Umgebung</a></li>
-          <li><a href="#vorteile">Vorteile</a></li>
-          <li><a href="#kontakt">Kontakt</a></li>
-        </ul>
-        <a href="#kontakt" class="btn btn--primary" data-desktop-cta>Jetzt anfragen</a>
-        <button class="nav-toggle" id="navToggle" aria-label="Menü öffnen" aria-expanded="false" aria-controls="mobileNav">
-          <svg class="ic"><use href="#i-menu"/></svg>
-        </button>
+        <a href="#ferienhaus">Das Ferienhaus</a>
+        <a href="#wohnungen">Wohnungen</a>
+        <a href="#umgebung">Umgebung</a>
+        <a href="#preise">Preise</a>
+        <a href="#kontakt">Kontakt</a>
       </nav>
+
+      <a class="btn btn--primary nav__cta" href="#kontakt">Jetzt anfragen</a>
+
+      <button class="nav-toggle" id="navToggle" aria-label="Menü öffnen" aria-expanded="false" aria-controls="mobileNav">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </header>
 
-  <!-- Mobile-Drawer -->
-  <div class="backdrop" id="backdrop"></div>
-  <aside class="mobile-nav" id="mobileNav" aria-label="Mobile Navigation" aria-hidden="true">
-    <div class="mobile-nav__top">
-      <span class="brand">
-        <span class="brand__mark" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M3 18h18L14 7l-3 4.5L9 9 3 18Z"/><path d="M3 21h18"/></svg>
-        </span>
-        <span class="brand__text"><span class="brand__name">Haus Egger</span></span>
-      </span>
-      <button class="m-close" id="menuClose" aria-label="Menü schließen"><svg class="ic"><use href="#i-close"/></svg></button>
-    </div>
-    <nav aria-label="Mobile Hauptnavigation">
-      <a class="m-link" href="#ueber-uns">Über uns <svg class="ic"><use href="#i-arrow"/></svg></a>
-      <a class="m-link" href="#wohnungen">Wohnungen <svg class="ic"><use href="#i-arrow"/></svg></a>
-      <a class="m-link" href="#umgebung">Umgebung <svg class="ic"><use href="#i-arrow"/></svg></a>
-      <a class="m-link" href="#vorteile">Vorteile <svg class="ic"><use href="#i-arrow"/></svg></a>
-      <a class="m-link" href="#kontakt">Kontakt <svg class="ic"><use href="#i-arrow"/></svg></a>
+  <!-- ============ MOBILE MENU ============ -->
+  <div class="mobile-nav" id="mobileNav" aria-hidden="true">
+    <nav class="mobile-nav__links" aria-label="Mobile Navigation">
+      <a href="#ferienhaus">Das Ferienhaus</a>
+      <a href="#wohnungen">Wohnungen</a>
+      <a href="#umgebung">Umgebung</a>
+      <a href="#preise">Preise</a>
+      <a href="#kontakt">Kontakt</a>
     </nav>
-    <a href="#kontakt" class="btn btn--primary btn--block">Jetzt anfragen</a>
-    <div class="mobile-nav__contact">
-      <p>Telefon: <a href="tel:+43000000000">+43 XXX XXX XXX</a></p>
-      <p>E-Mail: <a href="mailto:info@haus-egger.at">info@haus-egger.at</a></p>
-    </div>
-  </aside>
+    <a class="btn btn--primary mobile-nav__cta" href="#kontakt">Jetzt anfragen</a>
+  </div>
 
-  <!-- =========================================================
-       HERO
-       ========================================================= -->
-  <section class="hero" id="hero">
-    <!-- Höhenlinien-Signatur -->
-    <svg class="hero__contour" viewBox="0 0 600 600" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-      <path d="M40 560C140 470 220 470 320 540s180 70 260 0"/>
-      <path d="M70 500C180 420 260 430 350 490s170 60 230 10"/>
-      <path d="M110 440C210 380 290 390 360 440s150 50 200 20"/>
-      <path d="M160 385C240 345 300 355 360 395s130 40 180 25"/>
-      <path d="M215 335C275 305 320 315 365 350s110 35 150 30"/>
-      <path d="M270 290C315 270 350 280 380 305s90 30 120 30"/>
-    </svg>
+  <main id="top">
 
-    <div class="container hero__inner">
-      <span class="hero__eyebrow"><span class="dot"></span> Oberdrauburg · Kärnten / Osttirol</span>
-      <h1>Ferienwohnungen Haus Egger</h1>
-      <p class="hero__sub">Gemütlich wohnen in Oberdrauburg – umgeben von Natur, Bergen und Erholung.</p>
-      <div class="hero__cta">
-        <a href="#kontakt" class="btn btn--primary">Jetzt anfragen <svg class="ic"><use href="#i-arrow"/></svg></a>
-        <a href="#wohnungen" class="btn btn--ghost">Wohnungen entdecken</a>
-      </div>
-    </div>
-
-    <a href="#ueber-uns" class="hero__scroll" aria-label="Nach unten scrollen">
-      <span class="hero__mouse"></span>
-      Entdecken
-    </a>
-  </section>
-
-  <!-- =========================================================
-       ÜBER UNS
-       ========================================================= -->
-  <section class="section" id="ueber-uns">
-    <div class="container about__grid">
-      <div class="about__text" data-reveal>
-        <span class="eyebrow">Herzlich willkommen</span>
-        <h2>Ankommen, durchatmen, sich zuhause fühlen</h2>
-        <p style="margin-top:1.3rem;">
-          Das Haus Egger liegt ruhig am Rand von Oberdrauburg – dort, wo die Drau das Tal durchzieht und die
-          Berge zum Greifen nah sind. Unsere drei liebevoll eingerichteten Ferienwohnungen sind Ihr gemütlicher
-          Rückzugsort: hell, warm und mit allem ausgestattet, was einen unbeschwerten Urlaub ausmacht.
-        </p>
-        <p>
-          Wir sind ein kleiner, familiärer Betrieb – und genau so soll sich Ihr Aufenthalt anfühlen. Morgens der
-          weite Blick auf die Lienzer Dolomiten, tagsüber Wandern, Radfahren oder einfach nur die Stille genießen,
-          abends auf dem Balkon den Tag ausklingen lassen. Ein bisschen Kärnten, ein bisschen Osttirol – und ganz
-          viel Erholung.
-        </p>
-        <div class="signature">
-          <div>
-            <span class="signature__name">Familie Egger</span><br>
-            <span class="signature__role">Ihre Gastgeber in Oberdrauburg</span>
-          </div>
+    <!-- ============ HERO ============ -->
+    <section class="hero" aria-label="Willkommen">
+      <div class="hero__media"></div>
+      <div class="hero__scrim"></div>
+      <div class="hero__content">
+        <p class="hero__eyebrow reveal">St. Veit · Defereggental · Osttirol</p>
+        <h1 class="hero__title reveal">Ferienhaus Veider</h1>
+        <p class="hero__subtitle reveal">Urlaub in Osttirol. Ruhig. Gemütlich. Echt.</p>
+        <div class="hero__actions reveal">
+          <a class="btn btn--primary btn--light" href="#kontakt">Jetzt anfragen</a>
+          <a class="link-arrow link-arrow--light" href="#wohnungen">Die Wohnungen entdecken</a>
         </div>
       </div>
+      <a class="hero__scroll" href="#willkommen" aria-label="Weiter nach unten">
+        <span class="hero__scroll-line"></span>
+      </a>
+    </section>
 
-      <div class="about__aside" data-reveal>
-        <ul>
-          <li class="feature-row">
-            <span class="feature-row__ic"><svg class="ic"><use href="#i-home"/></svg></span>
-            <span>
-              <span class="feature-row__title">Drei eigene Wohnungen</span>
-              <span class="feature-row__desc">Für Paare, Familien und Aktivurlauber – jede mit eigenem Charakter.</span>
-            </span>
-          </li>
-          <li class="feature-row">
-            <span class="feature-row__ic"><svg class="ic"><use href="#i-quiet"/></svg></span>
-            <span>
-              <span class="feature-row__title">Ruhige Lage</span>
-              <span class="feature-row__desc">Abseits vom Trubel, mitten in der Natur – und doch zentral gelegen.</span>
-            </span>
-          </li>
-          <li class="feature-row">
-            <span class="feature-row__ic"><svg class="ic"><use href="#i-bike"/></svg></span>
-            <span>
-              <span class="feature-row__title">Drauradweg direkt vor der Tür</span>
-              <span class="feature-row__desc">Einer der schönsten Radwege der Alpen beginnt quasi vor dem Haus.</span>
-            </span>
-          </li>
-          <li class="feature-row">
-            <span class="feature-row__ic"><svg class="ic"><use href="#i-heart"/></svg></span>
-            <span>
-              <span class="feature-row__title">Persönliche Betreuung</span>
-              <span class="feature-row__desc">Wir nehmen uns Zeit für Sie und kennen die besten Plätze der Region.</span>
-            </span>
-          </li>
-        </ul>
-      </div>
-    </div>
-  </section>
-
-  <!-- =========================================================
-       FERIENWOHNUNGEN
-       ========================================================= -->
-  <section class="section section--mist" id="wohnungen">
-    <div class="container">
-      <div class="section-head center" data-reveal>
-        <span class="eyebrow">Unsere Ferienwohnungen</span>
-        <h2>Drei Wohnungen, ein Gefühl von Zuhause</h2>
-        <p class="lead" style="margin-top:1rem;">
-          Hell, gemütlich und durchdacht ausgestattet – wählen Sie die Wohnung, die am besten zu Ihrem Urlaub passt.
+    <!-- ============ WILLKOMMEN ============ -->
+    <section class="welcome section" id="willkommen">
+      <div class="container welcome__inner">
+        <p class="eyebrow reveal">Willkommen</p>
+        <h2 class="welcome__title reveal">Willkommen im<br>Ferienhaus Veider</h2>
+        <p class="welcome__lead reveal">
+          Genießen Sie erholsame Tage in gemütlicher Atmosphäre, umgeben von der
+          wunderschönen Bergwelt Osttirols. Unser Ferienhaus bietet drei liebevoll
+          eingerichtete Wohnungen für Paare, Familien und Gäste, die Ruhe, Natur und
+          echte Gastfreundschaft suchen.
         </p>
+        <div class="divider reveal" aria-hidden="true">
+          <span class="divider__rule"></span>
+          <svg class="mark" viewBox="0 0 140 92" role="img" aria-label="Ferienhaus Veider Emblem">
+            <g transform="translate(70 52) scale(0.235)" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-linecap="round">
+              <path d="M-225 120 L-90 -40 L0 70 L100 -60 L230 120" stroke-width="10" opacity="0.45"></path>
+              <path d="M-110 120 V-20 L0 -130 L110 -20 V120 Z" stroke-width="12"></path>
+              <path d="M-70 -55 L0 -125 L70 -55" stroke-width="9"></path>
+              <rect x="-26" y="42" width="52" height="78" fill="currentColor" stroke="none"></rect>
+              <line x1="-175" y1="120" x2="175" y2="120" stroke-width="12"></line>
+            </g>
+          </svg>
+          <span class="divider__rule"></span>
+        </div>
       </div>
+    </section>
 
-      <div class="apt-grid">
+    <!-- ============ DAS FERIENHAUS (Bildband) ============ -->
+    <section class="feature" id="ferienhaus">
+      <div class="feature__media">
+        <img loading="lazy"
+             src="https://impro.usercontent.one/appid/oneComWsb/domain/ferienhaus-veider.at/media/ferienhaus-veider.at/onewebmedia/Au%C3%9Fenansicht_Internet.JPG?etag=%229fbefa-5746b181%22&sourceContentType=image%2Fjpeg&ignoreAspectRatio&resize=1820,1212&quality=85"
+             alt="Außenansicht des Ferienhaus Veider in der Bergwelt Osttirols">
+      </div>
+      <div class="feature__panel">
+        <div class="feature__panel-inner reveal">
+          <p class="eyebrow eyebrow--accent">Das Ferienhaus</p>
+          <h2 class="feature__title">Ein Haus, das man<br>sofort gernhat.</h2>
+          <p class="feature__text">
+            Warmes Holz, viel Tageslicht und der Blick in die Berge: Das Ferienhaus Veider
+            ist ein Ort zum Ankommen. Hier verbinden sich gemütliche Behaglichkeit und
+            zeitloser Geschmack – ein Zuhause auf Zeit, mitten in der Natur Osttirols.
+          </p>
+          <ul class="feature__list">
+            <li>Drei eigenständige Ferienwohnungen</li>
+            <li>Ruhige Lage in St. Veit im Defereggental</li>
+            <li>Persönliche, herzliche Gastfreundschaft</li>
+          </ul>
+          <a class="link-arrow" href="#wohnungen">Zu den Wohnungen</a>
+        </div>
+      </div>
+    </section>
 
-        <!-- Wohnung Bergblick -->
-        <article class="apt-card" data-reveal>
-          <div class="apt-card__media">
-            <span class="apt-card__tag"><svg class="ic"><use href="#i-balcony"/></svg> Mit Balkon</span>
-            <!-- Illustration: Bergblick -->
-            <svg viewBox="0 0 400 250" preserveAspectRatio="xMidYMid slice" aria-label="Illustration Berglandschaft">
-              <defs>
-                <linearGradient id="skyA" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0" stop-color="#EAF1E9"/><stop offset="1" stop-color="#F7FBF5"/>
-                </linearGradient>
-              </defs>
-              <rect width="400" height="250" fill="url(#skyA)"/>
-              <circle cx="312" cy="64" r="26" fill="#E7D6AE"/>
-              <path d="M-10 200 L80 110 L150 175 L210 120 L300 200 Z" fill="#9CBBA4"/>
-              <path d="M120 200 L210 95 L260 150 L320 100 L420 200 Z" fill="#6E927A"/>
-              <path d="M210 95 L188 122 L232 122 Z" fill="#F7FBF5"/>
-              <path d="M320 100 L304 122 L336 122 Z" fill="#F7FBF5"/>
-              <path d="M-10 210 L420 210 L420 250 L-10 250 Z" fill="#2F5E45"/>
-              <path d="M-10 205 C90 188 150 222 230 205 S360 188 420 205" fill="none" stroke="#1C3A2C" stroke-width="2" opacity=".25"/>
-              <path d="M70 50 q12 -8 24 0" fill="none" stroke="#6E927A" stroke-width="2" stroke-linecap="round"/>
-              <path d="M100 60 q10 -7 20 0" fill="none" stroke="#6E927A" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </div>
-          <div class="apt-card__body">
-            <h3>Wohnung Bergblick</h3>
-            <p class="apt-card__desc">
-              Sonnendurchflutete Wohnung im Obergeschoss mit Balkon und weitem Blick auf die Lienzer Dolomiten.
-              Perfekt für Paare, die morgens mit Bergpanorama in den Tag starten möchten.
-            </p>
-            <ul class="amenities">
-              <li><svg class="ic"><use href="#i-users"/></svg> 2–3 Personen</li>
-              <li><svg class="ic"><use href="#i-balcony"/></svg> Balkon</li>
-              <li><svg class="ic"><use href="#i-kitchen"/></svg> Küche</li>
-              <li><svg class="ic"><use href="#i-wifi"/></svg> WLAN</li>
-            </ul>
-            <div class="apt-card__foot">
-              <span class="apt-card__price">ab <strong>auf Anfrage</strong></span>
-              <a href="#kontakt" class="link-arrow">Anfragen <svg class="ic"><use href="#i-arrow"/></svg></a>
+    <!-- ============ WOHNUNGEN ============ -->
+    <section class="apartments section" id="wohnungen">
+      <div class="container">
+        <header class="section-head reveal">
+          <p class="eyebrow eyebrow--accent">Wohnungen</p>
+          <h2 class="section-head__title">Drei Wohnungen,<br>ein Gefühl von Zuhause</h2>
+          <p class="section-head__text">
+            Jede unserer Wohnungen hat ihren eigenen Charakter – und alle teilen dasselbe
+            Versprechen: Platz zum Wohlfühlen, Ruhe und die Nähe zur Natur.
+          </p>
+        </header>
+
+        <div class="cards">
+          <article class="card reveal">
+            <div class="card__frame">
+              <span class="card__num">01</span>
+              <img loading="lazy"
+                   src="https://impro.usercontent.one/appid/oneComWsb/domain/ferienhaus-veider.at/media/ferienhaus-veider.at/onewebmedia/Veider2015%20059%20-%20Internet.JPG?etag=W%2F%22234693-5746add7%22&sourceContentType=image%2Fjpeg&ignoreAspectRatio&resize=1616,1212&quality=85"
+                   alt="Innenansicht der Ferienwohnung 1 im Ferienhaus Veider">
             </div>
-          </div>
-        </article>
-
-        <!-- Wohnung Gartenglück -->
-        <article class="apt-card" data-reveal>
-          <div class="apt-card__media">
-            <span class="apt-card__tag"><svg class="ic"><use href="#i-leaf"/></svg> Mit Garten</span>
-            <!-- Illustration: Gartenglück -->
-            <svg viewBox="0 0 400 250" preserveAspectRatio="xMidYMid slice" aria-label="Illustration Garten">
-              <defs>
-                <linearGradient id="skyB" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0" stop-color="#EDF4EC"/><stop offset="1" stop-color="#F7FBF5"/>
-                </linearGradient>
-              </defs>
-              <rect width="400" height="250" fill="url(#skyB)"/>
-              <circle cx="80" cy="58" r="24" fill="#E7D6AE"/>
-              <path d="M-10 210 C100 175 300 175 410 205 L410 250 L-10 250 Z" fill="#9CBBA4"/>
-              <path d="M-10 230 C120 205 290 205 410 228 L410 250 L-10 250 Z" fill="#2F5E45"/>
-              <!-- Baum -->
-              <rect x="292" y="150" width="9" height="60" rx="3" fill="#7A5A3A"/>
-              <circle cx="296" cy="138" r="34" fill="#6E927A"/>
-              <circle cx="276" cy="150" r="24" fill="#5b8067"/>
-              <circle cx="316" cy="150" r="24" fill="#7fa389"/>
-              <!-- Blumen -->
-              <g stroke="#2F5E45" stroke-width="2" stroke-linecap="round">
-                <path d="M120 210v-26"/><path d="M150 210v-32"/><path d="M180 210v-22"/>
-              </g>
-              <circle cx="120" cy="180" r="7" fill="#C49A4B"/>
-              <circle cx="150" cy="174" r="8" fill="#E7D6AE"/>
-              <circle cx="180" cy="186" r="6" fill="#C49A4B"/>
-            </svg>
-          </div>
-          <div class="apt-card__body">
-            <h3>Wohnung Gartenglück</h3>
-            <p class="apt-card__desc">
-              Ebenerdige Wohnung mit direktem Zugang zum gepflegten Garten. Hier sitzt man im Grünen,
-              hört nur die Vögel – ideal für ruhesuchende Gäste und auch für den Vierbeiner geeignet.
-            </p>
-            <ul class="amenities">
-              <li><svg class="ic"><use href="#i-users"/></svg> 2 Personen</li>
-              <li><svg class="ic"><use href="#i-leaf"/></svg> Gartenzugang</li>
-              <li><svg class="ic"><use href="#i-dog"/></svg> Hund willkommen</li>
-              <li><svg class="ic"><use href="#i-wifi"/></svg> WLAN</li>
-            </ul>
-            <div class="apt-card__foot">
-              <span class="apt-card__price">ab <strong>auf Anfrage</strong></span>
-              <a href="#kontakt" class="link-arrow">Anfragen <svg class="ic"><use href="#i-arrow"/></svg></a>
+            <div class="card__body">
+              <h3 class="card__title">Wohnung 1</h3>
+              <p class="card__text">
+                Gemütliche Ferienwohnung mit viel Platz zum Wohlfühlen – ideal für
+                entspannte Urlaubstage zu zweit oder mit der Familie.
+              </p>
+              <button class="link-arrow card__cta" type="button" data-wohnung="Wohnung 1">Wohnung ansehen</button>
             </div>
-          </div>
-        </article>
+          </article>
 
-        <!-- Wohnung Familienzeit -->
-        <article class="apt-card" data-reveal>
-          <div class="apt-card__media">
-            <span class="apt-card__tag"><svg class="ic"><use href="#i-users"/></svg> Für Familien</span>
-            <!-- Illustration: Familienzeit (gemütliches Haus) -->
-            <svg viewBox="0 0 400 250" preserveAspectRatio="xMidYMid slice" aria-label="Illustration gemütliches Haus">
-              <defs>
-                <linearGradient id="skyC" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0" stop-color="#EFEAE0"/><stop offset="1" stop-color="#F7FBF5"/>
-                </linearGradient>
-              </defs>
-              <rect width="400" height="250" fill="url(#skyC)"/>
-              <circle cx="330" cy="60" r="22" fill="#E7D6AE"/>
-              <path d="M-10 215 C120 190 300 190 410 212 L410 250 L-10 250 Z" fill="#6E927A"/>
-              <!-- Baum links -->
-              <rect x="58" y="150" width="8" height="60" rx="3" fill="#7A5A3A"/>
-              <circle cx="62" cy="142" r="28" fill="#5b8067"/>
-              <!-- Haus -->
-              <rect x="140" y="130" width="140" height="86" rx="6" fill="#FAFCF8" stroke="#1C3A2C" stroke-width="2"/>
-              <path d="M132 134 L210 86 L288 134 Z" fill="#2F5E45"/>
-              <rect x="234" y="96" width="14" height="26" fill="#2F5E45"/>
-              <!-- Fenster mit warmem Licht -->
-              <rect x="160" y="150" width="34" height="34" rx="4" fill="#E7D6AE" stroke="#C49A4B" stroke-width="2"/>
-              <path d="M177 150v34M160 167h34" stroke="#C49A4B" stroke-width="2"/>
-              <!-- Tür -->
-              <rect x="225" y="166" width="30" height="50" rx="4" fill="#3a6b50"/>
-              <circle cx="249" cy="192" r="2" fill="#E7D6AE"/>
-              <!-- Rauch -->
-              <path d="M241 92 c-6 -8 6 -12 0 -20 c-5 -7 5 -11 0 -18" fill="none" stroke="#C7D3C7" stroke-width="3" stroke-linecap="round"/>
-            </svg>
-          </div>
-          <div class="apt-card__body">
-            <h3>Wohnung Familienzeit</h3>
-            <p class="apt-card__desc">
-              Unsere geräumigste Wohnung mit zwei Schlafzimmern und viel Platz zum Wohlfühlen.
-              Kindgerecht, hell und durchdacht – damit die ganze Familie unbeschwert Urlaub machen kann.
-            </p>
-            <ul class="amenities">
-              <li><svg class="ic"><use href="#i-users"/></svg> 4–5 Personen</li>
-              <li><svg class="ic"><use href="#i-bed"/></svg> 2 Schlafzimmer</li>
-              <li><svg class="ic"><use href="#i-tv"/></svg> Smart-TV</li>
-              <li><svg class="ic"><use href="#i-parking"/></svg> Parkplatz</li>
-            </ul>
-            <div class="apt-card__foot">
-              <span class="apt-card__price">ab <strong>auf Anfrage</strong></span>
-              <a href="#kontakt" class="link-arrow">Anfragen <svg class="ic"><use href="#i-arrow"/></svg></a>
+          <article class="card reveal">
+            <div class="card__frame">
+              <span class="card__num">02</span>
+              <img loading="lazy"
+                   src="https://impro.usercontent.one/appid/oneComWsb/domain/ferienhaus-veider.at/media/ferienhaus-veider.at/onewebmedia/IMG_1260%20-%20Internet.JPG?etag=W%2F%22c4817-5746aa25%22&sourceContentType=image%2Fjpeg&ignoreAspectRatio&resize=1400,935&quality=85"
+                   alt="Wohnliche Impression der Ferienwohnung 2 im Ferienhaus Veider">
             </div>
+            <div class="card__body">
+              <h3 class="card__title">Wohnung 2</h3>
+              <p class="card__text">
+                Helle Räume, warmes Holz und der Blick ins Tal: ein Rückzugsort, der vom
+                ersten Moment an vertraut wirkt.
+              </p>
+              <button class="link-arrow card__cta" type="button" data-wohnung="Wohnung 2">Wohnung ansehen</button>
+            </div>
+          </article>
+
+          <article class="card reveal">
+            <div class="card__frame">
+              <span class="card__num">03</span>
+              <img loading="lazy"
+                   src="https://impro.usercontent.one/appid/oneComWsb/domain/ferienhaus-veider.at/media/ferienhaus-veider.at/onewebmedia/Homepage%20neu.jpg?etag=%22d1352-56d6fd23%22&sourceContentType=image%2Fjpeg&ignoreAspectRatio&resize=1000,820&quality=85"
+                   alt="Außenbereich der Ferienwohnung 3 im Ferienhaus Veider">
+            </div>
+            <div class="card__body">
+              <h3 class="card__title">Wohnung 3</h3>
+              <p class="card__text">
+                Ruhig gelegen und liebevoll eingerichtet – hier kommen Sie an, atmen durch
+                und lassen den Alltag hinter sich.
+              </p>
+              <button class="link-arrow card__cta" type="button" data-wohnung="Wohnung 3">Wohnung ansehen</button>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ UMGEBUNG / AKTIVURLAUB ============ -->
+    <section class="surroundings" id="umgebung">
+      <div class="surroundings__media">
+        <img loading="lazy"
+             src="https://impro.usercontent.one/appid/oneComWsb/domain/ferienhaus-veider.at/media/ferienhaus-veider.at/onewebmedia/IMG_1260%20-%20Internet.JPG?etag=W%2F%22c4817-5746aa25%22&sourceContentType=image%2Fjpeg&ignoreAspectRatio&resize=1400,935&quality=85"
+             alt="Natur und Bergwelt rund um das Ferienhaus Veider in Osttirol">
+        <div class="surroundings__scrim"></div>
+        <div class="container surroundings__content reveal">
+          <p class="eyebrow eyebrow--light">Umgebung &amp; Aktivurlaub</p>
+          <h2 class="surroundings__title">Sommer wie Winter<br>vor der Haustür</h2>
+          <p class="surroundings__text">
+            Ob Sommer oder Winter – rund um das Ferienhaus Veider warten zahlreiche
+            Möglichkeiten für Aktivurlaub und Erholung: Wandern, Radfahren, Skifahren,
+            Langlaufen oder einfach die Ruhe der Natur genießen.
+          </p>
+          <ul class="surroundings__tags">
+            <li>Wandern</li>
+            <li>Radfahren</li>
+            <li>Skifahren</li>
+            <li>Langlaufen</li>
+            <li>Natur genießen</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PREISE & ANFRAGE ============ -->
+    <section class="inquiry section" id="preise">
+      <div class="container inquiry__inner reveal">
+        <p class="eyebrow eyebrow--light">Preise &amp; Anfrage</p>
+        <h2 class="inquiry__title">Wir erstellen Ihnen Ihr<br>persönliches Angebot</h2>
+        <p class="inquiry__text">
+          Senden Sie uns gerne eine unverbindliche Anfrage. Wir erstellen Ihnen ein
+          passendes Angebot für Ihren Aufenthalt.
+        </p>
+        <a class="btn btn--primary btn--on-dark" href="#kontakt">Unverbindlich anfragen</a>
+      </div>
+    </section>
+
+    <!-- ============ KONTAKT ============ -->
+    <section class="contact section" id="kontakt">
+      <div class="container contact__grid">
+
+        <div class="contact__intro reveal">
+          <p class="eyebrow eyebrow--accent">Kontakt</p>
+          <h2 class="contact__title">Schreiben Sie uns</h2>
+          <p class="contact__text">
+            Erzählen Sie uns von Ihrem Wunschaufenthalt – wir melden uns persönlich
+            bei Ihnen zurück.
+          </p>
+
+          <div class="contact__details">
+            <p class="contact__name">Ferienhaus Veider</p>
+            <dl class="contact__list">
+              <div>
+                <dt>Adresse</dt>
+                <dd>Adresse hier einfügen</dd>
+              </div>
+              <div>
+                <dt>Telefon</dt>
+                <dd><a href="tel:">Telefon hier einfügen</a></dd>
+              </div>
+              <div>
+                <dt>E-Mail</dt>
+                <dd><a href="mailto:">E-Mail hier einfügen</a></dd>
+              </div>
+            </dl>
           </div>
-        </article>
 
-      </div>
-    </div>
-  </section>
+          <img class="contact__image" loading="lazy"
+               src="https://impro.usercontent.one/appid/oneComWsb/domain/ferienhaus-veider.at/media/ferienhaus-veider.at/onewebmedia/Veider2015%20059%20-%20Internet.JPG?etag=W%2F%22234693-5746add7%22&sourceContentType=image%2Fjpeg&ignoreAspectRatio&resize=1616,1212&quality=85"
+               alt="Gemütlicher Innenraum im Ferienhaus Veider">
+        </div>
 
-  <!-- =========================================================
-       UMGEBUNG OBERDRAUBURG
-       ========================================================= -->
-  <section class="section" id="umgebung">
-    <div class="container env__grid">
-      <!-- Bild-Collage: Dorf-Bild + Naturbild -->
-      <div class="env__gallery" data-reveal>
-        <div class="env__img env__img--main">
-          <img src="https://vcdn.bergfex.at/images/resized/e8/7ca58190982be9e8_7b7deb09b8ff850a.jpg"
-               alt="Blick auf das Dorf Oberdrauburg" loading="lazy" decoding="async">
-          <span class="env__badge"><svg class="ic"><use href="#i-pin"/></svg> Oberdrauburg</span>
-        </div>
-        <div class="env__img env__img--sub">
-          <img src="https://gasthofpost.at/wp-content/uploads/2024/08/Oberdrauburg-Gasthof-Post-Sommer-04.webp"
-               alt="Sommerliche Natur rund um Oberdrauburg" loading="lazy" decoding="async">
-        </div>
-      </div>
-
-      <div data-reveal>
-        <span class="eyebrow">Umgebung</span>
-        <h2>Oberdrauburg – wo der Drauradweg auf die Berge trifft</h2>
-        <p class="lead" style="margin-top:1.2rem;">
-          Eingebettet zwischen den Gailtaler Alpen und den Lienzer Dolomiten ist Oberdrauburg ein Paradies
-          für alle, die Natur und Bewegung lieben – ohne auf Ruhe verzichten zu müssen.
-        </p>
-        <p style="margin-top:1rem; color:var(--muted);">
-          Direkt vor der Haustür führt der berühmte Drauradweg durchs Tal, rundherum warten unzählige
-          Wander- und Bergtouren für jedes Niveau. Wer es ruhiger mag, genießt die klare Bergluft am
-          Flussufer oder unternimmt Tagesausflüge nach Lienz, an den Weißensee oder in die
-          Dolomitenregion.
-        </p>
-        <ul class="chips">
-          <li><svg class="ic"><use href="#i-hike"/></svg> Wandern</li>
-          <li><svg class="ic"><use href="#i-bike"/></svg> Drauradweg</li>
-          <li><svg class="ic"><use href="#i-peak"/></svg> Bergtouren</li>
-          <li><svg class="ic"><use href="#i-water"/></svg> Baden am See</li>
-          <li><svg class="ic"><use href="#i-compass"/></svg> Ausflüge</li>
-          <li><svg class="ic"><use href="#i-quiet"/></svg> Ruhe genießen</li>
-        </ul>
-      </div>
-    </div>
-  </section>
-
-  <!-- =========================================================
-       VORTEILE
-       ========================================================= -->
-  <section class="section section--mist" id="vorteile">
-    <div class="container">
-      <div class="section-head center" data-reveal>
-        <span class="eyebrow">Warum Haus Egger</span>
-        <h2>Kleine Details, großer Unterschied</h2>
-      </div>
-
-      <div class="perks">
-        <div class="perk" data-reveal>
-          <span class="perk__ic"><svg class="ic"><use href="#i-quiet"/></svg></span>
-          <h3>Ruhige Lage</h3>
-          <p>Abseits von Lärm und Hektik schlafen Sie hier so tief wie schon lange nicht mehr.</p>
-        </div>
-        <div class="perk" data-reveal>
-          <span class="perk__ic"><svg class="ic"><use href="#i-home"/></svg></span>
-          <h3>Gemütliche Wohnungen</h3>
-          <p>Warm eingerichtet und voll ausgestattet – Sie müssen nur noch ankommen und sich wohlfühlen.</p>
-        </div>
-        <div class="perk" data-reveal>
-          <span class="perk__ic"><svg class="ic"><use href="#i-leaf"/></svg></span>
-          <h3>Natur vor der Haustür</h3>
-          <p>Berge, Wälder und der Drauradweg beginnen praktisch direkt am Grundstück.</p>
-        </div>
-        <div class="perk" data-reveal>
-          <span class="perk__ic"><svg class="ic"><use href="#i-users"/></svg></span>
-          <h3>Für alle, die Urlaub lieben</h3>
-          <p>Ob Familie, Paar oder Aktivurlauber – bei uns findet jeder die passende Wohnung.</p>
-        </div>
-        <div class="perk" data-reveal>
-          <span class="perk__ic"><svg class="ic"><use href="#i-heart"/></svg></span>
-          <h3>Persönliche Betreuung</h3>
-          <p>Wir sind für Sie da, geben Tipps aus erster Hand und kümmern uns um Ihr Wohl.</p>
-        </div>
-        <div class="perk" data-reveal>
-          <span class="perk__ic"><svg class="ic"><use href="#i-shield"/></svg></span>
-          <h3>Sorglos buchen</h3>
-          <p>Unkomplizierte Anfrage, schnelle Rückmeldung und faire, transparente Konditionen.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- =========================================================
-       PRE-FOOTER CTA-BAND
-       ========================================================= -->
-  <section class="cta-band">
-    <div class="cta-band__contour" aria-hidden="true">
-      <svg viewBox="0 0 1200 300" fill="none" stroke="currentColor" stroke-width="1.5" preserveAspectRatio="none">
-        <path d="M0 250 C300 200 500 280 750 230 S1050 170 1200 220"/>
-        <path d="M0 210 C300 160 500 240 750 190 S1050 130 1200 180"/>
-        <path d="M0 170 C300 120 500 200 750 150 S1050 90 1200 140"/>
-        <path d="M0 130 C300 80 500 160 750 110 S1050 50 1200 100"/>
-      </svg>
-    </div>
-    <div class="container" data-reveal>
-      <h2>Bereit für ein paar ruhige Tage in den Bergen?</h2>
-      <p>Schreiben Sie uns – wir finden gemeinsam die passende Wohnung und die schönste Zeit für Ihren Urlaub im Haus Egger.</p>
-      <a href="#kontakt" class="btn btn--light">Jetzt unverbindlich anfragen <svg class="ic"><use href="#i-arrow"/></svg></a>
-    </div>
-  </section>
-
-  <!-- =========================================================
-       KONTAKT / BUCHUNG
-       ========================================================= -->
-  <section class="section" id="kontakt">
-    <div class="container">
-      <div class="section-head center" data-reveal>
-        <span class="eyebrow">Buchung &amp; Kontakt</span>
-        <h2>Ihre Anfrage – wir freuen uns auf Sie</h2>
-        <p class="lead" style="margin-top:1rem;">
-          Füllen Sie einfach das Formular aus. Wir melden uns in der Regel innerhalb von 24 Stunden mit
-          Verfügbarkeit und Preis bei Ihnen.
-        </p>
-      </div>
-
-      <div class="contact__grid">
-        <!-- Formular -->
-        <div class="form-card" data-reveal>
-          <form id="bookingForm" novalidate>
-            <div class="form-grid">
-              <div class="field">
-                <label for="name">Name <span class="req">*</span></label>
-                <input type="text" id="name" name="name" placeholder="Vor- und Nachname" required>
-              </div>
-              <div class="field">
-                <label for="email">E-Mail <span class="req">*</span></label>
-                <input type="email" id="email" name="email" placeholder="name@email.at" required>
-              </div>
-              <div class="field">
-                <label for="phone">Telefonnummer <span class="req">*</span></label>
-                <input type="tel" id="phone" name="phone" placeholder="+43 ..." required>
-              </div>
-              <div class="field">
-                <label for="guests">Anzahl Personen <span class="req">*</span></label>
-                <input type="number" id="guests" name="guests" min="1" max="12" value="2" placeholder="2" required>
-              </div>
-              <div class="field">
-                <label for="arrival">Anreisedatum <span class="req">*</span></label>
-                <input type="date" id="arrival" name="arrival" required>
-              </div>
-              <div class="field">
-                <label for="departure">Abreisedatum <span class="req">*</span></label>
-                <input type="date" id="departure" name="departure" required>
-              </div>
-              <div class="field full">
-                <label for="message">Nachricht</label>
-                <textarea id="message" name="message" placeholder="Welche Wohnung interessiert Sie? Haben Sie besondere Wünsche?"></textarea>
+        <div class="contact__form-wrap reveal">
+          <!-- Hinweis: action/method leer lassen und an eigenen Endpunkt
+               (z. B. Formspree oder Resend-Backend) anbinden. Aktuell wird das
+               Formular per JavaScript abgefangen und zeigt eine Bestätigung. -->
+          <form class="form" id="anfrageForm" novalidate>
+            <div class="form__row">
+              <div class="form__field">
+                <label for="name">Name</label>
+                <input type="text" id="name" name="name" autocomplete="name" required>
               </div>
             </div>
 
-            <button type="submit" class="btn btn--primary btn--block" style="margin-top:1.6rem;">
-              Buchungsanfrage senden <svg class="ic"><use href="#i-arrow"/></svg>
-            </button>
+            <div class="form__row form__row--2">
+              <div class="form__field">
+                <label for="email">E-Mail</label>
+                <input type="email" id="email" name="email" autocomplete="email" required>
+              </div>
+              <div class="form__field">
+                <label for="telefon">Telefon</label>
+                <input type="tel" id="telefon" name="telefon" autocomplete="tel">
+              </div>
+            </div>
 
-            <p class="form-note">
-              <svg class="ic"><use href="#i-shield"/></svg>
-              Ihre Daten werden ausschließlich zur Bearbeitung Ihrer Anfrage verwendet und nicht weitergegeben.
+            <div class="form__row form__row--2">
+              <div class="form__field">
+                <label for="zeitraum">Zeitraum</label>
+                <input type="text" id="zeitraum" name="zeitraum" placeholder="z. B. 12.–19. Juli">
+              </div>
+              <div class="form__field">
+                <label for="personen">Personenanzahl</label>
+                <input type="number" id="personen" name="personen" min="1" max="20" inputmode="numeric">
+              </div>
+            </div>
+
+            <div class="form__row">
+              <div class="form__field">
+                <label for="wohnung">Gewünschte Wohnung</label>
+                <div class="form__select">
+                  <select id="wohnung" name="wohnung">
+                    <option value="">Keine Präferenz</option>
+                    <option value="Wohnung 1">Wohnung 1</option>
+                    <option value="Wohnung 2">Wohnung 2</option>
+                    <option value="Wohnung 3">Wohnung 3</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="form__row">
+              <div class="form__field">
+                <label for="nachricht">Nachricht</label>
+                <textarea id="nachricht" name="nachricht" rows="4" placeholder="Ihre Wünsche oder Fragen …"></textarea>
+              </div>
+            </div>
+
+            <button class="btn btn--primary form__submit" type="submit">Anfrage senden</button>
+
+            <p class="form__success" id="formSuccess" role="status" hidden>
+              Vielen Dank für Ihre Anfrage – wir melden uns in Kürze persönlich bei Ihnen.
             </p>
           </form>
-
-          <!-- Erfolgs-Meldung (per JS eingeblendet) -->
-          <div class="form-success" id="formSuccess" role="status" aria-live="polite">
-            <span class="form-success__ic"><svg class="ic"><use href="#i-check"/></svg></span>
-            <h3>Vielen Dank für Ihre Anfrage!</h3>
-            <p>Wir haben Ihre Buchungsanfrage erhalten und melden uns innerhalb von 24 Stunden persönlich bei Ihnen.</p>
-            <button class="btn btn--outline" id="resetForm" style="margin-top:1.4rem;">Weitere Anfrage senden</button>
-          </div>
         </div>
 
-        <!-- Kontaktbox -->
-        <div class="contact-aside" data-reveal>
-          <div class="contact-box">
-            <h3>So erreichen Sie uns</h3>
-            <div class="contact-item">
-              <span class="contact-item__ic"><svg class="ic"><use href="#i-phone"/></svg></span>
-              <span>
-                <span class="contact-item__label">Telefon</span><br>
-                <a class="contact-item__value" href="tel:+43000000000">+43 XXX XXX XXX</a>
-              </span>
-            </div>
-            <div class="contact-item">
-              <span class="contact-item__ic"><svg class="ic"><use href="#i-mail"/></svg></span>
-              <span>
-                <span class="contact-item__label">E-Mail</span><br>
-                <a class="contact-item__value" href="mailto:info@haus-egger.at">info@haus-egger.at</a>
-              </span>
-            </div>
-            <div class="contact-item">
-              <span class="contact-item__ic"><svg class="ic"><use href="#i-pin"/></svg></span>
-              <span>
-                <span class="contact-item__label">Adresse</span><br>
-                <span class="contact-item__value">Oberdrauburg, Österreich</span>
-              </span>
-            </div>
-          </div>
+      </div>
+    </section>
+  </main>
 
-          <div class="contact-hours">
-            <div class="contact-hours__title"><svg class="ic"><use href="#i-clock"/></svg> Gut zu wissen</div>
-            <p>Check-in ab 15:00 Uhr · Check-out bis 10:00 Uhr.<br>Anreisen außerhalb dieser Zeiten? Schreiben Sie uns einfach – wir finden eine Lösung.</p>
-          </div>
-        </div>
+  <!-- ============ FOOTER ============ -->
+  <footer class="site-footer">
+    <div class="container site-footer__grid">
+      <div class="site-footer__brand">
+        <svg class="mark site-footer__mark" viewBox="0 0 140 92" role="img" aria-label="Ferienhaus Veider Emblem">
+          <g transform="translate(70 52) scale(0.235)" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-linecap="round">
+            <path d="M-225 120 L-90 -40 L0 70 L100 -60 L230 120" stroke-width="10" opacity="0.45"></path>
+            <path d="M-110 120 V-20 L0 -130 L110 -20 V120 Z" stroke-width="12"></path>
+            <path d="M-70 -55 L0 -125 L70 -55" stroke-width="9"></path>
+            <rect x="-26" y="42" width="52" height="78" fill="currentColor" stroke="none"></rect>
+            <line x1="-175" y1="120" x2="175" y2="120" stroke-width="12"></line>
+          </g>
+        </svg>
+        <p class="site-footer__name">Ferienhaus Veider</p>
+        <p class="site-footer__tag">Urlaub in Osttirol. Ruhig. Gemütlich. Echt.</p>
+      </div>
+
+      <nav class="site-footer__nav" aria-label="Footer-Navigation">
+        <a href="#ferienhaus">Das Ferienhaus</a>
+        <a href="#wohnungen">Wohnungen</a>
+        <a href="#umgebung">Umgebung</a>
+        <a href="#preise">Preise</a>
+        <a href="#kontakt">Kontakt</a>
+      </nav>
+
+      <div class="site-footer__contact">
+        <p>Ferienhaus Veider</p>
+        <p>Adresse hier einfügen</p>
+        <p><a href="tel:">Telefon hier einfügen</a></p>
+        <p><a href="mailto:">E-Mail hier einfügen</a></p>
       </div>
     </div>
-  </section>
 
-  <!-- =========================================================
-       FOOTER
-       ========================================================= -->
-  <footer class="footer">
-    <div class="container">
-      <div class="footer__grid">
-        <div>
-          <span class="brand">
-            <span class="brand__mark" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M3 18h18L14 7l-3 4.5L9 9 3 18Z"/><path d="M3 21h18"/></svg>
-            </span>
-            <span class="brand__text"><span class="brand__name">Haus Egger</span><span class="brand__sub">Oberdrauburg</span></span>
-          </span>
-          <p class="footer__about">
-            Gemütliche Ferienwohnungen in Oberdrauburg – umgeben von Natur, Bergen und Erholung.
-            Ihr ruhiger Rückzugsort zwischen Kärnten und Osttirol.
-          </p>
-          <div class="socials">
-            <a href="#" aria-label="Instagram"><svg class="ic"><use href="#i-insta"/></svg></a>
-            <a href="#" aria-label="Facebook"><svg class="ic"><use href="#i-fb"/></svg></a>
-          </div>
-        </div>
-
-        <div class="footer__nav footer__links">
-          <h4>Entdecken</h4>
-          <a href="#ueber-uns">Über uns</a>
-          <a href="#wohnungen">Wohnungen</a>
-          <a href="#umgebung">Umgebung</a>
-          <a href="#vorteile">Vorteile</a>
-        </div>
-
-        <div class="footer__links">
-          <h4>Wohnungen</h4>
-          <a href="#wohnungen">Wohnung Bergblick</a>
-          <a href="#wohnungen">Wohnung Gartenglück</a>
-          <a href="#wohnungen">Wohnung Familienzeit</a>
-          <a href="#kontakt">Jetzt anfragen</a>
-        </div>
-
-        <div class="footer__contact">
-          <h4>Kontakt</h4>
-          <p><a href="tel:+43000000000">+43 XXX XXX XXX</a></p>
-          <p><a href="mailto:info@haus-egger.at">info@haus-egger.at</a></p>
-          <p>Oberdrauburg, Österreich</p>
-        </div>
-      </div>
-
-      <div class="footer__bottom">
-        <span>© <span id="year"></span> Ferienwohnungen Haus Egger · Alle Rechte vorbehalten</span>
-        <span class="footer__made"><svg class="ic"><use href="#i-leaf"/></svg> Mit Liebe in den Bergen.</span>
-      </div>
+    <div class="container site-footer__bottom">
+      <p>© <span id="year">2026</span> Ferienhaus Veider</p>
+      <a class="site-footer__top" href="#top">Nach oben ↑</a>
     </div>
   </footer>
 
-  <!-- =========================================================
-       JAVASCRIPT
-       ========================================================= -->
   <script>
-    (function () {
-      "use strict";
+/* =================================================================
+   Ferienhaus Veider — script.js
+   Header-Zustand · Mobile-Menü · Scroll-Reveal · Hero-Parallax ·
+   Wohnungs-Auswahl · Formular
+   ================================================================= */
 
-      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+(function () {
+  "use strict";
 
-      /* ----- Jahr im Footer ----- */
-      document.getElementById("year").textContent = new Date().getFullYear();
+  const prefersReducedMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)"
+  ).matches;
 
-      /* ----- Header: Hintergrund beim Scrollen ----- */
-      const header = document.getElementById("header");
-      const onScroll = () => header.classList.toggle("scrolled", window.scrollY > 40);
-      onScroll();
-      window.addEventListener("scroll", onScroll, { passive: true });
+  /* ---------- Aktuelles Jahr im Footer ---------- */
+  const yearEl = document.getElementById("year");
+  if (yearEl) yearEl.textContent = new Date().getFullYear();
 
-      /* ----- Mobiles Menü ----- */
-      const toggle   = document.getElementById("navToggle");
-      const drawer   = document.getElementById("mobileNav");
-      const backdrop = document.getElementById("backdrop");
-      const closeBtn = document.getElementById("menuClose");
+  /* ---------- Header: transparent über Hero, fest beim Scrollen ---------- */
+  const header = document.getElementById("siteHeader");
+  const hero = document.querySelector(".hero");
 
-      const openMenu = () => {
-        drawer.classList.add("open");
-        backdrop.classList.add("open");
-        toggle.setAttribute("aria-expanded", "true");
-        drawer.setAttribute("aria-hidden", "false");
-        document.body.style.overflow = "hidden";
-      };
-      const closeMenu = () => {
-        drawer.classList.remove("open");
-        backdrop.classList.remove("open");
-        toggle.setAttribute("aria-expanded", "false");
-        drawer.setAttribute("aria-hidden", "true");
-        document.body.style.overflow = "";
-      };
+  function updateHeaderState() {
+    if (!header) return;
+    // Schwelle: kurz bevor der Hero den Header verlässt
+    const threshold = hero ? hero.offsetHeight - 120 : 80;
+    header.dataset.state = window.scrollY > threshold ? "solid" : "top";
+  }
 
-      toggle.addEventListener("click", openMenu);
-      closeBtn.addEventListener("click", closeMenu);
-      backdrop.addEventListener("click", closeMenu);
-      drawer.querySelectorAll("a").forEach(a => a.addEventListener("click", closeMenu));
-      document.addEventListener("keydown", e => { if (e.key === "Escape") closeMenu(); });
+  /* ---------- Hero-Parallax (dezent) ---------- */
+  const heroMedia = document.querySelector(".hero__media");
 
-      /* ----- Sanftes Scrollen mit Versatz für den fixen Header ----- */
-      const headerH = 78;
-      document.querySelectorAll('a[href^="#"]').forEach(link => {
-        link.addEventListener("click", e => {
-          const id = link.getAttribute("href");
-          if (id === "#" || id.length < 2) return;
-          const target = document.querySelector(id);
-          if (!target) return;
-          e.preventDefault();
-          const top = target.getBoundingClientRect().top + window.scrollY - headerH + 2;
-          window.scrollTo({ top, behavior: reduceMotion ? "auto" : "smooth" });
-        });
+  function updateParallax() {
+    if (prefersReducedMotion || !heroMedia) return;
+    const y = window.scrollY;
+    if (y < window.innerHeight) {
+      heroMedia.style.transform = `scale(1.06) translateY(${y * 0.18}px)`;
+    }
+  }
+
+  let ticking = false;
+  function onScroll() {
+    if (ticking) return;
+    ticking = true;
+    window.requestAnimationFrame(function () {
+      updateHeaderState();
+      updateParallax();
+      ticking = false;
+    });
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", updateHeaderState);
+  updateHeaderState();
+
+  /* ---------- Mobile-Menü ---------- */
+  const navToggle = document.getElementById("navToggle");
+  const mobileNav = document.getElementById("mobileNav");
+
+  function setMenu(open) {
+    if (!navToggle || !mobileNav) return;
+    mobileNav.classList.toggle("is-open", open);
+    mobileNav.setAttribute("aria-hidden", String(!open));
+    navToggle.setAttribute("aria-expanded", String(open));
+    navToggle.setAttribute("aria-label", open ? "Menü schließen" : "Menü öffnen");
+    document.body.classList.toggle("menu-open", open);
+  }
+
+  if (navToggle && mobileNav) {
+    navToggle.addEventListener("click", function () {
+      const isOpen = mobileNav.classList.contains("is-open");
+      setMenu(!isOpen);
+    });
+    // Bei Klick auf einen Menüpunkt schließen
+    mobileNav.querySelectorAll("a").forEach(function (a) {
+      a.addEventListener("click", function () {
+        setMenu(false);
       });
+    });
+    // Esc schließt das Menü
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") setMenu(false);
+    });
+  }
 
-      /* ----- Scroll-Animationen (Reveal) mit IntersectionObserver ----- */
-      const revealEls = document.querySelectorAll("[data-reveal]");
-      if (reduceMotion || !("IntersectionObserver" in window)) {
-        revealEls.forEach(el => el.classList.add("is-visible"));
-      } else {
-        const io = new IntersectionObserver((entries, obs) => {
-          entries.forEach(entry => {
-            if (entry.isIntersecting) {
-              entry.target.classList.add("is-visible");
-              obs.unobserve(entry.target);
-            }
-          });
-        }, { threshold: 0.14, rootMargin: "0px 0px -8% 0px" });
+  /* ---------- Scroll-Reveal ---------- */
+  const revealEls = document.querySelectorAll(".reveal");
 
-        // Karten innerhalb eines Rasters leicht versetzt einblenden
-        document.querySelectorAll(".apt-grid, .perks").forEach(grid => {
-          grid.querySelectorAll("[data-reveal]").forEach((el, i) => {
-            el.style.transitionDelay = (i * 90) + "ms";
-          });
+  if (prefersReducedMotion || !("IntersectionObserver" in window)) {
+    revealEls.forEach(function (el) {
+      el.classList.add("is-visible");
+    });
+  } else {
+    const observer = new IntersectionObserver(
+      function (entries, obs) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+            obs.unobserve(entry.target);
+          }
         });
-        revealEls.forEach(el => io.observe(el));
+      },
+      { threshold: 0.12, rootMargin: "0px 0px -8% 0px" }
+    );
+    revealEls.forEach(function (el) {
+      observer.observe(el);
+    });
+  }
+
+  /* ---------- "Wohnung ansehen" -> Auswahl setzen + zum Formular ---------- */
+  const wohnungSelect = document.getElementById("wohnung");
+  const kontakt = document.getElementById("kontakt");
+
+  document.querySelectorAll("[data-wohnung]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      const wahl = btn.getAttribute("data-wohnung");
+      if (wohnungSelect && wahl) wohnungSelect.value = wahl;
+      if (kontakt) {
+        kontakt.scrollIntoView({
+          behavior: prefersReducedMotion ? "auto" : "smooth",
+          block: "start",
+        });
+      }
+    });
+  });
+
+  /* ---------- Formular ----------
+     Hinweis: Für den Live-Betrieb das Formular an einen Endpunkt
+     anbinden (z. B. Formspree, eigenes Resend-Backend o. Ä.).
+     Hier: Validierung + freundliche Bestätigung, ohne Server.       */
+  const form = document.getElementById("anfrageForm");
+  const success = document.getElementById("formSuccess");
+
+  if (form) {
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
       }
 
-      /* ----- Aktiven Navigationspunkt hervorheben (Scrollspy) ----- */
-      const sections = ["ueber-uns", "wohnungen", "umgebung", "vorteile", "kontakt"]
-        .map(id => document.getElementById(id))
-        .filter(Boolean);
-      const navMap = {};
-      document.querySelectorAll(".nav-links a").forEach(a => {
-        navMap[a.getAttribute("href").slice(1)] = a;
-      });
-      if ("IntersectionObserver" in window) {
-        const spy = new IntersectionObserver(entries => {
-          entries.forEach(entry => {
-            const link = navMap[entry.target.id];
-            if (!link) return;
-            if (entry.isIntersecting) {
-              Object.values(navMap).forEach(l => l.classList.remove("active"));
-              link.classList.add("active");
-            }
-          });
-        }, { rootMargin: "-45% 0px -50% 0px" });
-        sections.forEach(s => spy.observe(s));
+      // --- Hier könnte der Versand an einen Endpunkt erfolgen ---
+      // const data = new FormData(form);
+      // fetch("DEIN_ENDPUNKT", { method: "POST", body: data });
+
+      if (success) {
+        success.hidden = false;
+        success.scrollIntoView({
+          behavior: prefersReducedMotion ? "auto" : "smooth",
+          block: "nearest",
+        });
       }
+      form.reset();
+    });
+  }
+})();
 
-      /* ----- Datumsfelder: Mindestdatum heute, Abreise nach Anreise ----- */
-      const arrival   = document.getElementById("arrival");
-      const departure = document.getElementById("departure");
-      const today = new Date().toISOString().split("T")[0];
-      arrival.min = today;
-      departure.min = today;
-      arrival.addEventListener("change", () => {
-        if (arrival.value) {
-          departure.min = arrival.value;
-          if (departure.value && departure.value < arrival.value) departure.value = arrival.value;
-        }
-      });
-
-      /* ----- Formular: Validierung + Erfolgs-Meldung -----
-         Hinweis: Dies zeigt nur die Bestätigung an. Zum echten Versand
-         das Formular mit einem Dienst (z. B. Formspree) oder Backend
-         verbinden – siehe Kommentar unten. */
-      const form    = document.getElementById("bookingForm");
-      const success = document.getElementById("formSuccess");
-      const resetBtn = document.getElementById("resetForm");
-
-      form.addEventListener("submit", e => {
-        e.preventDefault();
-
-        // Abreise muss nach Anreise liegen
-        if (arrival.value && departure.value && departure.value <= arrival.value) {
-          departure.setCustomValidity("Das Abreisedatum muss nach dem Anreisedatum liegen.");
-          departure.reportValidity();
-          return;
-        }
-        departure.setCustomValidity("");
-
-        if (!form.checkValidity()) {
-          form.reportValidity();
-          return;
-        }
-
-        /* --- Hier echten Versand einbauen, z. B.:
-           fetch("https://formspree.io/f/DEIN-CODE", {
-             method: "POST",
-             headers: { "Accept": "application/json" },
-             body: new FormData(form)
-           });
-        --- */
-
-        form.style.display = "none";
-        success.classList.add("show");
-        success.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "center" });
-      });
-
-      resetBtn.addEventListener("click", () => {
-        form.reset();
-        document.getElementById("guests").value = 2;
-        success.classList.remove("show");
-        form.style.display = "";
-      });
-    })();
   </script>
 </body>
 </html>
