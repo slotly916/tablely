@@ -3,44 +3,37 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TLU — Power Electronics Made in Germany</title>
+<title>TLU GmbH — Leistungselektronik. Made in Germany.</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bone:#fffdf9;
-  --slate:#495764;
-  --carbon:#101010;
-  --obsidian:#000000;
-  --graphite:#403f3f;
-  --gunmetal:#6f879c;
+  --bone:#fffdf9;--slate:#495764;--carbon:#101010;--obsidian:#000;--graphite:#403f3f;--gunmetal:#6f879c;
   --font:'Inter',ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  --gap:108px;
 }
 *{box-sizing:border-box;}
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;}
 body{margin:0;background:var(--slate);color:var(--bone);font-family:var(--font);font-weight:400;-webkit-font-smoothing:antialiased;overflow-x:hidden;line-height:1.5;}
 ::selection{background:var(--gunmetal);color:var(--bone);}
 h1,h2,h3,h4{margin:0;font-weight:400;letter-spacing:-0.02em;line-height:1.0;}
-p{margin:0;}
-a{color:inherit;text-decoration:none;}
-.wrap{width:100%;max-width:1560px;margin:0 auto;padding:0 40px;}
+p{margin:0;}a{color:inherit;text-decoration:none;}
+.wrap{width:100%;max-width:1600px;margin:0 auto;padding:0 40px;}
 @media(max-width:760px){.wrap{padding:0 24px;}}
 
-/* type roles */
-.caption{font-size:14px;line-height:1.5;}
+/* type */
+.caption{font-size:14px;}
 .body-lg{font-size:18px;line-height:1.5;}
-.subhead{font-size:clamp(19px,2.2vw,22px);line-height:1.2;letter-spacing:0;}
-.h-sm{font-size:clamp(26px,3.4vw,36px);line-height:1.17;letter-spacing:-0.01em;}
-.h{font-size:clamp(32px,5vw,56px);line-height:1.13;letter-spacing:-0.02em;}
-.display{font-size:clamp(44px,8.4vw,105px);line-height:1.0;letter-spacing:-0.02em;}
-.display-xl{font-size:clamp(50px,10.6vw,136px);line-height:1.0;letter-spacing:-0.02em;}
-b,strong,.em{font-weight:700;}
-.label{font-size:15px;letter-spacing:0.02em;color:var(--gunmetal);text-transform:uppercase;}
+.subhead{font-size:clamp(19px,2.1vw,22px);line-height:1.25;}
+.h-sm{font-size:clamp(26px,3.2vw,36px);line-height:1.17;letter-spacing:-0.01em;}
+.h{font-size:clamp(32px,4.6vw,56px);line-height:1.13;letter-spacing:-0.02em;}
+.display{font-size:clamp(46px,8vw,105px);line-height:1.01;letter-spacing:-0.02em;}
+.display-xl{font-size:clamp(54px,11vw,150px);line-height:1.0;letter-spacing:-0.02em;}
+b,strong{font-weight:700;}
+.label{font-size:15px;letter-spacing:0.03em;color:var(--gunmetal);text-transform:uppercase;}
 
 /* ghost button */
-.ghost{display:inline-flex;align-items:center;gap:10px;background:transparent;border:1px solid var(--bone);border-radius:0;color:var(--bone);font-family:var(--font);font-weight:400;font-size:14px;letter-spacing:0.06em;text-transform:uppercase;padding:11px 18px;cursor:pointer;transition:border-color .4s ease,color .4s ease;}
+.ghost{display:inline-flex;align-items:center;gap:10px;background:transparent;border:1px solid var(--bone);border-radius:0;color:var(--bone);font-family:var(--font);font-weight:400;font-size:14px;letter-spacing:0.06em;text-transform:uppercase;padding:11px 18px;cursor:pointer;transition:border-color .4s,color .4s;}
 .ghost:hover{border-color:var(--gunmetal);color:var(--gunmetal);}
 .ghost.accent{border-color:var(--gunmetal);}
 .ghost svg{width:14px;height:14px;}
@@ -48,101 +41,155 @@ b,strong,.em{font-weight:700;}
 /* reveal */
 .rv{opacity:0;transform:translateY(26px);transition:opacity 1.1s cubic-bezier(.16,.8,.24,1),transform 1.1s cubic-bezier(.16,.8,.24,1);}
 .rv.in{opacity:1;transform:none;}
-.d1.in{transition-delay:.1s}.d2.in{transition-delay:.2s}.d3.in{transition-delay:.3s}.d4.in{transition-delay:.4s}
+.d1.in{transition-delay:.1s}.d2.in{transition-delay:.2s}.d3.in{transition-delay:.3s}
 @media(prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}}
 
-/* ===== glass prism ===== */
+/* chromatic aberration on big headlines */
+.ca{position:relative;}
+.ca .ca-r,.ca .ca-b{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .5s,transform .5s;}
+.ca .ca-r{color:#ff2f5e;z-index:-1;}
+.ca .ca-b{color:#25d6ff;z-index:-1;}
+.ca:hover .ca-r{opacity:.42;transform:translate(-3px,-1px);}
+.ca:hover .ca-b{opacity:.42;transform:translate(3px,1px);}
+@media(prefers-reduced-motion:reduce){.ca:hover .ca-r,.ca:hover .ca-b{opacity:0;}}
+
+/* noise overlay */
+.noise{position:fixed;inset:0;z-index:90;pointer-events:none;opacity:.05;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+
+/* loader */
+#loader{position:fixed;inset:0;z-index:400;background:var(--carbon);display:flex;align-items:center;justify-content:center;transition:transform 1s cubic-bezier(.76,0,.24,1);}
+#loader.done{transform:translateY(-100%);}
+#loader .li{text-align:center;}
+#loader .lw{font-size:clamp(34px,5vw,56px);letter-spacing:-0.02em;}
+#loader .lw span{color:var(--gunmetal);}
+#loader .lc{margin-top:14px;font-size:15px;color:var(--gunmetal);font-variant-numeric:tabular-nums;}
+
+/* custom cursor */
+#cur,#curRing{position:fixed;top:0;left:0;pointer-events:none;z-index:500;border-radius:50%;}
+#cur{width:7px;height:7px;background:var(--bone);transform:translate(-50%,-50%);}
+#curRing{width:34px;height:34px;border:1px solid var(--gunmetal);transform:translate(-50%,-50%);transition:width .3s,height .3s,border-color .3s,opacity .3s;}
+#curRing.big{width:64px;height:64px;border-color:var(--bone);}
+@media(hover:none){#cur,#curRing{display:none;}}
+body.has-cursor,body.has-cursor a,body.has-cursor button{cursor:none;}
+
+/* prism decorative */
 .prism{position:absolute;pointer-events:none;z-index:0;}
 .prism svg{width:100%;height:100%;display:block;}
-@keyframes float{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-26px) rotate(2deg)}}
-.floats{animation:float 12s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-24px) rotate(2deg)}}
+.floats{animation:float 13s ease-in-out infinite;}
 @media(prefers-reduced-motion:reduce){.floats{animation:none;}}
 
-/* ===== NAV ===== */
-header{position:fixed;top:0;left:0;right:0;z-index:100;background:transparent;transition:padding .4s ease;}
+/* nav */
+header{position:fixed;top:0;left:0;right:0;z-index:100;background:transparent;mix-blend-mode:normal;}
 .nav{height:78px;display:flex;align-items:center;justify-content:space-between;}
-.wordmark{font-size:18px;letter-spacing:-0.01em;color:var(--bone);}
+.wordmark{font-size:18px;letter-spacing:-0.01em;}
 .wordmark span{color:var(--gunmetal);}
 .nav-right{display:flex;align-items:center;gap:26px;}
 .nav-links{display:flex;gap:24px;}
-.nav-links a{font-size:14px;letter-spacing:0.04em;text-transform:uppercase;color:var(--bone);opacity:.82;transition:opacity .3s,color .3s;position:relative;}
+.nav-links a{font-size:14px;letter-spacing:0.04em;text-transform:uppercase;opacity:.82;transition:opacity .3s,color .3s;}
 .nav-links a:hover{opacity:1;color:var(--gunmetal);}
 .nav-cta{border-radius:5px;}
 .burger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:8px;}
 .burger span{width:24px;height:1.5px;background:var(--bone);display:block;}
 @media(max-width:900px){.nav-links,.nav-cta{display:none;}.burger{display:flex;}}
-.mob{display:none;position:fixed;inset:0;z-index:200;background:var(--slate);flex-direction:column;padding:28px 24px;}
+.mob{display:none;position:fixed;inset:0;z-index:300;background:var(--carbon);flex-direction:column;padding:28px 24px;}
 .mob.open{display:flex;}
-.mob .x{align-self:flex-end;background:none;border:none;color:var(--bone);font-size:34px;cursor:pointer;line-height:1;font-weight:400;}
-.mob a{color:var(--bone);font-size:clamp(30px,7vw,44px);letter-spacing:-0.02em;padding:16px 0;border-bottom:1px solid var(--graphite);}
+.mob .x{align-self:flex-end;background:none;border:none;color:var(--bone);font-size:34px;cursor:pointer;line-height:1;}
+.mob a{color:var(--bone);font-size:clamp(30px,7vw,44px);letter-spacing:-0.02em;padding:14px 0;border-bottom:1px solid var(--graphite);}
 .mob .mf{margin-top:auto;font-size:14px;color:var(--gunmetal);}
 
-/* ===== HERO ===== */
-.hero{position:relative;min-height:100svh;display:flex;flex-direction:column;justify-content:center;overflow:hidden;padding-top:78px;}
-.hero .prism{right:-4%;top:50%;transform:translateY(-50%);width:min(52vw,720px);height:min(80vh,860px);}
-@media(max-width:900px){.hero .prism{right:-24%;top:38%;width:110vw;height:60vh;opacity:.5;}}
-.hero-inner{position:relative;z-index:2;padding:60px 0;}
-.hero .subhead{color:var(--bone);opacity:.9;margin-bottom:26px;max-width:40ch;}
-.hero .display-xl{max-width:15ch;}
-.hero-actions{display:flex;gap:14px;margin-top:44px;flex-wrap:wrap;}
-.hero-support{position:relative;z-index:2;}
-.hero-support .wrap{display:flex;justify-content:flex-end;padding-bottom:48px;}
-.hero-support p{max-width:44ch;font-size:18px;line-height:1.5;color:var(--bone);opacity:.82;}
-@media(max-width:900px){.hero-support .wrap{justify-content:flex-start;}}
+/* HERO */
+.hero{position:relative;min-height:100svh;overflow:hidden;background:radial-gradient(120% 100% at 70% 30%,#0d1219 0%,var(--carbon) 55%,#000 100%);}
+#glcanvas{position:absolute;inset:0;width:100%;height:100%;display:block;}
+.hero-ui{position:relative;z-index:2;min-height:100svh;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:70px;padding-top:78px;pointer-events:none;}
+.hero-ui .wrap{pointer-events:none;}
+.hero-ui a{pointer-events:auto;}
+.hero h1{max-width:14ch;}
+.hero .subhead{margin-top:30px;max-width:52ch;opacity:.85;}
+.hero-actions{display:flex;gap:14px;margin-top:38px;flex-wrap:wrap;}
+.hero-hint{position:absolute;right:40px;bottom:70px;z-index:2;display:flex;align-items:center;gap:12px;font-size:13px;letter-spacing:0.1em;text-transform:uppercase;color:var(--gunmetal);}
+.hero-hint .ln{width:36px;height:1px;background:var(--gunmetal);position:relative;overflow:hidden;}
+.hero-hint .ln::after{content:"";position:absolute;left:-100%;top:0;bottom:0;width:100%;background:var(--bone);animation:sl 2.4s ease-in-out infinite;}
+@keyframes sl{0%{left:-100%}50%{left:0}100%{left:100%}}
+@media(max-width:760px){.hero-hint{display:none;}}
+@media(prefers-reduced-motion:reduce){.hero-hint .ln::after{animation:none;}}
+.hero-part-tags{position:absolute;left:40px;top:120px;z-index:2;display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--gunmetal);letter-spacing:0.06em;text-transform:uppercase;}
+.hero-part-tags span{opacity:0;transform:translateX(-8px);transition:opacity .8s ease,transform .8s ease;}
+.hero-part-tags span.on{opacity:.8;transform:none;}
+@media(max-width:900px){.hero-part-tags{display:none;}}
 
-/* ===== SECTION base ===== */
-.section{padding:var(--gap) 0;position:relative;}
-.lead-in{color:var(--bone);opacity:.9;margin-bottom:34px;}
+/* sections */
+.section{padding:108px 0;position:relative;}
+.stmt .h{max-width:22ch;}
+.stmt .subhead{margin-top:26px;max-width:46ch;opacity:.82;}
 
-/* manifesto */
-.manifesto .h{max-width:20ch;}
-.manifesto.big .display{max-width:16ch;}
+/* kompetenzen — editorial expertise blocks */
+.xps{margin-top:60px;border-top:1px solid var(--graphite);}
+.xp{display:grid;grid-template-columns:0.85fr 1.15fr;gap:40px;padding:52px 0;border-bottom:1px solid var(--graphite);}
+@media(max-width:820px){.xp{grid-template-columns:1fr;gap:20px;}}
+.xp h3{font-size:clamp(24px,3vw,36px);line-height:1.1;max-width:14ch;}
+.xp .xp-p{font-size:18px;line-height:1.5;opacity:.82;max-width:56ch;}
+.xp ul{list-style:none;margin:24px 0 0;padding:0;columns:2;column-gap:40px;}
+@media(max-width:520px){.xp ul{columns:1;}}
+.xp li{font-size:16px;padding:9px 0;opacity:.78;break-inside:avoid;}
+.xp li::before{content:"—";color:var(--gunmetal);margin-right:12px;}
 
-/* editorial list */
-.elist{border-top:1px solid var(--graphite);}
-.erow{display:grid;grid-template-columns:88px 1fr 1.1fr;gap:32px;align-items:baseline;padding:34px 0;border-bottom:1px solid var(--graphite);transition:padding-left .5s cubic-bezier(.16,.8,.24,1);}
-.erow:hover{padding-left:16px;}
-.erow .en{font-size:15px;color:var(--gunmetal);letter-spacing:0.04em;}
-.erow .eh{font-size:clamp(24px,3vw,36px);line-height:1.1;letter-spacing:-0.02em;}
-.erow .ed{font-size:17px;line-height:1.5;color:var(--bone);opacity:.72;}
-@media(max-width:820px){.erow{grid-template-columns:1fr;gap:12px;}.erow:hover{padding-left:0;}}
+/* produkte — huge index list */
+.pindex{margin-top:60px;border-top:1px solid var(--graphite);counter-reset:pi;}
+.pline{display:flex;align-items:baseline;gap:30px;padding:34px 0;border-bottom:1px solid var(--graphite);transition:padding-left .5s cubic-bezier(.16,.8,.24,1),color .4s;position:relative;}
+.pline:hover{padding-left:18px;color:var(--gunmetal);}
+.pline .pn{font-size:15px;color:var(--gunmetal);min-width:40px;}
+.pline .pt{font-size:clamp(28px,4.4vw,64px);letter-spacing:-0.02em;line-height:1.05;}
+.pline .pd{margin-left:auto;font-size:16px;opacity:.6;max-width:32ch;text-align:right;color:var(--bone);}
+@media(max-width:760px){.pline .pd{display:none;}}
 
-/* inline sequence (prozess) */
-.seq{display:flex;flex-wrap:wrap;gap:14px 30px;margin-top:20px;}
-.seq .s{display:flex;align-items:baseline;gap:14px;}
-.seq .s .sn{font-size:15px;color:var(--gunmetal);}
-.seq .s .st{font-size:clamp(20px,2.4vw,28px);letter-spacing:-0.02em;}
-.seq .s .ar{color:var(--gunmetal);margin-left:14px;font-size:20px;}
-.seq-desc{margin-top:44px;max-width:60ch;font-size:18px;line-height:1.5;opacity:.8;}
+/* entwicklung / fertigung split statements */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:start;}
+@media(max-width:860px){.split{grid-template-columns:1fr;gap:34px;}}
+.split .sp-t{font-size:clamp(30px,4vw,52px);line-height:1.1;letter-spacing:-0.02em;max-width:16ch;}
+.split .sp-b{font-size:18px;line-height:1.55;opacity:.82;max-width:52ch;}
+.split .sp-b ul{list-style:none;margin:22px 0 0;padding:0;}
+.split .sp-b li{padding:8px 0;border-bottom:1px solid var(--graphite);font-size:16px;opacity:.85;}
+.split .sp-b li::before{content:"—";color:var(--gunmetal);margin-right:12px;}
+.mspec{margin-top:44px;display:flex;gap:44px;flex-wrap:wrap;}
+.mspec .ms .mn{font-size:clamp(34px,4.4vw,64px);letter-spacing:-0.02em;line-height:1;font-variant-numeric:tabular-nums;}
+.mspec .ms .mn i{font-style:normal;color:var(--gunmetal);font-size:.42em;}
+.mspec .ms .ml{margin-top:8px;font-size:14px;color:var(--gunmetal);text-transform:uppercase;letter-spacing:0.04em;}
 
-/* products manifesto */
-.prod-line{max-width:22ch;}
-.prod-sub{margin-top:30px;max-width:56ch;font-size:18px;line-height:1.5;opacity:.82;}
+/* qualität manifesto on carbon recess */
+.qual{background:var(--carbon);}
+.qual .display{max-width:16ch;}
+.qual .subhead{margin-top:28px;max-width:50ch;opacity:.8;}
+.qsteps{margin-top:54px;display:flex;flex-wrap:wrap;gap:12px 34px;}
+.qsteps span{font-size:16px;opacity:.75;}
+.qsteps span b{color:var(--bone);}
+.qsteps .sep{color:var(--gunmetal);}
 
-/* quote */
-.quote .h{max-width:24ch;}
-.quote .qby{margin-top:40px;display:flex;align-items:baseline;gap:16px;}
-.quote .qby .qn{font-size:18px;}
-.quote .qby .qt{font-size:15px;color:var(--gunmetal);}
-.partners{margin-top:56px;display:flex;flex-wrap:wrap;gap:8px 28px;padding-top:30px;border-top:1px solid var(--graphite);}
-.partners span{font-size:17px;opacity:.8;}
-.partners span b{color:var(--bone);}
+/* branchen marquee */
+.branchen{overflow:hidden;padding:70px 0;border-top:1px solid var(--graphite);border-bottom:1px solid var(--graphite);}
+.mq{display:flex;white-space:nowrap;gap:0;animation:mq 34s linear infinite;width:max-content;}
+.mq:hover{animation-play-state:paused;}
+.mq span{font-size:clamp(34px,5.4vw,76px);letter-spacing:-0.02em;padding:0 34px;opacity:.85;}
+.mq .dot{color:var(--gunmetal);}
+@keyframes mq{to{transform:translateX(-50%);}}
+@media(prefers-reduced-motion:reduce){.mq{animation:none;flex-wrap:wrap;white-space:normal;}}
 
-/* contact */
+/* kontakt */
 .contact{position:relative;overflow:hidden;}
-.contact .prism{left:-8%;bottom:-14%;width:min(44vw,560px);height:min(70vh,720px);opacity:.85;}
-@media(max-width:900px){.contact .prism{opacity:.3;left:-30%;}}
+.contact .prism{left:-8%;bottom:-16%;width:min(42vw,540px);height:min(70vh,700px);opacity:.85;}
+@media(max-width:900px){.contact .prism{opacity:.28;left:-32%;}}
 .contact-inner{position:relative;z-index:2;}
 .contact .display{max-width:16ch;}
-.contact-actions{display:flex;gap:14px;margin-top:40px;flex-wrap:wrap;}
-.cdetails{margin-top:64px;border-top:1px solid var(--graphite);max-width:640px;}
+.contact .subhead{margin-top:26px;max-width:48ch;opacity:.85;}
+.contact-actions{display:flex;gap:14px;margin-top:38px;flex-wrap:wrap;}
+.cdetails{margin-top:60px;border-top:1px solid var(--graphite);max-width:660px;}
 .cdrow{display:flex;justify-content:space-between;gap:20px;padding:20px 0;border-bottom:1px solid var(--graphite);}
 .cdrow .ck{font-size:15px;color:var(--gunmetal);text-transform:uppercase;letter-spacing:0.04em;}
 .cdrow .cv{font-size:18px;text-align:right;}
 .cdrow a.cv:hover{color:var(--gunmetal);}
 
 /* footer */
-footer{padding:64px 0 40px;border-top:1px solid var(--graphite);}
+footer{padding:60px 0 40px;border-top:1px solid var(--graphite);}
 .foot{display:flex;justify-content:space-between;align-items:flex-end;gap:30px;flex-wrap:wrap;}
 .foot .fm{font-size:18px;}
 .foot .fm span{color:var(--gunmetal);}
@@ -154,16 +201,26 @@ footer{padding:64px 0 40px;border-top:1px solid var(--graphite);}
 </head>
 <body>
 
-<!-- prism template reused inline -->
+<div class="noise" aria-hidden="true"></div>
+<div id="cur" aria-hidden="true"></div>
+<div id="curRing" aria-hidden="true"></div>
+
+<div id="loader" aria-hidden="true">
+  <div class="li">
+    <div class="lw">TLU<span>+</span></div>
+    <div class="lc"><span id="lcNum">0</span>%</div>
+  </div>
+</div>
+
 <header id="hdr">
   <div class="wrap nav">
     <a href="#top" class="wordmark">TLU<span>+</span></a>
     <div class="nav-right">
       <nav class="nav-links">
-        <a href="#leistungen">Leistungen</a>
+        <a href="#unternehmen">Unternehmen</a>
+        <a href="#kompetenzen">Kompetenzen</a>
         <a href="#produkte">Produkte</a>
-        <a href="#qualitaet">Qualität</a>
-        <a href="#prozess">Prozess</a>
+        <a href="#fertigung">Fertigung</a>
       </nav>
       <a href="#kontakt" class="ghost nav-cta">Kontakt</a>
     </div>
@@ -173,165 +230,199 @@ footer{padding:64px 0 40px;border-top:1px solid var(--graphite);}
 
 <div class="mob" id="mob">
   <button class="x" id="mobX" aria-label="Schließen">&times;</button>
-  <a href="#leistungen">Leistungen</a>
+  <a href="#unternehmen">Unternehmen</a>
+  <a href="#kompetenzen">Kompetenzen</a>
   <a href="#produkte">Produkte</a>
-  <a href="#qualitaet">Qualität</a>
-  <a href="#prozess">Prozess</a>
+  <a href="#fertigung">Fertigung</a>
   <a href="#kontakt">Kontakt</a>
-  <div class="mf">+43 4852 62400 — office@tlu.gmbh</div>
+  <div class="mf">office@tlu.gmbh</div>
 </div>
 
-<!-- ===== HERO ===== -->
+<!-- ============ 01 HERO — 3D exploded module ============ -->
 <section class="hero" id="top">
-  <div class="prism floats" aria-hidden="true">
-    <svg viewBox="0 0 460 640" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="gA" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#fffdf9" stop-opacity="0.28"/>
-          <stop offset="0.55" stop-color="#9fb2c4" stop-opacity="0.10"/>
-          <stop offset="1" stop-color="#101010" stop-opacity="0"/>
-        </linearGradient>
-        <linearGradient id="gB" x1="1" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#fffdf9" stop-opacity="0.16"/>
-          <stop offset="0.6" stop-color="#495764" stop-opacity="0.05"/>
-          <stop offset="1" stop-color="#000" stop-opacity="0"/>
-        </linearGradient>
-        <radialGradient id="fade" cx="0.5" cy="0.45" r="0.62">
-          <stop offset="0.45" stop-color="#fff" stop-opacity="1"/>
-          <stop offset="1" stop-color="#fff" stop-opacity="0"/>
-        </radialGradient>
-        <mask id="vig"><rect x="0" y="0" width="460" height="640" fill="url(#fade)"/></mask>
-        <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.1"/></filter>
-      </defs>
-      <g mask="url(#vig)" filter="url(#soft)">
-        <!-- chromatic aberration silhouettes -->
-        <polygon points="230,40 350,190 335,470 230,600 125,470 110,190" fill="none" stroke="#ff2f5e" stroke-width="2.4" opacity="0.55" transform="translate(-4,-2)"/>
-        <polygon points="230,40 350,190 335,470 230,600 125,470 110,190" fill="none" stroke="#25d6ff" stroke-width="2.4" opacity="0.55" transform="translate(4,2)"/>
-        <polygon points="230,40 350,190 335,470 230,600 125,470 110,190" fill="none" stroke="#37ff9a" stroke-width="2" opacity="0.4" transform="translate(1,4)"/>
-        <!-- facets -->
-        <polygon points="230,40 110,190 125,470 230,600" fill="url(#gA)"/>
-        <polygon points="230,40 350,190 335,470 230,600" fill="url(#gB)"/>
-        <polygon points="230,40 350,190 110,190" fill="#fffdf9" opacity="0.06"/>
-        <!-- edges -->
-        <polygon points="230,40 350,190 335,470 230,600 125,470 110,190" fill="none" stroke="#fffdf9" stroke-width="1" opacity="0.55"/>
-        <line x1="230" y1="40" x2="230" y2="600" stroke="#fffdf9" stroke-width="1" opacity="0.4"/>
-        <line x1="110" y1="190" x2="350" y2="190" stroke="#fffdf9" stroke-width="1" opacity="0.28"/>
-        <line x1="125" y1="470" x2="335" y2="470" stroke="#fffdf9" stroke-width="1" opacity="0.2"/>
-        <!-- refraction highlights -->
-        <line x1="200" y1="80" x2="150" y2="200" stroke="#fffdf9" stroke-width="1.4" opacity="0.5"/>
-        <line x1="300" y1="240" x2="315" y2="430" stroke="#25d6ff" stroke-width="1" opacity="0.35"/>
-      </g>
-    </svg>
+  <canvas id="glcanvas"></canvas>
+  <div class="hero-part-tags" id="ptags">
+    <span>Deckel · Aluminium eloxiert</span>
+    <span>DC-Zwischenkreis · Elektrolyt</span>
+    <span>Leiterplatte · 6-Lagen FR4</span>
+    <span>IGBT-Module · SiC</span>
+    <span>Grundplatte · AlSi</span>
+    <span>Kühlkörper · stranggepresst</span>
   </div>
-
-  <div class="hero-inner">
+  <div class="hero-ui">
     <div class="wrap">
-      <p class="subhead rv in">Sicherheits- &amp; Elektrotechnik — Lienz, Osttirol</p>
-      <h1 class="display-xl rv in d1">Power Electronics.<br>Made in <b>Germany.</b></h1>
+      <h1 class="display-xl rv in ca"><span aria-hidden="true" class="ca-r">Leistungs-<br>elektronik.</span><span aria-hidden="true" class="ca-b">Leistungs-<br>elektronik.</span>Leistungs-<br>elektronik. <b>Made in Germany.</b></h1>
+      <p class="subhead rv in d1">TLU entwickelt und produziert hochwertige Leistungselektronik für industrielle Anwendungen — von der ersten Schaltung bis zur Serie.</p>
       <div class="hero-actions rv in d2">
         <a href="#produkte" class="ghost">Produkte entdecken
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-        <a href="#top-ueber" class="ghost accent">Unternehmen kennenlernen</a>
+        <a href="#unternehmen" class="ghost accent">Unternehmen kennenlernen</a>
       </div>
     </div>
   </div>
+  <div class="hero-hint"><span class="ln"></span>Scrollen</div>
+</section>
 
-  <div class="hero-support">
-    <div class="wrap">
-      <p class="rv in d3">Mit rund 30 Jahren Branchenerfahrung planen, installieren und warten wir Sicherheits- und Elektrotechnik — für Privathäuser und Unternehmen in Osttirol und Kärnten. Modernste Technik, persönlich betreut.</p>
+<!-- ============ 02 UNTERNEHMEN ============ -->
+<section class="section stmt" id="unternehmen">
+  <div class="wrap">
+    <p class="label rv" style="margin-bottom:28px;">Unternehmen</p>
+    <h2 class="h rv d1">Präzision ist bei uns keine Behauptung — sie ist <b>Konstruktionsprinzip.</b></h2>
+    <p class="subhead rv d2">TLU GmbH entwickelt und fertigt Stromversorgungen, Steuerungen und elektronische Baugruppen für Industrieunternehmen. Ein Haus, ein Anspruch: deutsche Ingenieurskunst.</p>
+    <div class="mspec rv d3">
+      <div class="ms"><div class="mn cnt" data-to="100"><span>0</span><i>%</i></div><div class="ml">Endprüfung je Baugruppe</div></div>
+      <div class="ms"><div class="mn cnt" data-to="6"><span>0</span><i>-Lagen</i></div><div class="ml">Leiterplatten-Design</div></div>
+      <div class="ms"><div class="mn"><span>DE</span></div><div class="ml">Entwicklung &amp; Fertigung</div></div>
     </div>
   </div>
 </section>
 
-<!-- ===== MANIFESTO / ÜBER ===== -->
-<section class="section manifesto" id="top-ueber">
+<!-- ============ 03 KOMPETENZEN ============ -->
+<section class="section" id="kompetenzen">
   <div class="wrap">
-    <p class="label lead-in rv">Über TLU</p>
-    <h2 class="h rv d1">Modernste Technik und <b>innovative Ideen</b> — seit über drei Jahrzehnten, aus einer Hand.</h2>
-    <p class="body-lg rv d2" style="margin-top:36px;max-width:60ch;opacity:.8;">Harald Unterluggauer hat sich 2018 selbstständig gemacht. Der Betrieb steht für Video- und Fernüberwachung, Einbruchmeldeanlagen, Sicherheitslösungen und Infrarotheizungen — für Privathäuser wie für Firmen, gemeinsam mit ausgezeichneten Partnern.</p>
-  </div>
-</section>
+    <h2 class="h rv" style="max-width:26ch;">Entwicklung ohne Fertigungstiefe und Serie ohne Prüfkonzept funktionieren nicht.</h2>
+    <p class="subhead rv d1" style="margin-top:26px;max-width:48ch;opacity:.82;">Deshalb arbeiten wir integriert — Entwicklung, Prototypenbau und Serienfertigung unter einem Dach.</p>
 
-<!-- ===== LEISTUNGEN ===== -->
-<section class="section" id="leistungen">
-  <div class="wrap">
-    <p class="label lead-in rv">Leistungen</p>
-    <h2 class="h-sm rv d1" style="max-width:22ch;margin-bottom:56px;">Ein Ansprechpartner für die gesamte Anlage.</h2>
-    <div class="elist">
-      <div class="erow rv"><span class="en">01</span><span class="eh">Einbruchmeldeanlagen</span><span class="ed">Hochwertige Alarmsysteme mit Notrufleitstelle — bis zu 15 Sicherungsbereiche, per App und SMS steuerbar.</span></div>
-      <div class="erow rv"><span class="en">02</span><span class="eh">Gefahrenmeldeanlagen</span><span class="ed">Schutz vor Feuer, Wasser und Gas. Drahtlose Technologien und maßgeschneiderte Lösungen.</span></div>
-      <div class="erow rv"><span class="en">03</span><span class="eh">Video- &amp; Fernüberwachung</span><span class="ed">Alles im Blick, auch von unterwegs — am Smartphone oder Tablet, in optimaler Qualität.</span></div>
-      <div class="erow rv"><span class="en">04</span><span class="eh">Infrarotheizungen</span><span class="ed">Energiesparend und elegant, mit hochwertigen Komponenten unseres Partners Heat4All.</span></div>
-      <div class="erow rv"><span class="en">05</span><span class="eh">Energiemanagement</span><span class="ed">Mit myGEKKO den Verbrauch optimal abstimmen — Kosten senken, Umwelt schützen.</span></div>
-      <div class="erow rv"><span class="en">06</span><span class="eh">E-Auto-Ladestationen</span><span class="ed">Grüne Mobilität vor der Haustür — von der Planung bis zur Inbetriebnahme.</span></div>
+    <div class="xps">
+      <div class="xp rv">
+        <h3>Entwicklung</h3>
+        <div>
+          <p class="xp-p">Alles beginnt mit der Schaltung. Wir entwickeln Leistungselektronik ab dem ersten Konzept — Topologie, Simulation, Layout und EMV-gerechtes Design.</p>
+          <ul>
+            <li>Schaltungsentwicklung</li>
+            <li>Leistungstopologien</li>
+            <li>Simulation &amp; Auslegung</li>
+            <li>PCB-Layout</li>
+            <li>EMV-Design</li>
+            <li>Firmware &amp; Regelung</li>
+          </ul>
+        </div>
+      </div>
+      <div class="xp rv">
+        <h3>Prototypenbau</h3>
+        <div>
+          <p class="xp-p">Vom Layout zum Labormuster in kürzester Zeit — aufgebaut, vermessen und iteriert im eigenen Haus, bis das Design serienreif ist.</p>
+          <ul>
+            <li>Musteraufbau</li>
+            <li>Inbetriebnahme</li>
+            <li>Messtechnik &amp; Validierung</li>
+            <li>Thermische Analyse</li>
+            <li>Design-Iteration</li>
+          </ul>
+        </div>
+      </div>
+      <div class="xp rv">
+        <h3>Serienfertigung</h3>
+        <div>
+          <p class="xp-p">Reproduzierbare Qualität in Serie — Bestückung, Montage und Prüfung elektronischer Baugruppen mit lückenloser Rückverfolgbarkeit.</p>
+          <ul>
+            <li>Baugruppenfertigung</li>
+            <li>Gerätemontage</li>
+            <li>In-Circuit- &amp; Funktionstest</li>
+            <li>Traceability</li>
+            <li>Logistik &amp; Serienbetreuung</li>
+          </ul>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ===== PRODUKTE ===== -->
+<!-- ============ 04 PRODUKTE ============ -->
 <section class="section" id="produkte">
   <div class="wrap">
-    <p class="label lead-in rv">Produkte &amp; Lösungen</p>
-    <h2 class="h prod-line rv d1">Systeme, die Sicherheit und Effizienz vereinen.</h2>
-    <p class="prod-sub rv d2">Von der <b>SecureCore</b> Alarmzentrale über <b>VisionLine</b> Videotechnik und <b>ThermaPanel</b> Infrarot bis zur <b>EnergyHub</b> Steuerung, <b>ChargePoint</b> Wallbox und <b>ControlGrid</b> Gebäudetechnik — jede Lösung individuell auf Ihr Objekt zugeschnitten, mit Geräten anerkannter Hersteller.</p>
-  </div>
-</section>
-
-<!-- ===== QUALITÄT ===== -->
-<section class="section manifesto big" id="qualitaet">
-  <div class="wrap">
-    <p class="label lead-in rv">Qualitätsstandards</p>
-    <h2 class="display rv d1">Geprüfte Qualität. <b>Kein Kompromiss.</b></h2>
-    <p class="body-lg rv d2" style="margin-top:36px;max-width:56ch;opacity:.8;">Jede Anlage wird gewissenhaft geplant, fachgerecht umgesetzt und vor der Übergabe vollständig geprüft — mit Markenkomponenten und 100 % Endkontrolle. Damit sie zuverlässig und langlebig funktioniert.</p>
-  </div>
-</section>
-
-<!-- ===== PROZESS ===== -->
-<section class="section" id="prozess">
-  <div class="wrap">
-    <p class="label lead-in rv">Prozess</p>
-    <h2 class="h-sm rv d1" style="max-width:22ch;">Von der Idee bis zur Wartung — ein klarer Weg.</h2>
-    <div class="seq rv d2">
-      <span class="s"><span class="sn">01</span><span class="st">Beratung</span><span class="ar">→</span></span>
-      <span class="s"><span class="sn">02</span><span class="st">Engineering</span><span class="ar">→</span></span>
-      <span class="s"><span class="sn">03</span><span class="st">Umsetzung</span><span class="ar">→</span></span>
-      <span class="s"><span class="sn">04</span><span class="st">Prüfung</span><span class="ar">→</span></span>
-      <span class="s"><span class="sn">05</span><span class="st">Inbetriebnahme</span><span class="ar">→</span></span>
-      <span class="s"><span class="sn">06</span><span class="st">Wartung</span></span>
-    </div>
-    <p class="seq-desc rv d3">Strukturiert, transparent und gewissenhaft — von der Bedarfsanalyse vor Ort über die fachgerechte Installation bis zur laufenden Betreuung über die gesamte Lebensdauer.</p>
-  </div>
-</section>
-
-<!-- ===== REFERENZEN / QUOTE ===== -->
-<section class="section quote" id="referenzen">
-  <div class="wrap">
-    <p class="label lead-in rv">Warum Kunden uns vertrauen</p>
-    <h2 class="h rv d1">„Kompetente Beratung, saubere Umsetzung — ein Partner, der auch <b>nach der Installation</b> für uns da ist."</h2>
-    <div class="qby rv d2"><span class="qn">FirmenABC</span><span class="qt">Gewerbekunde · Osttirol · 5,0 / 5</span></div>
-    <div class="partners rv d2">
-      <span><b>myGEKKO</b> — Energie</span>
-      <span><b>Dahua</b> — Video</span>
-      <span><b>Heat4All</b> — Infrarot</span>
-      <span><b>FirmenABC</b> — Top-Betrieb</span>
+    <p class="label rv" style="margin-bottom:28px;">Produkte</p>
+    <h2 class="h rv d1" style="max-width:22ch;">Systeme, die Industrie bewegen.</h2>
+    <div class="pindex">
+      <div class="pline rv"><span class="pn">01</span><span class="pt">Stromversorgungen</span><span class="pd">Kundenspezifische AC/DC- und DC/DC-Systeme für den Dauereinsatz.</span></div>
+      <div class="pline rv"><span class="pn">02</span><span class="pt">Steuerungen</span><span class="pd">Industrielle Steuer- und Regelungselektronik, robust und langlebig.</span></div>
+      <div class="pline rv"><span class="pn">03</span><span class="pt">Leistungsmodule</span><span class="pd">Kompakte Module mit optimiertem Thermomanagement.</span></div>
+      <div class="pline rv"><span class="pn">04</span><span class="pt">Elektronische Baugruppen</span><span class="pd">Bestückt, montiert und geprüft — einbaufertig geliefert.</span></div>
     </div>
   </div>
 </section>
 
-<!-- ===== KONTAKT ===== -->
+<!-- ============ 05/06 ENTWICKLUNG + FERTIGUNG ============ -->
+<section class="section" id="fertigung">
+  <div class="wrap">
+    <div class="split">
+      <div class="rv">
+        <p class="label" style="margin-bottom:24px;">Entwicklung</p>
+        <div class="sp-t">Vom weißen Blatt zur validierten Schaltung.</div>
+      </div>
+      <div class="rv d1">
+        <div class="sp-b">
+          <p>Unsere Ingenieure denken Elektronik vom Einsatzort her: Wirkungsgrad, Wärme, EMV und Lebensdauer werden von Anfang an ausgelegt — nicht nachträglich repariert.</p>
+          <ul>
+            <li>Anforderungsanalyse mit Ihrem Entwicklungsteam</li>
+            <li>Topologie- und Bauteilauswahl</li>
+            <li>Worst-Case- und Derating-Betrachtung</li>
+            <li>Prüfgerechtes Design für die Serie</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="split" style="margin-top:88px;">
+      <div class="rv">
+        <p class="label" style="margin-bottom:24px;">Fertigung</p>
+        <div class="sp-t">Serie heißt: jedes Gerät wie das erste.</div>
+      </div>
+      <div class="rv d1">
+        <div class="sp-b">
+          <p>Reproduzierbarkeit ist unser Maßstab. Jede Baugruppe durchläuft definierte Prüfschritte — vom In-Circuit-Test bis zum Funktionstest unter Last.</p>
+          <ul>
+            <li>Bestückung und Montage im eigenen Haus</li>
+            <li>100 % Endprüfung, dokumentiert</li>
+            <li>Lückenlose Rückverfolgbarkeit</li>
+            <li>Serienbetreuung über den Lebenszyklus</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 07 QUALITÄT ============ -->
+<section class="section qual">
+  <div class="wrap">
+    <p class="label rv" style="margin-bottom:28px;">Qualität</p>
+    <h2 class="display rv d1 ca"><span aria-hidden="true" class="ca-r">Geprüft. Dokumentiert. <b>Ohne Ausnahme.</b></span><span aria-hidden="true" class="ca-b">Geprüft. Dokumentiert. <b>Ohne Ausnahme.</b></span>Geprüft. Dokumentiert. <b>Ohne Ausnahme.</b></h2>
+    <p class="subhead rv d2">Qualität entsteht nicht in der Endkontrolle, sondern in jedem Schritt davor. Deshalb prüfen wir dort, wo Fehler entstehen könnten — und dokumentieren, was wir prüfen.</p>
+    <div class="qsteps rv d3">
+      <span><b>Wareneingang</b></span><span class="sep">→</span>
+      <span><b>In-Circuit-Test</b></span><span class="sep">→</span>
+      <span><b>Funktionstest</b></span><span class="sep">→</span>
+      <span><b>Lastprüfung</b></span><span class="sep">→</span>
+      <span><b>Dokumentation</b></span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 08 BRANCHEN ============ -->
+<section class="branchen" id="branchen">
+  <div class="mq" aria-label="Branchen">
+    <span>Maschinenbau</span><span class="dot">·</span>
+    <span>Automatisierung</span><span class="dot">·</span>
+    <span>Energietechnik</span><span class="dot">·</span>
+    <span>Antriebstechnik</span><span class="dot">·</span>
+    <span>Medizintechnik</span><span class="dot">·</span>
+    <span>Prüftechnik</span><span class="dot">·</span>
+    <span>Maschinenbau</span><span class="dot">·</span>
+    <span>Automatisierung</span><span class="dot">·</span>
+    <span>Energietechnik</span><span class="dot">·</span>
+    <span>Antriebstechnik</span><span class="dot">·</span>
+    <span>Medizintechnik</span><span class="dot">·</span>
+    <span>Prüftechnik</span><span class="dot">·</span>
+  </div>
+</section>
+
+<!-- ============ 09 KONTAKT ============ -->
 <section class="section contact" id="kontakt">
   <div class="prism floats" aria-hidden="true">
     <svg viewBox="0 0 460 640" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id="gA2" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#fffdf9" stop-opacity="0.24"/>
-          <stop offset="0.55" stop-color="#9fb2c4" stop-opacity="0.09"/>
-          <stop offset="1" stop-color="#101010" stop-opacity="0"/>
-        </linearGradient>
-        <linearGradient id="gB2" x1="1" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#fffdf9" stop-opacity="0.14"/>
-          <stop offset="1" stop-color="#000" stop-opacity="0"/>
-        </linearGradient>
+        <linearGradient id="gA2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fffdf9" stop-opacity="0.24"/><stop offset="0.55" stop-color="#9fb2c4" stop-opacity="0.09"/><stop offset="1" stop-color="#101010" stop-opacity="0"/></linearGradient>
+        <linearGradient id="gB2" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffdf9" stop-opacity="0.14"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient>
         <radialGradient id="fade2" cx="0.5" cy="0.5" r="0.62"><stop offset="0.45" stop-color="#fff" stop-opacity="1"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
         <mask id="vig2"><rect width="460" height="640" fill="url(#fade2)"/></mask>
         <filter id="soft2" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.1"/></filter>
@@ -341,60 +432,212 @@ footer{padding:64px 0 40px;border-top:1px solid var(--graphite);}
         <polygon points="230,60 340,180 330,480 230,590 130,480 120,180" fill="none" stroke="#25d6ff" stroke-width="2.4" opacity="0.5" transform="translate(4,2)"/>
         <polygon points="230,60 130,180 130,480 230,590" fill="url(#gA2)"/>
         <polygon points="230,60 340,180 330,480 230,590" fill="url(#gB2)"/>
-        <polygon points="230,60 340,180 130,180 120,180" fill="#fffdf9" opacity="0.05"/>
         <polygon points="230,60 340,180 330,480 230,590 130,480 120,180" fill="none" stroke="#fffdf9" stroke-width="1" opacity="0.5"/>
         <line x1="230" y1="60" x2="230" y2="590" stroke="#fffdf9" stroke-width="1" opacity="0.36"/>
-        <line x1="120" y1="180" x2="340" y2="180" stroke="#fffdf9" stroke-width="1" opacity="0.24"/>
       </g>
     </svg>
   </div>
   <div class="contact-inner">
     <div class="wrap">
-      <p class="label lead-in rv">Kontakt</p>
+      <p class="label rv" style="margin-bottom:28px;">Kontakt</p>
       <h2 class="display rv d1">Sprechen wir über <b>Ihr Projekt.</b></h2>
+      <p class="subhead rv d1">Ob Neuentwicklung, Redesign oder Serienauftrag — sprechen Sie direkt mit unseren Ingenieuren.</p>
       <div class="contact-actions rv d2">
-        <a href="tel:+43485262400" class="ghost">+43 4852 62400</a>
-        <a href="mailto:office@tlu.gmbh" class="ghost accent">office@tlu.gmbh</a>
+        <a href="mailto:office@tlu.gmbh" class="ghost">office@tlu.gmbh</a>
+        <a href="tel:+43485262400" class="ghost accent">+43 4852 62400</a>
       </div>
       <div class="cdetails rv d2">
-        <div class="cdrow"><span class="ck">Adresse</span><span class="cv">Adolf Purtscher-Straße 9a, 9900 Lienz</span></div>
+        <div class="cdrow"><span class="ck">Anfragen</span><a class="cv" href="mailto:office@tlu.gmbh">office@tlu.gmbh</a></div>
         <div class="cdrow"><span class="ck">Telefon</span><a class="cv" href="tel:+43485262400">+43 4852 62400</a></div>
-        <div class="cdrow"><span class="ck">E-Mail</span><a class="cv" href="mailto:office@tlu.gmbh">office@tlu.gmbh</a></div>
-        <div class="cdrow"><span class="ck">Öffnungszeiten</span><span class="cv">Nach Terminvereinbarung</span></div>
+        <div class="cdrow"><span class="ck">Standort</span><span class="cv">Adolf Purtscher-Straße 9a, 9900 Lienz</span></div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ===== FOOTER ===== -->
+<!-- ============ 10 FOOTER ============ -->
 <footer>
   <div class="wrap">
     <div class="foot">
-      <div class="fm">
-        TLU<span>+</span>
-        <p>Techno Logics Unterluggauer — Sicherheits- und Elektrotechnik aus Lienz, Osttirol.</p>
+      <div class="fm">TLU<span>+</span>
+        <p>TLU GmbH — Entwicklung und Fertigung hochwertiger Leistungselektronik für industrielle Anwendungen.</p>
       </div>
       <div class="foot-links">
-        <a href="#leistungen">Leistungen</a>
+        <a href="#kompetenzen">Kompetenzen</a>
         <a href="#produkte">Produkte</a>
         <a href="#kontakt">Kontakt</a>
         <a href="#">Impressum</a>
         <a href="#">Datenschutz</a>
       </div>
     </div>
-    <div class="foot-copy">© 2026 Techno Logics Unterluggauer GmbH</div>
+    <div class="foot-copy">© 2026 TLU GmbH · Alle Rechte vorbehalten</div>
   </div>
 </footer>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 (function(){
+  var rm=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- loader ---------- */
+  var loader=document.getElementById('loader'),lcNum=document.getElementById('lcNum');
+  var lc=0,lt=setInterval(function(){
+    lc+=Math.max(1,Math.round((100-lc)*0.09));
+    if(lc>=100){lc=100;clearInterval(lt);setTimeout(function(){loader.classList.add('done');},250);}
+    lcNum.textContent=lc;
+  },40);
+  if(rm){clearInterval(lt);lcNum.textContent=100;loader.classList.add('done');}
+
+  /* ---------- custom cursor ---------- */
+  var fine=window.matchMedia('(hover:hover) and (pointer:fine)').matches;
+  if(fine){
+    document.body.classList.add('has-cursor');
+    var cur=document.getElementById('cur'),ring=document.getElementById('curRing');
+    var mx=innerWidth/2,my=innerHeight/2,rx=mx,ry=my;
+    addEventListener('mousemove',function(e){mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px';});
+    (function loop(){rx+=(mx-rx)*0.14;ry+=(my-ry)*0.14;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(loop);})();
+    document.querySelectorAll('a,button,.pline').forEach(function(el){
+      el.addEventListener('mouseenter',function(){ring.classList.add('big');});
+      el.addEventListener('mouseleave',function(){ring.classList.remove('big');});
+    });
+  }
+
+  /* ---------- mobile menu ---------- */
   var mob=document.getElementById('mob');
   document.getElementById('burger').addEventListener('click',function(){mob.classList.add('open');});
   document.getElementById('mobX').addEventListener('click',function(){mob.classList.remove('open');});
   mob.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(){mob.classList.remove('open');});});
 
-  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:0.14,rootMargin:'0px 0px -60px 0px'});
+  /* ---------- reveal ---------- */
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:0.13,rootMargin:'0px 0px -60px 0px'});
   document.querySelectorAll('.rv').forEach(function(el){io.observe(el);});
+
+  /* ---------- counters ---------- */
+  var cio=new IntersectionObserver(function(es){es.forEach(function(e){
+    if(!e.isIntersecting)return;
+    var el=e.target,to=parseInt(el.dataset.to,10),sp=el.querySelector('span');
+    if(rm){sp.textContent=to;cio.unobserve(el);return;}
+    var st=performance.now();
+    (function fr(now){var p=Math.min((now-st)/1400,1),ea=1-Math.pow(1-p,3);sp.textContent=Math.floor(ea*to);if(p<1)requestAnimationFrame(fr);})(st);
+    cio.unobserve(el);
+  });},{threshold:0.6});
+  document.querySelectorAll('.cnt').forEach(function(c){cio.observe(c);});
+
+  /* ---------- THREE.js exploded power module ---------- */
+  var canvas=document.getElementById('glcanvas');
+  if(!window.THREE||!canvas){return;}
+  var renderer;
+  try{renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:true});}catch(e){canvas.style.display='none';return;}
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  var scene=new THREE.Scene();
+  var camera=new THREE.PerspectiveCamera(38,1,0.1,100);
+
+  /* lights: black stage, blue light */
+  scene.add(new THREE.AmbientLight(0x22303c,0.9));
+  var key=new THREE.DirectionalLight(0x9fc2ff,1.15);key.position.set(4,6,6);scene.add(key);
+  var rim=new THREE.PointLight(0x3d7dff,1.6,30);rim.position.set(-6,2,-4);scene.add(rim);
+  var rim2=new THREE.PointLight(0x6f879c,0.9,30);rim2.position.set(5,-3,3);scene.add(rim2);
+
+  var alu=new THREE.MeshStandardMaterial({color:0x9aa4ad,metalness:0.85,roughness:0.35});
+  var aluDark=new THREE.MeshStandardMaterial({color:0x5c666f,metalness:0.9,roughness:0.3});
+  var pcbMat=new THREE.MeshStandardMaterial({color:0x101418,metalness:0.2,roughness:0.6,emissive:0x0a2a4a,emissiveIntensity:0.35});
+  var capMat=new THREE.MeshStandardMaterial({color:0x1a1e24,metalness:0.6,roughness:0.4});
+  var chipMat=new THREE.MeshStandardMaterial({color:0x0c0e12,metalness:0.3,roughness:0.5});
+  var glassMat=new THREE.MeshPhongMaterial({color:0x8fb2d8,transparent:true,opacity:0.14,shininess:120});
+  var screwMat=new THREE.MeshStandardMaterial({color:0xb8c0c8,metalness:1,roughness:0.25});
+
+  var group=new THREE.Group();scene.add(group);
+  var parts=[]; /* {mesh, base:Vector3, off:Vector3} */
+  function part(mesh,off){mesh.userData.base=mesh.position.clone();mesh.userData.off=off;parts.push(mesh);group.add(mesh);}
+
+  /* heatsink: baseplate + fins */
+  var base=new THREE.Mesh(new THREE.BoxGeometry(3.2,0.16,2.2),alu);
+  base.position.set(0,-0.5,0);part(base,new THREE.Vector3(0,-1.0,0));
+  for(var i=0;i<9;i++){
+    var fin=new THREE.Mesh(new THREE.BoxGeometry(0.09,0.5,2.1),aluDark);
+    fin.position.set(-1.4+i*0.35,-0.83,0);
+    part(fin,new THREE.Vector3(0,-1.7-(i%3)*0.12,0));
+  }
+  /* IGBT blocks on baseplate */
+  for(var j=0;j<2;j++){
+    var igbt=new THREE.Mesh(new THREE.BoxGeometry(0.9,0.18,0.6),chipMat);
+    igbt.position.set(-0.7+j*1.4,-0.32,0.45);
+    part(igbt,new THREE.Vector3((j?0.5:-0.5),-0.35,0.4));
+  }
+  /* PCB */
+  var pcb=new THREE.Mesh(new THREE.BoxGeometry(3.0,0.05,2.0),pcbMat);
+  pcb.position.set(0,0.05,0);part(pcb,new THREE.Vector3(0,0.55,0));
+  /* capacitors */
+  var capGeo=new THREE.CylinderGeometry(0.16,0.16,0.5,24);
+  for(var c=0;c<4;c++){
+    var cap=new THREE.Mesh(capGeo,capMat);
+    cap.position.set(-0.9+c*0.6,0.33,-0.55);
+    part(cap,new THREE.Vector3(-0.3+c*0.2,1.15,-0.5));
+  }
+  /* small chips */
+  for(var k=0;k<5;k++){
+    var chip=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.06,0.3),chipMat);
+    chip.position.set(-1.0+k*0.5,0.1,0.55);
+    part(chip,new THREE.Vector3(-0.2+k*0.1,0.85,0.55));
+  }
+  /* cover */
+  var cover=new THREE.Mesh(new THREE.BoxGeometry(3.2,0.5,2.2),glassMat);
+  cover.position.set(0,0.42,0);part(cover,new THREE.Vector3(0,1.9,0));
+  var coverFrame=new THREE.Mesh(new THREE.BoxGeometry(3.24,0.08,2.24),alu);
+  coverFrame.position.set(0,0.7,0);part(coverFrame,new THREE.Vector3(0,2.35,0));
+  /* screws */
+  var scrGeo=new THREE.CylinderGeometry(0.06,0.06,0.22,16);
+  [[-1.45,-0.95],[1.45,-0.95],[-1.45,0.95],[1.45,0.95]].forEach(function(p2,idx){
+    var s=new THREE.Mesh(scrGeo,screwMat);
+    s.position.set(p2[0],0.75,p2[1]);
+    part(s,new THREE.Vector3(p2[0]*0.35,2.9+idx*0.12,p2[1]*0.35));
+  });
+
+  group.rotation.set(0.35,-0.5,0);
+
+  /* animation state */
+  var explode={v:0},camZ={v:2.3},camY={v:0.1};
+  var start=null,DUR=4200,DELAY=900;
+  var mouseX=0,mouseY=0;
+  if(fine){addEventListener('mousemove',function(e){mouseX=(e.clientX/innerWidth-0.5);mouseY=(e.clientY/innerHeight-0.5);});}
+
+  function ease(t){return t<0.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;}
+
+  function size(){
+    var w=canvas.clientWidth,h=canvas.clientHeight;
+    if(canvas.width!==w||canvas.height!==h){renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+  }
+  var heroEl=document.querySelector('.hero');
+  function tick(ts){
+    size();
+    if(start===null)start=ts;
+    var t=Math.max(0,ts-start-DELAY);
+    var p=rm?1:Math.min(t/DUR,1);
+    var e=ease(p);
+    explode.v=e;
+    camZ.v=2.3+e*4.9;      /* dolly back 2.3 -> 7.2 */
+    camY.v=0.1+e*0.9;
+    parts.forEach(function(m){
+      m.position.copy(m.userData.base).addScaledVector(m.userData.off,explode.v);
+    });
+    /* subtle scroll + mouse motion */
+    var sc=Math.min(scrollY/innerHeight,1);
+    group.rotation.y=-0.5+explode.v*0.35+sc*0.6+mouseX*0.12;
+    group.rotation.x=0.35+mouseY*0.08;
+    group.position.y=sc*1.2;
+    camera.position.set(0.4,camY.v,camZ.v);
+    camera.lookAt(0,0,0);
+    /* fade canvas when scrolled past hero */
+    var r=heroEl.getBoundingClientRect();
+    canvas.style.opacity=Math.max(0,1+r.top/innerHeight*1.2);
+    renderer.render(scene,camera);
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  /* part tags appear with explosion */
+  var tags=document.querySelectorAll('#ptags span');
+  tags.forEach(function(s,i){setTimeout(function(){s.classList.add('on');},rm?0:DELAY+900+i*420);});
 })();
 </script>
 </body>
