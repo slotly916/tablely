@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Haus Egger · Alpenpost — Ferienwohnungen in Oberdrauburg</title>
+<meta name="description" content="Ferienwohnungen Haus Egger in Oberdrauburg – redaktionelles Design. Gemütliche Wohnungen umgeben von Natur, Bergen und Erholung." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,600;0,6..96,700;1,6..96,400&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ====== DESIGN A · ALPENPOST — Editorial ====== */
+:root{
+  --ink:#191D1A; --paper:#F4F3EE; --paper-2:#ECEAE2; --paper-3:#E3E0D7;
+  --pine:#28543E; --pine-2:#1F4732; --stone:#6B675D; --rule:#D6D3CA; --white:#fff;
+  --serif:"Bodoni Moda", Georgia, serif;
+  --sans:"Archivo", system-ui, sans-serif;
+  --ease:cubic-bezier(.2,.6,.3,1); --hh:72px; --max:1240px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:var(--sans);color:var(--ink);background:var(--paper);line-height:1.7;font-size:1.02rem;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+ul{margin:0;padding:0;list-style:none}
+section{scroll-margin-top:calc(var(--hh) + 8px)}
+h1,h2,h3{font-family:var(--serif);color:var(--ink);font-weight:600;line-height:1.05;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(2.8rem,7vw,5.6rem);font-weight:500}
+h2{font-size:clamp(2.1rem,4.6vw,3.5rem);font-weight:500}
+h3{font-size:clamp(1.3rem,2vw,1.7rem)}
+p{margin:0 0 1rem}
+.wrap{width:100%;max-width:var(--max);margin-inline:auto;padding-inline:clamp(20px,5vw,56px)}
+.sec{padding-block:clamp(70px,10vw,128px);position:relative}
+.rule{height:1px;background:var(--rule);border:none;margin:0}
+.ic{width:24px;height:24px;display:inline-block;vertical-align:middle}
+
+/* Kicker / redaktioneller Index */
+.kicker{display:inline-flex;align-items:baseline;gap:.7rem;font-family:var(--sans);font-size:.74rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--pine);margin-bottom:1.3rem}
+.kicker .idx{font-family:var(--serif);font-style:italic;font-size:1.05rem;color:var(--stone);letter-spacing:0}
+.kicker::after{content:"";width:36px;height:1px;background:var(--pine);align-self:center}
+.dek{font-size:1.1rem;color:var(--stone);max-width:54ch}
+.center{text-align:center}
+.center .kicker{justify-content:center}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:.6rem;padding:.85rem 1.7rem;font-family:var(--sans);font-weight:700;font-size:.84rem;letter-spacing:.14em;text-transform:uppercase;transition:all .35s var(--ease)}
+.btn .ic{width:16px;height:16px}
+.btn--solid{background:var(--pine);color:#fff}
+.btn--solid:hover{background:var(--pine-2)}
+.btn--line{border:1px solid var(--ink);color:var(--ink)}
+.btn--line:hover{background:var(--ink);color:var(--paper)}
+.btn--ghost{border:1px solid rgba(255,255,255,.6);color:#fff}
+.btn--ghost:hover{background:#fff;color:var(--ink)}
+.tlink{display:inline-flex;align-items:center;gap:.5rem;font-family:var(--sans);font-weight:700;font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:var(--pine);position:relative;padding-bottom:3px;border-bottom:1px solid var(--pine)}
+.tlink .ic{width:15px;height:15px;transition:transform .3s var(--ease)}
+.tlink:hover .ic{transform:translateX(5px)}
+
+/* Header */
+.hd{position:fixed;inset:0 0 auto 0;z-index:100;height:var(--hh);display:flex;align-items:center;transition:background-color .4s var(--ease),box-shadow .4s var(--ease),border-color .4s var(--ease);border-bottom:1px solid transparent}
+.hd .wrap{display:flex;align-items:center;justify-content:space-between;gap:1.5rem}
+.hd.on{background:rgba(244,243,238,.92);backdrop-filter:blur(10px);border-bottom-color:var(--rule)}
+.logo{display:flex;align-items:center;gap:.7rem;color:#fff;transition:color .4s var(--ease)}
+.hd.on .logo{color:var(--ink)}
+.logo b{font-family:var(--serif);font-weight:600;font-size:1.3rem;letter-spacing:.01em}
+.logo small{display:block;font-family:var(--sans);font-size:.62rem;letter-spacing:.28em;text-transform:uppercase;opacity:.75;margin-top:1px}
+.nav{display:flex;align-items:center;gap:2.4rem}
+.nav-l{display:flex;gap:2rem}
+.nav-l a{font-family:var(--sans);font-weight:600;font-size:.76rem;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.85);position:relative;padding-bottom:4px}
+.hd.on .nav-l a{color:var(--stone)}
+.nav-l a::after{content:"";position:absolute;left:0;bottom:0;width:0;height:1px;background:var(--pine);transition:width .3s var(--ease)}
+.nav-l a:hover{color:#fff}.hd.on .nav-l a:hover{color:var(--pine)}
+.nav-l a:hover::after,.nav-l a.active::after{width:100%}
+.burger{display:none;width:44px;height:44px;align-items:center;justify-content:center;color:#fff;border:1px solid rgba(255,255,255,.4)}
+.hd.on .burger{color:var(--ink);border-color:var(--rule)}
+
+/* Mobile drawer */
+.scrim{position:fixed;inset:0;z-index:110;background:rgba(25,29,26,.5);opacity:0;visibility:hidden;transition:.35s var(--ease)}
+.scrim.open{opacity:1;visibility:visible}
+.drawer{position:fixed;top:0;right:0;z-index:120;height:100%;width:min(330px,86vw);background:var(--paper);transform:translateX(100%);transition:transform .45s var(--ease);box-shadow:-30px 0 60px -30px rgba(0,0,0,.4);padding:1.4rem 1.6rem 2rem;display:flex;flex-direction:column}
+.drawer.open{transform:translateX(0)}
+.drawer .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.6rem}
+.drawer .top .logo{color:var(--ink)}
+.x{width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--rule);color:var(--ink)}
+.drawer a.ml{display:flex;justify-content:space-between;align-items:center;padding:1rem 0;font-family:var(--serif);font-size:1.5rem;border-bottom:1px solid var(--rule)}
+.drawer a.ml .ic{width:17px;height:17px;color:var(--pine)}
+.drawer .btn{margin-top:1.6rem;justify-content:center}
+
+/* HERO */
+.hero{position:relative;min-height:clamp(640px,100svh,940px);display:flex;flex-direction:column;justify-content:center;color:#fff;background-image:linear-gradient(180deg,rgba(15,20,16,.5),rgba(15,20,16,.3) 40%,rgba(15,20,16,.65));background-size:cover;background-position:center 42%}
+.hero::before{content:"";position:absolute;inset:0;background-image:url("https://gasthofpost.at/wp-content/uploads/2024/08/Oberdrauburg-Gasthof-Post-Sommer-04.webp");background-size:cover;background-position:center 42%;z-index:-1}
+.hero .bar{position:absolute;top:calc(var(--hh) + 4px);left:0;right:0}
+.hero .bar .wrap{display:flex;justify-content:space-between;align-items:center;font-family:var(--sans);font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.8)}
+.hero .bar .line{height:1px;background:rgba(255,255,255,.3);margin-top:.9rem}
+.hero .inner{text-align:center;padding-top:var(--hh)}
+.hero .kk{font-family:var(--serif);font-style:italic;font-size:1.15rem;color:rgba(255,255,255,.9);margin-bottom:1rem;letter-spacing:.01em}
+.hero h1{color:#fff;max-width:16ch;margin:0 auto;text-shadow:0 2px 40px rgba(0,0,0,.3)}
+.hero .sub{max-width:50ch;margin:1.5rem auto 2.4rem;font-size:1.15rem;color:rgba(255,255,255,.92);text-shadow:0 1px 20px rgba(0,0,0,.3)}
+.hero .cta{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+.scrolldown{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);font-family:var(--sans);font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.75);display:flex;flex-direction:column;align-items:center;gap:.5rem}
+.scrolldown .ln{width:1px;height:34px;background:rgba(255,255,255,.5);animation:drop 2s var(--ease) infinite;transform-origin:top}
+@keyframes drop{0%{transform:scaleY(0)}40%{transform:scaleY(1)}100%{transform:scaleY(0);transform-origin:bottom}}
+
+/* ÜBER UNS */
+.about{display:grid;grid-template-columns:1fr 1fr;gap:clamp(40px,6vw,90px);align-items:start}
+.about .lead-h{font-size:clamp(1.6rem,2.6vw,2.3rem);line-height:1.25;font-weight:500}
+.dropcap p:first-of-type::first-letter{font-family:var(--serif);font-weight:600;font-size:4.2em;line-height:.72;float:left;margin:.06em .12em 0 0;color:var(--pine)}
+.about .body{color:var(--stone)}
+.sig{margin-top:2rem;display:flex;align-items:center;gap:1rem;border-top:1px solid var(--rule);padding-top:1.4rem}
+.sig b{font-family:var(--serif);font-style:italic;font-size:1.4rem;color:var(--pine);font-weight:500}
+.sig span{display:block;font-size:.8rem;letter-spacing:.04em;color:var(--stone)}
+
+/* WOHNUNGEN */
+.entries{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(24px,3vw,40px)}
+.entry{display:flex;flex-direction:column}
+.entry__media{position:relative;aspect-ratio:4/5;background:linear-gradient(150deg,var(--paper-2),var(--paper-3));border:1px solid var(--rule);display:grid;place-items:center;overflow:hidden}
+.entry__media .num{position:absolute;top:14px;left:16px;font-family:var(--serif);font-style:italic;font-size:.95rem;color:var(--stone)}
+.entry__media .tag{position:absolute;top:14px;right:16px;font-family:var(--sans);font-size:.64rem;letter-spacing:.16em;text-transform:uppercase;color:var(--pine);border:1px solid var(--pine);padding:.25rem .55rem}
+.entry__media .ini{font-family:var(--serif);font-weight:500;font-size:clamp(6rem,14vw,9rem);color:var(--pine);opacity:.18;line-height:1}
+.entry__media .micon{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);color:var(--pine);opacity:.55}
+.entry__media .micon .ic{width:30px;height:30px}
+.entry h3{margin:1.3rem 0 .2rem}
+.entry .ek{font-family:var(--sans);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--stone)}
+.entry .ed{color:var(--stone);font-size:.97rem;margin:.7rem 0 1rem}
+.entry .am{font-size:.82rem;color:var(--ink);display:flex;flex-wrap:wrap;gap:.35rem .9rem;margin-bottom:1.2rem}
+.entry .am li{display:inline-flex;align-items:center;gap:.4rem}
+.entry .am .ic{width:15px;height:15px;color:var(--pine)}
+.entry .foot{margin-top:auto;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--rule);padding-top:1rem}
+.entry .price{font-family:var(--serif);font-style:italic;color:var(--stone);font-size:.95rem}
+
+/* UMGEBUNG */
+.env{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(36px,5vw,72px);align-items:center}
+.env .spread{display:grid;gap:14px}
+.env figure{margin:0;position:relative}
+.env figure img{width:100%;height:100%;object-fit:cover;border:1px solid var(--rule)}
+.env .big{aspect-ratio:3/2}
+.env .row{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;align-items:end}
+.env .small{aspect-ratio:1/1}
+.env figcaption{font-family:var(--serif);font-style:italic;font-size:.85rem;color:var(--stone);margin-top:.5rem}
+.chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1.6rem}
+.chips li{display:inline-flex;align-items:center;gap:.45rem;font-family:var(--sans);font-size:.78rem;letter-spacing:.04em;border:1px solid var(--rule);padding:.45rem .9rem;color:var(--ink);transition:all .3s var(--ease)}
+.chips li:hover{border-color:var(--pine);color:var(--pine)}
+.chips .ic{width:15px;height:15px;color:var(--pine)}
+
+/* VORTEILE */
+.perks{display:grid;grid-template-columns:repeat(3,1fr)}
+.perk{padding:2rem 1.8rem;border-top:1px solid var(--rule);border-right:1px solid var(--rule)}
+.perks .perk:nth-child(3n){border-right:none}
+.perk .pn{font-family:var(--serif);font-style:italic;font-size:1rem;color:var(--stone);margin-bottom:1rem;display:flex;align-items:center;gap:.6rem}
+.perk .pn .ic{width:22px;height:22px;color:var(--pine)}
+.perk h3{font-size:1.25rem;margin-bottom:.5rem}
+.perk p{color:var(--stone);font-size:.95rem;margin:0}
+
+/* KONTAKT */
+.contact{display:grid;grid-template-columns:1.3fr .7fr;gap:clamp(36px,5vw,72px);align-items:start}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:1.8rem 1.6rem}
+.fld{display:flex;flex-direction:column}
+.fld.full{grid-column:1/-1}
+.fld label{font-family:var(--sans);font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--stone);margin-bottom:.5rem}
+.fld input,.fld textarea{font-family:var(--serif);font-size:1.15rem;color:var(--ink);border:none;border-bottom:1px solid var(--ink);background:transparent;padding:.4rem 0;transition:border-color .3s var(--ease)}
+.fld textarea{resize:vertical;min-height:70px;font-size:1.05rem;line-height:1.5}
+.fld input::placeholder,.fld textarea::placeholder{color:#aaa6}
+.fld input:focus,.fld textarea:focus{outline:none;border-color:var(--pine)}
+.fnote{margin-top:1.6rem;font-size:.84rem;color:var(--stone)}
+.ok{display:none;text-align:center;padding:2rem 1rem}
+.ok.show{display:block}
+.ok .mk{font-family:var(--serif);font-size:3rem;color:var(--pine);line-height:1}
+.ok h3{margin:1rem 0 .6rem}
+.ok p{color:var(--stone);max-width:40ch;margin-inline:auto}
+.cinfo{border-top:2px solid var(--ink);padding-top:1.6rem}
+.cinfo .ci{padding:1.1rem 0;border-bottom:1px solid var(--rule)}
+.cinfo .ci small{display:block;font-family:var(--sans);font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--stone);margin-bottom:.3rem}
+.cinfo .ci b{font-family:var(--serif);font-weight:500;font-size:1.3rem}
+.cinfo .ci a:hover{color:var(--pine)}
+.chours{margin-top:1.4rem;font-size:.92rem;color:var(--stone)}
+
+/* FOOTER */
+.ft{background:var(--ink);color:rgba(244,243,238,.7);padding-block:clamp(54px,7vw,80px) 28px}
+.ft .logo{color:var(--paper)}
+.ftg{display:grid;grid-template-columns:1.6fr 1fr 1fr 1.1fr;gap:2.4rem}
+.ft .ab{max-width:34ch;margin-top:1.1rem;font-size:.94rem;font-family:var(--serif);font-style:italic;color:rgba(244,243,238,.8)}
+.ft h4{font-family:var(--sans);color:var(--paper);font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;margin-bottom:1rem}
+.ft a.fl{display:block;padding:.35rem 0;color:rgba(244,243,238,.7);transition:color .25s}
+.ft a.fl:hover{color:#fff}
+.ft .fc p{font-size:.94rem;margin-bottom:.6rem}
+.ft .fc a{color:#fff}
+.ftb{margin-top:3rem;padding-top:1.5rem;border-top:1px solid rgba(244,243,238,.15);display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem;font-size:.8rem;letter-spacing:.04em}
+
+[data-rv]{opacity:0;transform:translateY(24px);transition:opacity .8s var(--ease),transform .8s var(--ease)}
+[data-rv].vis{opacity:1;transform:none}
+
+@media(max-width:980px){
+ .nav-l{display:none}.burger{display:flex}
+ .about{grid-template-columns:1fr;gap:2rem}
+ .entries{grid-template-columns:1fr 1fr}
+ .env{grid-template-columns:1fr}
+ .perks{grid-template-columns:1fr 1fr}
+ .perks .perk:nth-child(3n){border-right:1px solid var(--rule)}
+ .perks .perk:nth-child(2n){border-right:none}
+ .contact{grid-template-columns:1fr}
+ .ftg{grid-template-columns:1fr 1fr}
+}
+@media(max-width:600px){
+ .entries{grid-template-columns:1fr}.fgrid{grid-template-columns:1fr}
+ .perks{grid-template-columns:1fr}.perks .perk{border-right:none!important}
+ .hero .cta{flex-direction:column}.hero .cta .btn{justify-content:center}
+ .ftg{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition-duration:.01ms!important}[data-rv]{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+<symbol id="i-peak" viewBox="0 0 24 24"><path d="M3 19h18L14 6l-3 5-2-3-6 11Z"/><path d="m11 11 1.5-2.5"/></symbol>
+<symbol id="i-leaf" viewBox="0 0 24 24"><path d="M4 20c0-8 6-14 16-14 0 10-6 16-14 16-1 0-2 0-2-2Z"/><path d="M8 16c3-3 6-5 10-6"/></symbol>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11 12 4l8 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></symbol>
+<symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9.3-9.1C1 7.5 2.7 4.5 5.8 4.5c2 0 3.3 1.2 4.2 2.6.9-1.4 2.2-2.6 4.2-2.6 3.1 0 4.8 3 3.1 6.4C19 15.6 12 20 12 20Z"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3 3-4.5 5.5-4.5S14 16 14.5 19"/><path d="M16 5.2A3 3 0 0 1 16 11"/><path d="M17 14.6c2 .5 3.4 2 3.8 4.4"/></symbol>
+<symbol id="i-wifi" viewBox="0 0 24 24"><path d="M2.5 9c5.4-4.7 13.6-4.7 19 0"/><path d="M5.5 12.5c3.7-3.2 9.3-3.2 13 0"/><path d="M8.5 16c2-1.7 5-1.7 7 0"/><circle cx="12" cy="19.5" r="1.1" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-kitchen" viewBox="0 0 24 24"><path d="M7 3v8M5 3v4a2 2 0 0 0 4 0V3M7 11v10"/><path d="M17 3c-1.7 0-3 2-3 4.5S15.3 12 17 12V3Zm0 9v9"/></symbol>
+<symbol id="i-tv" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M8 21h8M9.5 6 12 3l2.5 3"/></symbol>
+<symbol id="i-bed" viewBox="0 0 24 24"><path d="M3 18V8m0 6h18m0 4V11a2 2 0 0 0-2-2H9v5"/><path d="M3 20v-2M21 20v-2"/></symbol>
+<symbol id="i-parking" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M10 16V8h2.5a2.2 2.2 0 0 1 0 4.5H10"/></symbol>
+<symbol id="i-balcony" viewBox="0 0 24 24"><path d="M4 21V11h16v10M4 16h16M9 11V7a3 3 0 0 1 6 0v4M12 11v10"/></symbol>
+<symbol id="i-dog" viewBox="0 0 24 24"><path d="M10 5 8 3v4l-3 2v5l3 3h6l3-3V9l-3-2V3l-2 2Z"/><circle cx="10" cy="11" r=".6" fill="currentColor" stroke="none"/><circle cx="14" cy="11" r=".6" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-quiet" viewBox="0 0 24 24"><path d="M5 9v6h3l5 4V5L8 9H5Z"/><path d="M16.5 9.5c1 1.6 1 3.4 0 5M19 7c2 3 2 7 0 10"/></symbol>
+<symbol id="i-hike" viewBox="0 0 24 24"><circle cx="13" cy="4.5" r="1.6"/><path d="M11 9l2-1 2 2 1 4M11 9l-2 4 2 2v6M11 9 9 7M7 21l2-6"/></symbol>
+<symbol id="i-bike" viewBox="0 0 24 24"><circle cx="6" cy="16" r="3.4"/><circle cx="18" cy="16" r="3.4"/><path d="M6 16 10 8h4l3 5M9 8h4l1 3M14 8h2"/></symbol>
+<symbol id="i-water" viewBox="0 0 24 24"><path d="M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11Z"/></symbol>
+<symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5 5-2Z"/></symbol>
+<symbol id="i-phone" viewBox="0 0 24 24"><path d="M6 3h3l1.5 4.5L8 9.5a11 11 0 0 0 6.5 6.5l2-2.5L21 15v3a2 2 0 0 1-2 2A16 16 0 0 1 4 5a2 2 0 0 1 2-2Z"/></symbol>
+<symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-6 7-11a7 7 0 0 0-14 0c0 5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3Z"/><path d="m9 12 2 2 4-4"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+<symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+<symbol id="i-insta" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="5"/><circle cx="12" cy="12" r="3.5"/><circle cx="17" cy="7" r=".6" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-fb" viewBox="0 0 24 24"><path d="M14 8h2V5h-2c-2 0-3 1.3-3 3.2V10H9v3h2v7h3v-7h2.2l.5-3H14V8.6c0-.4.2-.6.6-.6Z"/></symbol>
+</g></defs></svg>
+
+<header class="hd" id="hd"><div class="wrap">
+  <a href="#hero" class="logo"><span><b>Haus Egger</b><small>Oberdrauburg</small></span></a>
+  <nav class="nav" aria-label="Hauptnavigation">
+    <ul class="nav-l">
+      <li><a href="#ueber">Über uns</a></li>
+      <li><a href="#wohnungen">Wohnungen</a></li>
+      <li><a href="#umgebung">Umgebung</a></li>
+      <li><a href="#vorteile">Vorteile</a></li>
+      <li><a href="#kontakt">Kontakt</a></li>
+    </ul>
+    <a href="#kontakt" class="btn btn--line" data-cta>Anfragen</a>
+    <button class="burger" id="burger" aria-label="Menü" aria-expanded="false"><svg class="ic"><use href="#i-menu"/></svg></button>
+  </nav>
+</div></header>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true">
+  <div class="top"><span class="logo"><span><b>Haus Egger</b></span></span><button class="x" id="x"><svg class="ic"><use href="#i-close"/></svg></button></div>
+  <nav>
+    <a class="ml" href="#ueber">Über uns <svg class="ic"><use href="#i-arrow"/></svg></a>
+    <a class="ml" href="#wohnungen">Wohnungen <svg class="ic"><use href="#i-arrow"/></svg></a>
+    <a class="ml" href="#umgebung">Umgebung <svg class="ic"><use href="#i-arrow"/></svg></a>
+    <a class="ml" href="#vorteile">Vorteile <svg class="ic"><use href="#i-arrow"/></svg></a>
+    <a class="ml" href="#kontakt">Kontakt <svg class="ic"><use href="#i-arrow"/></svg></a>
+  </nav>
+  <a href="#kontakt" class="btn btn--solid">Jetzt anfragen</a>
+</aside>
+
+<!-- HERO -->
+<section class="hero" id="hero">
+  <div class="bar"><div class="wrap"><span>Oberdrauburg · Kärnten / Osttirol</span><span>Ausgabe 2026</span></div><div class="wrap"><div class="line"></div></div></div>
+  <div class="wrap inner">
+    <div class="kk">Ferien in den Bergen</div>
+    <h1>Ferienwohnungen Haus Egger</h1>
+    <p class="sub">Gemütlich wohnen in Oberdrauburg – umgeben von Natur, Bergen und Erholung.</p>
+    <div class="cta">
+      <a href="#kontakt" class="btn btn--ghost">Jetzt anfragen</a>
+      <a href="#wohnungen" class="btn btn--ghost">Wohnungen ansehen</a>
+    </div>
+  </div>
+  <a href="#ueber" class="scrolldown"><span class="ln"></span>Mehr lesen</a>
+</section>
+
+<!-- ÜBER UNS -->
+<section class="sec" id="ueber"><div class="wrap">
+  <div class="about">
+    <div data-rv>
+      <div class="kicker"><span class="idx">01</span> Willkommen</div>
+      <p class="lead-h">Ankommen, durchatmen, sich zuhause fühlen – zwischen Drau und Dolomiten.</p>
+    </div>
+    <div class="body dropcap" data-rv>
+      <p>Das Haus Egger liegt ruhig am Rand von Oberdrauburg, dort wo die Drau das Tal durchzieht und die Berge zum Greifen nah sind. Unsere drei liebevoll eingerichteten Ferienwohnungen sind Ihr gemütlicher Rückzugsort: hell, warm und mit allem ausgestattet, was einen unbeschwerten Urlaub ausmacht.</p>
+      <p>Wir sind ein kleiner, familiärer Betrieb – und genau so soll sich Ihr Aufenthalt anfühlen. Morgens der weite Blick auf die Lienzer Dolomiten, tagsüber Wandern und Radfahren, abends auf dem Balkon den Tag ausklingen lassen. Ein bisschen Kärnten, ein bisschen Osttirol – und ganz viel Erholung.</p>
+      <div class="sig"><div><b>Familie Egger</b><span>Ihre Gastgeber in Oberdrauburg</span></div></div>
+    </div>
+  </div>
+</div></section>
+
+<hr class="rule">
+
+<!-- WOHNUNGEN -->
+<section class="sec" id="wohnungen"><div class="wrap">
+  <div class="center" data-rv style="max-width:640px;margin:0 auto clamp(40px,6vw,64px)">
+    <div class="kicker"><span class="idx">02</span> Die Wohnungen</div>
+    <h2>Drei Wohnungen, ein Gefühl von Zuhause</h2>
+    <p class="dek" style="margin:1rem auto 0">Hell, gemütlich und durchdacht ausgestattet – wählen Sie die Wohnung, die am besten zu Ihrem Urlaub passt.</p>
+  </div>
+  <div class="entries">
+    <article class="entry" data-rv>
+      <div class="entry__media"><span class="num">Nr. 01</span><span class="tag">Balkon</span><span class="ini">B</span><span class="micon"><svg class="ic"><use href="#i-peak"/></svg></span></div>
+      <h3>Wohnung Bergblick</h3>
+      <div class="ek">2–3 Personen · Obergeschoss</div>
+      <p class="ed">Sonnendurchflutete Wohnung mit Balkon und weitem Blick auf die Lienzer Dolomiten – perfekt für Paare, die mit Bergpanorama in den Tag starten.</p>
+      <ul class="am"><li><svg class="ic"><use href="#i-balcony"/></svg>Balkon</li><li><svg class="ic"><use href="#i-kitchen"/></svg>Küche</li><li><svg class="ic"><use href="#i-wifi"/></svg>WLAN</li></ul>
+      <div class="foot"><span class="price">Preis auf Anfrage</span><a href="#kontakt" class="tlink">Anfragen <svg class="ic"><use href="#i-arrow"/></svg></a></div>
+    </article>
+    <article class="entry" data-rv>
+      <div class="entry__media"><span class="num">Nr. 02</span><span class="tag">Garten</span><span class="ini">G</span><span class="micon"><svg class="ic"><use href="#i-leaf"/></svg></span></div>
+      <h3>Wohnung Gartenglück</h3>
+      <div class="ek">2 Personen · Ebenerdig</div>
+      <p class="ed">Ebenerdige Wohnung mit direktem Gartenzugang. Hier sitzt man im Grünen, hört nur die Vögel – ideal für Ruhesuchende, auch der Vierbeiner ist willkommen.</p>
+      <ul class="am"><li><svg class="ic"><use href="#i-leaf"/></svg>Garten</li><li><svg class="ic"><use href="#i-dog"/></svg>Hund ok</li><li><svg class="ic"><use href="#i-wifi"/></svg>WLAN</li></ul>
+      <div class="foot"><span class="price">Preis auf Anfrage</span><a href="#kontakt" class="tlink">Anfragen <svg class="ic"><use href="#i-arrow"/></svg></a></div>
+    </article>
+    <article class="entry" data-rv>
+      <div class="entry__media"><span class="num">Nr. 03</span><span class="tag">Familie</span><span class="ini">F</span><span class="micon"><svg class="ic"><use href="#i-home"/></svg></span></div>
+      <h3>Wohnung Familienzeit</h3>
+      <div class="ek">4–5 Personen · 2 Schlafzimmer</div>
+      <p class="ed">Unsere geräumigste Wohnung mit zwei Schlafzimmern und viel Platz zum Wohlfühlen. Kindgerecht, hell und durchdacht – für unbeschwerten Familienurlaub.</p>
+      <ul class="am"><li><svg class="ic"><use href="#i-bed"/></svg>2 SZ</li><li><svg class="ic"><use href="#i-tv"/></svg>Smart-TV</li><li><svg class="ic"><use href="#i-parking"/></svg>Parkplatz</li></ul>
+      <div class="foot"><span class="price">Preis auf Anfrage</span><a href="#kontakt" class="tlink">Anfragen <svg class="ic"><use href="#i-arrow"/></svg></a></div>
+    </article>
+  </div>
+</div></section>
+
+<hr class="rule">
+
+<!-- UMGEBUNG -->
+<section class="sec" id="umgebung"><div class="wrap">
+  <div class="env">
+    <div class="spread" data-rv>
+      <figure class="big"><img src="https://vcdn.bergfex.at/images/resized/e8/7ca58190982be9e8_7b7deb09b8ff850a.jpg" alt="Dorf Oberdrauburg" loading="lazy"><figcaption>Oberdrauburg im Drautal — Kärnten / Osttirol</figcaption></figure>
+      <div class="row">
+        <figure class="small"><img src="https://gasthofpost.at/wp-content/uploads/2024/08/Oberdrauburg-Gasthof-Post-Sommer-04.webp" alt="Natur um Oberdrauburg" loading="lazy"></figure>
+        <p class="dek" style="font-size:.95rem">Eingebettet zwischen Gailtaler Alpen und Lienzer Dolomiten – ein Tal für alle, die Natur und Bewegung lieben.</p>
+      </div>
+    </div>
+    <div data-rv>
+      <div class="kicker"><span class="idx">03</span> Umgebung</div>
+      <h2>Wo der Drauradweg auf die Berge trifft</h2>
+      <p style="margin-top:1.2rem;color:var(--stone)">Direkt vor der Haustür führt der berühmte Drauradweg durchs Tal, rundherum warten unzählige Wander- und Bergtouren für jedes Niveau. Wer es ruhiger mag, genießt die klare Bergluft am Flussufer oder unternimmt Tagesausflüge nach Lienz, an den Weißensee oder in die Dolomitenregion.</p>
+      <ul class="chips">
+        <li><svg class="ic"><use href="#i-hike"/></svg>Wandern</li>
+        <li><svg class="ic"><use href="#i-bike"/></svg>Drauradweg</li>
+        <li><svg class="ic"><use href="#i-peak"/></svg>Bergtouren</li>
+        <li><svg class="ic"><use href="#i-water"/></svg>Baden</li>
+        <li><svg class="ic"><use href="#i-compass"/></svg>Ausflüge</li>
+        <li><svg class="ic"><use href="#i-quiet"/></svg>Ruhe</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<!-- VORTEILE -->
+<section class="sec" id="vorteile" style="background:var(--paper-2)"><div class="wrap">
+  <div class="center" data-rv style="margin-bottom:clamp(36px,5vw,56px)">
+    <div class="kicker"><span class="idx">04</span> Warum Haus Egger</div>
+    <h2>Kleine Details, großer Unterschied</h2>
+  </div>
+  <div class="perks">
+    <div class="perk" data-rv><div class="pn"><svg class="ic"><use href="#i-quiet"/></svg>i.</div><h3>Ruhige Lage</h3><p>Abseits von Lärm und Hektik schlafen Sie hier so tief wie schon lange nicht mehr.</p></div>
+    <div class="perk" data-rv><div class="pn"><svg class="ic"><use href="#i-home"/></svg>ii.</div><h3>Gemütliche Wohnungen</h3><p>Warm eingerichtet und voll ausgestattet – Sie müssen nur noch ankommen.</p></div>
+    <div class="perk" data-rv><div class="pn"><svg class="ic"><use href="#i-leaf"/></svg>iii.</div><h3>Natur vor der Tür</h3><p>Berge, Wälder und der Drauradweg beginnen praktisch am Grundstück.</p></div>
+    <div class="perk" data-rv><div class="pn"><svg class="ic"><use href="#i-users"/></svg>iv.</div><h3>Für alle, die Urlaub lieben</h3><p>Ob Familie, Paar oder Aktivurlauber – jeder findet die passende Wohnung.</p></div>
+    <div class="perk" data-rv><div class="pn"><svg class="ic"><use href="#i-heart"/></svg>v.</div><h3>Persönliche Betreuung</h3><p>Wir geben Tipps aus erster Hand und kümmern uns um Ihr Wohl.</p></div>
+    <div class="perk" data-rv><div class="pn"><svg class="ic"><use href="#i-shield"/></svg>vi.</div><h3>Sorglos buchen</h3><p>Unkomplizierte Anfrage, schnelle Rückmeldung, faire Konditionen.</p></div>
+  </div>
+</div></section>
+
+<!-- KONTAKT -->
+<section class="sec" id="kontakt"><div class="wrap">
+  <div class="center" data-rv style="max-width:640px;margin:0 auto clamp(40px,6vw,60px)">
+    <div class="kicker"><span class="idx">05</span> Buchung &amp; Kontakt</div>
+    <h2>Ihre Anfrage – wir freuen uns auf Sie</h2>
+    <p class="dek" style="margin:1rem auto 0">Füllen Sie das Formular aus. Wir melden uns in der Regel innerhalb von 24 Stunden mit Verfügbarkeit und Preis.</p>
+  </div>
+  <div class="contact">
+    <div data-rv>
+      <form id="form" novalidate>
+        <div class="fgrid">
+          <div class="fld"><label for="n">Name *</label><input id="n" name="name" placeholder="Vor- und Nachname" required></div>
+          <div class="fld"><label for="e">E-Mail *</label><input id="e" type="email" name="email" placeholder="name@email.at" required></div>
+          <div class="fld"><label for="t">Telefon *</label><input id="t" type="tel" name="phone" placeholder="+43 …" required></div>
+          <div class="fld"><label for="g">Personen *</label><input id="g" type="number" min="1" max="12" value="2" name="guests" required></div>
+          <div class="fld"><label for="a">Anreise *</label><input id="a" type="date" name="arrival" required></div>
+          <div class="fld"><label for="d">Abreise *</label><input id="d" type="date" name="departure" required></div>
+          <div class="fld full"><label for="m">Nachricht</label><textarea id="m" name="message" placeholder="Welche Wohnung interessiert Sie? Besondere Wünsche?"></textarea></div>
+        </div>
+        <button class="btn btn--solid" style="margin-top:2rem" type="submit">Buchungsanfrage senden <svg class="ic"><use href="#i-arrow"/></svg></button>
+        <p class="fnote">Ihre Daten werden ausschließlich zur Bearbeitung Ihrer Anfrage verwendet.</p>
+      </form>
+      <div class="ok" id="ok" role="status"><div class="mk">✓</div><h3>Vielen Dank für Ihre Anfrage!</h3><p>Wir haben Ihre Buchungsanfrage erhalten und melden uns innerhalb von 24 Stunden persönlich bei Ihnen.</p><button class="btn btn--line" id="again" style="margin-top:1.4rem">Weitere Anfrage</button></div>
+    </div>
+    <aside data-rv>
+      <div class="cinfo">
+        <div class="ci"><small>Telefon</small><b><a href="tel:+43000000000">+43 XXX XXX XXX</a></b></div>
+        <div class="ci"><small>E-Mail</small><b><a href="mailto:info@haus-egger.at">info@haus-egger.at</a></b></div>
+        <div class="ci"><small>Adresse</small><b>Oberdrauburg, Österreich</b></div>
+      </div>
+      <p class="chours">Check-in ab 15:00 Uhr · Check-out bis 10:00 Uhr. Andere Zeiten? Schreiben Sie uns – wir finden eine Lösung.</p>
+    </aside>
+  </div>
+</div></section>
+
+<!-- FOOTER -->
+<footer class="ft"><div class="wrap">
+  <div class="ftg">
+    <div>
+      <span class="logo"><span><b>Haus Egger</b><small>Oberdrauburg</small></span></span>
+      <p class="ab">Gemütliche Ferienwohnungen in Oberdrauburg – umgeben von Natur, Bergen und Erholung.</p>
+    </div>
+    <div><h4>Inhalt</h4><a class="fl" href="#ueber">Über uns</a><a class="fl" href="#wohnungen">Wohnungen</a><a class="fl" href="#umgebung">Umgebung</a><a class="fl" href="#vorteile">Vorteile</a></div>
+    <div><h4>Wohnungen</h4><a class="fl" href="#wohnungen">Bergblick</a><a class="fl" href="#wohnungen">Gartenglück</a><a class="fl" href="#wohnungen">Familienzeit</a></div>
+    <div class="fc"><h4>Kontakt</h4><p><a href="tel:+43000000000">+43 XXX XXX XXX</a></p><p><a href="mailto:info@haus-egger.at">info@haus-egger.at</a></p><p>Oberdrauburg, Österreich</p></div>
+  </div>
+  <div class="ftb"><span>© <span id="yr"></span> Ferienwohnungen Haus Egger</span><span>Mit Liebe in den Bergen.</span></div>
+</div></footer>
+
+<script>
+(function(){"use strict";
+var rm=matchMedia("(prefers-reduced-motion: reduce)").matches;
+document.getElementById("yr").textContent=new Date().getFullYear();
+var hd=document.getElementById("hd");var os=function(){hd.classList.toggle("on",scrollY>40)};os();addEventListener("scroll",os,{passive:true});
+var b=document.getElementById("burger"),dr=document.getElementById("drawer"),sc=document.getElementById("scrim"),x=document.getElementById("x");
+function op(){dr.classList.add("open");sc.classList.add("open");b.setAttribute("aria-expanded","true");dr.setAttribute("aria-hidden","false");document.body.style.overflow="hidden"}
+function cl(){dr.classList.remove("open");sc.classList.remove("open");b.setAttribute("aria-expanded","false");dr.setAttribute("aria-hidden","true");document.body.style.overflow=""}
+b.onclick=op;x.onclick=cl;sc.onclick=cl;dr.querySelectorAll("a").forEach(function(a){a.onclick=cl});
+addEventListener("keydown",function(e){if(e.key==="Escape")cl()});
+document.querySelectorAll('a[href^="#"]').forEach(function(l){l.addEventListener("click",function(e){var id=l.getAttribute("href");if(id.length<2)return;var t=document.querySelector(id);if(!t)return;e.preventDefault();var y=t.getBoundingClientRect().top+scrollY-70;scrollTo({top:y,behavior:rm?"auto":"smooth"})})});
+var rv=document.querySelectorAll("[data-rv]");
+if(rm||!("IntersectionObserver"in window)){rv.forEach(function(el){el.classList.add("vis")})}
+else{var io=new IntersectionObserver(function(en,o){en.forEach(function(e){if(e.isIntersecting){e.target.classList.add("vis");o.unobserve(e.target)}})},{threshold:.12,rootMargin:"0px 0px -8% 0px"});
+document.querySelectorAll(".entries,.perks").forEach(function(g){g.querySelectorAll("[data-rv]").forEach(function(el,i){el.style.transitionDelay=(i*80)+"ms"})});
+rv.forEach(function(el){io.observe(el)})}
+var nm={};document.querySelectorAll(".nav-l a").forEach(function(a){nm[a.getAttribute("href").slice(1)]=a});
+["ueber","wohnungen","umgebung","vorteile","kontakt"].map(function(i){return document.getElementById(i)}).forEach(function(s){if(!s)return;new IntersectionObserver(function(en){en.forEach(function(e){var l=nm[e.target.id];if(l&&e.isIntersecting){Object.values(nm).forEach(function(z){z.classList.remove("active")});l.classList.add("active")}})},{rootMargin:"-45% 0px -50% 0px"}).observe(s)});
+var a=document.getElementById("a"),d=document.getElementById("d"),tod=new Date().toISOString().split("T")[0];a.min=tod;d.min=tod;
+a.onchange=function(){if(a.value){d.min=a.value;if(d.value&&d.value<a.value)d.value=a.value}};
+var f=document.getElementById("form"),ok=document.getElementById("ok");
+f.addEventListener("submit",function(e){e.preventDefault();
+ if(a.value&&d.value&&d.value<=a.value){d.setCustomValidity("Abreise muss nach Anreise liegen.");d.reportValidity();return}d.setCustomValidity("");
+ if(!f.checkValidity()){f.reportValidity();return}
+ f.style.display="none";ok.classList.add("show");ok.scrollIntoView({behavior:rm?"auto":"smooth",block:"center"})});
+document.getElementById("again").onclick=function(){f.reset();document.getElementById("g").value=2;ok.classList.remove("show");f.style.display=""};
+})();
+</script>
+</body>
+</html>
