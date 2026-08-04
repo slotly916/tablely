@@ -40,23 +40,39 @@ export default function NewReservation() {
 
   async function loadData() {
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error: authErr } = await supabase.auth.getUser();
+    if (authErr) {
+      console.error("Auth-Fehler:", authErr);
+      setError("Deine Sitzung konnte nicht geprüft werden. Bitte Seite neu laden." + (authErr.message ? ` (${authErr.message})` : ""));
+      return;
+    }
     if (!user) { router.push("/login"); return; }
 
     // Restaurant suchen — tolerant gegen mehrere/keine Treffer (kein .single()).
-    const { data: rests } = await supabase
+    const { data: rests, error: restErr } = await supabase
       .from("restaurants")
       .select("*")
       .eq("email", user.email)
       .order("created_at", { ascending: true })
       .limit(1);
+    // Bei Fehler NICHT ins Onboarding leiten — das waere fuer bestehende Kunden falsch.
+    if (restErr) {
+      console.error("Restaurant laden fehlgeschlagen:", restErr);
+      setError("Dein Restaurant konnte nicht geladen werden. Bitte Seite neu laden." + (restErr.message ? ` (${restErr.message})` : ""));
+      return;
+    }
     const rest = rests && rests.length > 0 ? rests[0] : null;
     if (!rest) { router.push("/onboarding"); return; }
 
     setRestaurantId(rest.id);
 
-    const { data: tbls } = await supabase
+    const { data: tbls, error: tblErr } = await supabase
       .from("tables").select("*").eq("restaurant_id", rest.id).order("name");
+    if (tblErr) {
+      console.error("Tische laden fehlgeschlagen:", tblErr);
+      setError("Die Tische konnten nicht geladen werden — du kannst trotzdem ohne Tischzuweisung speichern." + (tblErr.message ? ` (${tblErr.message})` : ""));
+      return;
+    }
     if (tbls) {
       tbls.sort((a: {name: string}, b: {name: string}) => {
         const numA = parseInt(a.name.replace(/[^0-9]/g, "")) || 0;
@@ -71,6 +87,10 @@ export default function NewReservation() {
   async function handleSubmit() {
     if (!guestName || !date || !time || !partySize) {
       setError("Bitte Name, Datum, Uhrzeit und Personenzahl ausfüllen.");
+      return;
+    }
+    if (!restaurantId) {
+      setError("Dein Restaurant wurde noch nicht geladen. Bitte Seite neu laden.");
       return;
     }
     setLoading(true);

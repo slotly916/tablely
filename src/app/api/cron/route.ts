@@ -25,15 +25,23 @@ export async function GET(req: Request) {
   let sent24h = 0;
   let sent2h = 0;
   let sentFeedback = 0;
+  // Fehler werden gesammelt und im Response zurueckgegeben, damit ein stiller
+  // Ausfall der Erinnerungen im Vercel-Cron-Log sichtbar wird.
+  const errors: string[] = [];
 
   // 24h Erinnerungen
-  const { data: res24h } = await supabase
+  const { data: res24h, error: err24h } = await supabase
     .from("reservations")
     .select("*, restaurants(name, phone)")
     .eq("date", format(in24h))
     .eq("reminder_24h_sent", false)
     .eq("status", "confirmed")
     .not("guest_email", "is", null);
+
+  if (err24h) {
+    console.error("24h-Erinnerungen laden fehlgeschlagen:", err24h);
+    errors.push(`24h laden: ${err24h.message}`);
+  }
 
   for (const res of res24h || []) {
     try {
@@ -52,25 +60,39 @@ export async function GET(req: Request) {
         }),
       });
 
-      await supabase
+      // Wenn das Flag nicht gesetzt werden kann, bekommt der Gast beim
+      // naechsten Lauf dieselbe Mail nochmal — das muss sichtbar sein.
+      const { error: flagErr } = await supabase
         .from("reservations")
         .update({ reminder_24h_sent: true })
         .eq("id", res.id);
 
+      if (flagErr) {
+        console.error("24h-Flag setzen fehlgeschlagen:", flagErr);
+        errors.push(`24h Flag ${res.id}: ${flagErr.message}`);
+        continue;
+      }
+
       sent24h++;
     } catch (e) {
       console.error("24h reminder error:", e);
+      errors.push(`24h Mail ${res.id}: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
   // 2h Erinnerungen
-  const { data: res2h } = await supabase
+  const { data: res2h, error: err2h } = await supabase
     .from("reservations")
     .select("*, restaurants(name, phone)")
     .eq("date", format(in2h))
     .eq("reminder_2h_sent", false)
     .eq("status", "confirmed")
     .not("guest_email", "is", null);
+
+  if (err2h) {
+    console.error("2h-Erinnerungen laden fehlgeschlagen:", err2h);
+    errors.push(`2h laden: ${err2h.message}`);
+  }
 
   for (const res of res2h || []) {
     const resTime = res.time.slice(0, 5);
@@ -98,14 +120,21 @@ export async function GET(req: Request) {
         }),
       });
 
-      await supabase
+      const { error: flagErr } = await supabase
         .from("reservations")
         .update({ reminder_2h_sent: true })
         .eq("id", res.id);
 
+      if (flagErr) {
+        console.error("2h-Flag setzen fehlgeschlagen:", flagErr);
+        errors.push(`2h Flag ${res.id}: ${flagErr.message}`);
+        continue;
+      }
+
       sent2h++;
     } catch (e) {
       console.error("2h reminder error:", e);
+      errors.push(`2h Mail ${res.id}: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
@@ -113,7 +142,7 @@ export async function GET(req: Request) {
   const yesterdayStr = format(new Date(now.getTime() - 48 * 60 * 60 * 1000));
   const todayStr = format(now);
 
-  const { data: feedbackCandidates } = await supabase
+  const { data: feedbackCandidates, error: fbErr } = await supabase
     .from("reservations")
     .select("id, guest_name, guest_email, time, date, restaurant_id, restaurants(name, google_place_id, google_review_url, stay_duration)")
     .in("status", ["confirmed", "completed"])
@@ -121,6 +150,11 @@ export async function GET(req: Request) {
     .not("guest_email", "is", null)
     .gte("date", yesterdayStr)
     .lte("date", todayStr);
+
+  if (fbErr) {
+    console.error("Feedback-Kandidaten laden fehlgeschlagen:", fbErr);
+    errors.push(`Feedback laden: ${fbErr.message}`);
+  }
 
   for (const res of feedbackCandidates || []) {
     if (!res.guest_email) continue;
@@ -143,7 +177,7 @@ export async function GET(req: Request) {
     }
 
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || "https://tablely.at"}/api/feedback-email`, {
+      const mailRes = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || "https://tablely.at"}/api/feedback-email`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -155,24 +189,41 @@ export async function GET(req: Request) {
         }),
       });
 
-      await supabase
+      // fetch wirft bei 4xx/5xx nicht — sonst wuerde feedback_sent gesetzt
+      // obwohl gar keine Mail rausging.
+      if (!mailRes.ok) {
+        console.error("Feedback-Mail fehlgeschlagen:", mailRes.status);
+        errors.push(`Feedback Mail ${res.id}: HTTP ${mailRes.status}`);
+        continue;
+      }
+
+      const { error: flagErr } = await supabase
         .from("reservations")
         .update({ feedback_sent: true })
         .eq("id", res.id);
 
+      if (flagErr) {
+        console.error("Feedback-Flag setzen fehlgeschlagen:", flagErr);
+        errors.push(`Feedback Flag ${res.id}: ${flagErr.message}`);
+        continue;
+      }
+
       sentFeedback++;
     } catch (e) {
       console.error("Feedback email error:", e);
+      errors.push(`Feedback ${res.id}: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
   return NextResponse.json({
-    success: true,
+    success: errors.length === 0,
     sent24h,
     sent2h,
     sentFeedback,
+    errorCount: errors.length,
+    errors,
     timestamp: now.toISOString(),
-  });
+  }, { status: errors.length > 0 ? 500 : 200 });
 }
 
 function reminderEmail({ guestName, restaurantName, restaurantPhone, date, time, partySize, hoursAhead }: {

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
+import Toast, { useToast, errorText } from "@/components/Toast";
 
 type Table = { id: string; name: string; capacity: number; combinable_with?: string[]; };
 type Hour = { id: string; day_of_week: number; open_time: string; close_time: string; is_closed: boolean; };
@@ -14,8 +15,10 @@ export default function Settings() {
   const [tab, setTab] = useState<"restaurant"|"tables"|"groups"|"hours">("restaurant");
   const [restaurantId, setRestaurantId] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const { toast, showError, closeToast } = useToast();
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -44,16 +47,32 @@ export default function Settings() {
 
   async function loadData() {
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    setLoadError("");
+
+    const { data: { user }, error: authErr } = await supabase.auth.getUser();
+    if (authErr) {
+      console.error("Auth-Fehler:", authErr);
+      setLoadError(errorText("Deine Sitzung konnte nicht geprüft werden.", authErr));
+      setLoading(false);
+      return;
+    }
     if (!user) { router.push("/login"); return; }
 
     // Restaurant suchen — tolerant gegen mehrere/keine Treffer (kein .single()).
-    const { data: rests } = await supabase
+    const { data: rests, error: restErr } = await supabase
       .from("restaurants")
       .select("*")
       .eq("email", user.email)
       .order("created_at", { ascending: true })
       .limit(1);
+    // Bei Fehler NICHT ins Onboarding leiten — sonst verliert ein bestehender
+    // Kunde bei einem Netzwerkfehler scheinbar sein Restaurant.
+    if (restErr) {
+      console.error("Restaurant laden fehlgeschlagen:", restErr);
+      setLoadError(errorText("Dein Restaurant konnte nicht geladen werden.", restErr));
+      setLoading(false);
+      return;
+    }
     const rest = rests && rests.length > 0 ? rests[0] : null;
     if (!rest) { router.push("/onboarding"); return; }
 
@@ -67,7 +86,13 @@ export default function Settings() {
     setGooglePlaceId(rest.google_place_id || "");
     setGoogleReviewUrl(rest.google_review_url || "");
 
-    const { data: tbls } = await supabase.from("tables").select("*").eq("restaurant_id", rest.id).order("name");
+    const { data: tbls, error: tblErr } = await supabase.from("tables").select("*").eq("restaurant_id", rest.id).order("name");
+    if (tblErr) {
+      console.error("Tische laden fehlgeschlagen:", tblErr);
+      setLoadError(errorText("Die Tische konnten nicht geladen werden.", tblErr));
+      setLoading(false);
+      return;
+    }
     if (tbls) {
       tbls.sort((a: {name: string}, b: {name: string}) => {
         const numA = parseInt(a.name.replace(/[^0-9]/g, "")) || 0;
@@ -77,7 +102,13 @@ export default function Settings() {
     }
     setTables(tbls || []);
 
-    const { data: hrs } = await supabase.from("opening_hours").select("*").eq("restaurant_id", rest.id).order("day_of_week");
+    const { data: hrs, error: hrsErr } = await supabase.from("opening_hours").select("*").eq("restaurant_id", rest.id).order("day_of_week");
+    if (hrsErr) {
+      console.error("Öffnungszeiten laden fehlgeschlagen:", hrsErr);
+      setLoadError(errorText("Die Öffnungszeiten konnten nicht geladen werden.", hrsErr));
+      setLoading(false);
+      return;
+    }
     if (hrs && hrs.length > 0) setHours(hrs);
     else setHours(DAYS.map((_,i) => ({ id: "", day_of_week: i, open_time: "11:00", close_time: "22:00", is_closed: i === 6 })));
 
@@ -87,7 +118,7 @@ export default function Settings() {
   async function saveRestaurant() {
     setSaving(true);
     const supabase = createClient();
-    await supabase.from("restaurants").update({
+    const { error } = await supabase.from("restaurants").update({
       name, phone, address,
       stay_duration: stayDuration,
       large_group_threshold: largeGroupThreshold,
@@ -95,41 +126,81 @@ export default function Settings() {
       google_review_url: googleReviewUrl || null,
     }).eq("id", restaurantId);
     setSaving(false);
+    if (error) {
+      console.error("Restaurant speichern fehlgeschlagen:", error);
+      showError(errorText("Die Restaurant-Daten konnten nicht gespeichert werden.", error));
+      return;
+    }
     showSaved();
   }
 
   async function saveTable(t: Table) {
     const supabase = createClient();
-    await supabase.from("tables").update({ name: t.name, capacity: t.capacity }).eq("id", t.id);
+    const { error } = await supabase.from("tables").update({ name: t.name, capacity: t.capacity }).eq("id", t.id);
+    if (error) {
+      console.error("Tisch speichern fehlgeschlagen:", error);
+      showError(errorText(`Tisch "${t.name}" konnte nicht gespeichert werden.`, error));
+      return;
+    }
     showSaved();
   }
 
   async function addTable() {
     const supabase = createClient();
-    const { data } = await supabase.from("tables").insert([{ restaurant_id: restaurantId, name: `Tisch ${tables.length + 1}`, capacity: 2, combinable_with: [] }]).select().single();
-    if (data) setTables([...tables, data]);
+    const { data, error } = await supabase.from("tables").insert([{ restaurant_id: restaurantId, name: `Tisch ${tables.length + 1}`, capacity: 2, combinable_with: [] }]).select().single();
+    if (error || !data) {
+      console.error("Tisch anlegen fehlgeschlagen:", error);
+      showError(errorText("Der Tisch konnte nicht angelegt werden.", error));
+      return;
+    }
+    setTables([...tables, data]);
+    showSaved();
   }
 
   async function deleteTable(id: string) {
     const supabase = createClient();
-    await supabase.from("tables").delete().eq("id", id);
+    const table = tables.find(t => t.id === id);
+    const { error } = await supabase.from("tables").delete().eq("id", id);
+    if (error) {
+      console.error("Tisch löschen fehlgeschlagen:", error);
+      // 23503 = Foreign-Key-Verletzung: an dem Tisch haengen noch Reservierungen.
+      if (error.code === "23503") {
+        showError(`Tisch "${table?.name ?? id}" kann nicht gelöscht werden, weil noch Reservierungen darauf liegen. Storniere oder verschiebe diese zuerst.`);
+      } else {
+        showError(errorText(`Tisch "${table?.name ?? id}" konnte nicht gelöscht werden.`, error));
+      }
+      return;
+    }
+
+    // Tisch aus allen Gruppen entfernen — Fehler hier einzeln melden, der Tisch
+    // selbst ist bereits weg.
     for (const t of tables) {
       if (t.combinable_with?.includes(id)) {
         const newCombine = t.combinable_with.filter(x => x !== id);
-        await supabase.from("tables").update({ combinable_with: newCombine }).eq("id", t.id);
+        const { error: grpErr } = await supabase.from("tables").update({ combinable_with: newCombine }).eq("id", t.id);
+        if (grpErr) {
+          console.error("Gruppe aktualisieren fehlgeschlagen:", grpErr);
+          showError(errorText(`Tisch "${t.name}" konnte nicht aus seiner Gruppe entfernt werden. Bitte Seite neu laden.`, grpErr));
+          return;
+        }
       }
     }
     setTables(tables.filter(t => t.id !== id).map(t => ({...t, combinable_with: (t.combinable_with || []).filter(x => x !== id)})));
+    showSaved();
   }
 
   async function saveHours() {
     setSaving(true);
     const supabase = createClient();
     for (const h of hours) {
-      if (h.id) {
-        await supabase.from("opening_hours").update({ open_time: h.open_time, close_time: h.close_time, is_closed: h.is_closed }).eq("id", h.id);
-      } else {
-        await supabase.from("opening_hours").insert([{ restaurant_id: restaurantId, day_of_week: h.day_of_week, open_time: h.open_time, close_time: h.close_time, is_closed: h.is_closed }]);
+      const { error } = h.id
+        ? await supabase.from("opening_hours").update({ open_time: h.open_time, close_time: h.close_time, is_closed: h.is_closed }).eq("id", h.id)
+        : await supabase.from("opening_hours").insert([{ restaurant_id: restaurantId, day_of_week: h.day_of_week, open_time: h.open_time, close_time: h.close_time, is_closed: h.is_closed }]);
+      if (error) {
+        console.error("Öffnungszeiten speichern fehlgeschlagen:", error);
+        setSaving(false);
+        showError(errorText(`Die Öffnungszeiten für ${DAYS[h.day_of_week]} konnten nicht gespeichert werden. Bitte nochmal speichern.`, error));
+        return;
       }
     }
     setSaving(false);
@@ -166,9 +237,19 @@ export default function Settings() {
     const supabase = createClient();
     for (const tableId of groupSelection) {
       const others = groupSelection.filter(id => id !== tableId);
-      await supabase.from("tables").update({ combinable_with: others }).eq("id", tableId);
+      const { error } = await supabase.from("tables").update({ combinable_with: others }).eq("id", tableId);
+      if (error) {
+        console.error("Gruppe anlegen fehlgeschlagen:", error);
+        showError(errorText("Die Tisch-Gruppe konnte nicht vollständig angelegt werden. Bitte Seite neu laden und nochmal versuchen.", error));
+        return;
+      }
     }
-    const { data: tbls } = await supabase.from("tables").select("*").eq("restaurant_id", restaurantId).order("name");
+    const { data: tbls, error: reloadErr } = await supabase.from("tables").select("*").eq("restaurant_id", restaurantId).order("name");
+    if (reloadErr) {
+      console.error("Tische neu laden fehlgeschlagen:", reloadErr);
+      showError(errorText("Die Gruppe wurde gespeichert, die Ansicht konnte aber nicht aktualisiert werden. Bitte Seite neu laden.", reloadErr));
+      return;
+    }
     if (tbls) {
       tbls.sort((a: {name: string}, b: {name: string}) => {
         const numA = parseInt(a.name.replace(/[^0-9]/g, "")) || 0;
@@ -185,9 +266,19 @@ export default function Settings() {
   async function deleteGroup(groupTables: Table[]) {
     const supabase = createClient();
     for (const t of groupTables) {
-      await supabase.from("tables").update({ combinable_with: [] }).eq("id", t.id);
+      const { error } = await supabase.from("tables").update({ combinable_with: [] }).eq("id", t.id);
+      if (error) {
+        console.error("Gruppe löschen fehlgeschlagen:", error);
+        showError(errorText("Die Tisch-Gruppe konnte nicht vollständig aufgelöst werden. Bitte Seite neu laden und nochmal versuchen.", error));
+        return;
+      }
     }
-    const { data: tbls } = await supabase.from("tables").select("*").eq("restaurant_id", restaurantId).order("name");
+    const { data: tbls, error: reloadErr } = await supabase.from("tables").select("*").eq("restaurant_id", restaurantId).order("name");
+    if (reloadErr) {
+      console.error("Tische neu laden fehlgeschlagen:", reloadErr);
+      showError(errorText("Die Gruppe wurde aufgelöst, die Ansicht konnte aber nicht aktualisiert werden. Bitte Seite neu laden.", reloadErr));
+      return;
+    }
     if (tbls) {
       tbls.sort((a: {name: string}, b: {name: string}) => {
         const numA = parseInt(a.name.replace(/[^0-9]/g, "")) || 0;
@@ -223,8 +314,25 @@ export default function Settings() {
     </div>
   );
 
+  if (loadError) return (
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#F5F0EB",fontFamily:"'DM Sans',sans-serif",padding:"24px"}}>
+      <div style={{background:"#fff",border:"1px solid #EDE8E3",borderRadius:"16px",padding:"32px",maxWidth:"460px",width:"100%",textAlign:"center"}}>
+        <div style={{width:"52px",height:"52px",borderRadius:"50%",background:"#FEE8E8",border:"1px solid rgba(226,75,74,.25)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="9" stroke="#E24B4A" strokeWidth="1.6"/><path d="M11 6.5v5.5M11 15v.5" stroke="#E24B4A" strokeWidth="1.8" strokeLinecap="round"/></svg>
+        </div>
+        <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"20px",fontWeight:700,color:"#1A1A2E",marginBottom:"8px"}}>Einstellungen konnten nicht geladen werden</h2>
+        <p style={{fontSize:"13px",color:"#6B6B80",lineHeight:1.6,marginBottom:"20px"}}>{loadError}</p>
+        <button onClick={() => { setLoading(true); loadData(); }} style={{
+          padding:"11px 24px",borderRadius:"10px",background:"#FF5C35",border:"none",color:"#fff",
+          fontSize:"14px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
+        }}>Erneut versuchen</button>
+      </div>
+    </div>
+  );
+
   return (
     <div style={{minHeight:"100vh",background:bg,fontFamily:"'DM Sans',sans-serif",display:"flex"}}>
+      <Toast toast={toast} onClose={closeToast}/>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500&display=swap');
         * { box-sizing: border-box; }

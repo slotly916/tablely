@@ -17,6 +17,8 @@ export default function FeedbackPage() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [submitError, setSubmitError] = useState("");
 
   useEffect(() => {
     loadData();
@@ -24,27 +26,43 @@ export default function FeedbackPage() {
 
   async function loadData() {
     const supabase = createClient();
-    const { data: res } = await supabase
+    setLoadError("");
+
+    const { data: res, error: resErr } = await supabase
       .from("reservations")
       .select("guest_name, restaurant_id")
       .eq("id", reservationId)
       .single();
-    if (res) {
-      setGuestName(res.guest_name);
-      const { data: rest } = await supabase
-        .from("restaurants")
-        .select("name")
-        .eq("id", res.restaurant_id)
-        .single();
-      if (rest) setRestaurantName(rest.name);
+    // PGRST116 = kein Treffer: der Link ist ungueltig. Alles andere ist eine Stoerung.
+    if (resErr && resErr.code !== "PGRST116") {
+      console.error("Reservierung laden fehlgeschlagen:", resErr);
+      setLoadError("Wir konnten deine Reservierung gerade nicht laden. Bitte versuche es in einem Moment nochmal.");
+      setLoading(false);
+      return;
     }
+    if (!res) {
+      setLoadError("Dieser Feedback-Link ist leider nicht mehr gültig.");
+      setLoading(false);
+      return;
+    }
+
+    setGuestName(res.guest_name);
+    const { data: rest, error: restErr } = await supabase
+      .from("restaurants")
+      .select("name")
+      .eq("id", res.restaurant_id)
+      .single();
+    // Der Restaurantname ist nur Deko — ein Fehler darf das Feedback nicht blockieren.
+    if (restErr) console.error("Restaurantname laden fehlgeschlagen:", restErr);
+    if (rest) setRestaurantName(rest.name);
     setLoading(false);
   }
 
   async function submitFeedback() {
     setSubmitting(true);
+    setSubmitError("");
     const supabase = createClient();
-    await supabase
+    const { error } = await supabase
       .from("reservations")
       .update({
         feedback_rating: rating,
@@ -52,6 +70,12 @@ export default function FeedbackPage() {
         feedback_submitted_at: new Date().toISOString(),
       })
       .eq("id", reservationId);
+    if (error) {
+      console.error("Feedback speichern fehlgeschlagen:", error);
+      setSubmitError("Dein Feedback konnte nicht gesendet werden. Bitte versuche es nochmal — dein Text bleibt erhalten.");
+      setSubmitting(false);
+      return;
+    }
     setSuccess(true);
     setSubmitting(false);
   }
@@ -60,6 +84,24 @@ export default function FeedbackPage() {
     return (
       <div style={{minHeight:"100vh",background:"#F5F0EB",display:"flex",alignItems:"center",justifyContent:"center"}}>
         <div style={{color:"#6B6B80",fontFamily:"DM Sans, sans-serif"}}>Laden...</div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div style={{minHeight:"100vh",background:"#F5F0EB",fontFamily:"'DM Sans',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
+        <div style={{maxWidth:"420px",width:"100%",background:"#fff",borderRadius:"20px",padding:"36px 28px",border:"1px solid #F0EBE3",textAlign:"center"}}>
+          <div style={{width:"52px",height:"52px",borderRadius:"50%",background:"#FEE8E8",border:"1px solid rgba(226,75,74,.25)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="9" stroke="#E24B4A" strokeWidth="1.6"/><path d="M11 6.5v5.5M11 15v.5" stroke="#E24B4A" strokeWidth="1.8" strokeLinecap="round"/></svg>
+          </div>
+          <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"20px",fontWeight:700,color:"#1A1A2E",marginBottom:"10px"}}>Feedback nicht möglich</h2>
+          <p style={{fontSize:"14px",color:"#6B6B80",lineHeight:1.6,marginBottom:"20px"}}>{loadError}</p>
+          <button onClick={() => { setLoading(true); loadData(); }} style={{
+            padding:"11px 24px",borderRadius:"10px",background:"#FF5C35",border:"none",color:"#fff",
+            fontSize:"14px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
+          }}>Erneut versuchen</button>
+        </div>
       </div>
     );
   }
@@ -117,6 +159,12 @@ export default function FeedbackPage() {
                   }}
                 />
               </div>
+
+              {submitError && (
+                <div style={{background:"#FEE8E8",border:"1px solid rgba(226,75,74,0.25)",borderRadius:"10px",padding:"10px 14px",fontSize:"13px",color:"#B3312F",marginBottom:"14px",lineHeight:1.5}}>
+                  {submitError}
+                </div>
+              )}
 
               <button onClick={submitFeedback} disabled={submitting} style={{
                 width:"100%",padding:"13px",borderRadius:"10px",background:"#FF5C35",border:"none",

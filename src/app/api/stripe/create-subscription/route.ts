@@ -38,11 +38,18 @@ export async function POST(req: Request) {
     }
 
     // Restaurant laden
-    const { data: restaurant } = await supabase
+    const { data: restaurant, error: restErr } = await supabase
       .from("restaurants")
       .select("*")
       .eq("id", restaurantId)
       .single();
+
+    // PGRST116 = kein Treffer. Andere Fehler duerfen nicht als "nicht gefunden"
+    // durchgehen, sonst sucht der Kunde den Fehler bei sich.
+    if (restErr && restErr.code !== "PGRST116") {
+      console.error("Restaurant laden fehlgeschlagen:", restErr);
+      return NextResponse.json({ error: "Deine Daten konnten gerade nicht geladen werden. Bitte versuche es in einem Moment nochmal." }, { status: 503 });
+    }
 
     if (!restaurant) {
       return NextResponse.json({ error: "Restaurant nicht gefunden." }, { status: 404 });
@@ -57,10 +64,16 @@ export async function POST(req: Request) {
         metadata: { restaurantId },
       });
       customerId = customer.id;
-      await supabase
+      // Abbrechen wenn die Customer-ID nicht gespeichert werden kann: sonst
+      // entsteht bei jedem Versuch ein neuer Stripe-Kunde.
+      const { error: custErr } = await supabase
         .from("restaurants")
         .update({ stripe_customer_id: customerId })
         .eq("id", restaurantId);
+      if (custErr) {
+        console.error("Stripe-Customer-ID speichern fehlgeschlagen:", custErr);
+        return NextResponse.json({ error: "Deine Zahlungsdaten konnten nicht gespeichert werden. Es wurde nichts abgebucht. Bitte versuche es nochmal." }, { status: 503 });
+      }
     }
 
     // Subscription mit "default_incomplete" erstellen.
@@ -75,14 +88,28 @@ export async function POST(req: Request) {
       metadata: { restaurantId, plan },
     });
 
-    // Subscription ID + gewählten Plan speichern (noch nicht aktiv bis bezahlt)
-    await supabase
+    // Subscription ID + gewählten Plan speichern (noch nicht aktiv bis bezahlt).
+    // Kritisch: der Webhook liest selected_plan um den Plan zu aktivieren.
+    // Fehlt der Wert, wird nach erfolgreicher Zahlung "standard" freigeschaltet —
+    // der Kunde zahlt fuer Plus/Premium und bekommt Standard.
+    const { error: subErr } = await supabase
       .from("restaurants")
       .update({
         stripe_subscription_id: subscription.id,
         selected_plan: plan,
       })
       .eq("id", restaurantId);
+
+    if (subErr) {
+      console.error("Plan speichern fehlgeschlagen:", subErr);
+      // Angelegte Subscription wieder abraeumen, damit nichts abgebucht wird.
+      try {
+        await stripe.subscriptions.cancel(subscription.id);
+      } catch (cancelErr) {
+        console.error("Subscription-Rollback fehlgeschlagen:", cancelErr, subscription.id);
+      }
+      return NextResponse.json({ error: "Dein Plan konnte nicht gespeichert werden. Es wurde nichts abgebucht. Bitte versuche es nochmal." }, { status: 503 });
+    }
 
     // confirmation_secret aus der expandierten Invoice holen
     const invoice = subscription.latest_invoice as Stripe.Invoice & {

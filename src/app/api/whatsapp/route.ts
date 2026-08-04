@@ -63,13 +63,28 @@ export async function POST(req: Request) {
   const text: string = message.text.body;
   const phoneNumberId: string = change?.value?.metadata?.phone_number_id;
 
-  // Restaurant finden
-  let { data: restaurant } = await supabase
+  // Restaurant finden. PGRST116 = kein Treffer (erwartbar, dann Fallback);
+  // jeder andere Fehler ist eine Stoerung und muss dem Gast gesagt werden,
+  // damit er nicht glaubt seine Nachricht sei angekommen.
+  const { data: restaurant0, error: restErr } = await supabase
     .from("restaurants").select("*").eq("whatsapp_phone_id", phoneNumberId).single();
 
+  if (restErr && restErr.code !== "PGRST116") {
+    console.error("Restaurant laden fehlgeschlagen:", restErr);
+    await sendWhatsApp(from, "Entschuldigung, bei uns gibt es gerade eine technische Störung. Bitte versuch es in ein paar Minuten nochmal oder ruf uns direkt an.");
+    return NextResponse.json({ ok: true });
+  }
+
+  let restaurant = restaurant0;
+
   if (!restaurant) {
-    const { data: fallback } = await supabase
+    const { data: fallback, error: fbErr } = await supabase
       .from("restaurants").select("*").order("created_at", { ascending: true }).limit(1).single();
+    if (fbErr && fbErr.code !== "PGRST116") {
+      console.error("Fallback-Restaurant laden fehlgeschlagen:", fbErr);
+      await sendWhatsApp(from, "Entschuldigung, bei uns gibt es gerade eine technische Störung. Bitte versuch es in ein paar Minuten nochmal oder ruf uns direkt an.");
+      return NextResponse.json({ ok: true });
+    }
     restaurant = fallback;
   }
 
@@ -81,16 +96,28 @@ export async function POST(req: Request) {
   const rest = restaurant as RestaurantRow;
   const largeGroupThreshold = rest.large_group_threshold || 15;
 
-  // Konversationshistorie laden
-  const { data: conv } = await supabase
+  // Konversationshistorie laden. Fehlt sie (PGRST116) ist das der normale Fall
+  // beim ersten Kontakt. Bei einem echten Fehler machen wir ohne Historie weiter,
+  // statt das Gespraech abzubrechen — der Gast merkt nur dass nachgefragt wird.
+  const { data: conv, error: convErr } = await supabase
     .from("whatsapp_conversations")
     .select("*").eq("phone", from).eq("restaurant_id", rest.id).single();
+
+  if (convErr && convErr.code !== "PGRST116") {
+    console.error("Konversation laden fehlgeschlagen:", convErr);
+  }
 
   const history: { role: string; content: string }[] = conv?.messages || [];
 
   // Öffnungszeiten
-  const { data: hours } = await supabase
+  const { data: hours, error: hoursErr } = await supabase
     .from("opening_hours").select("*").eq("restaurant_id", rest.id);
+
+  if (hoursErr) {
+    console.error("Öffnungszeiten laden fehlgeschlagen:", hoursErr);
+    await sendWhatsApp(from, "Entschuldigung, ich kann gerade nicht auf unsere Öffnungszeiten zugreifen. Bitte versuch es in ein paar Minuten nochmal oder ruf uns direkt an.");
+    return NextResponse.json({ ok: true });
+  }
 
   const hoursText = (hours || []).map((h: { is_closed: boolean; day_of_week: number; open_time: string; close_time: string }) => {
     const days = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag","Sonntag"];
@@ -161,20 +188,22 @@ KRITISCH — PERSONENZAHL PRÜFEN:
     { role: "assistant", content: aiMessage }
   ].slice(-20);
 
-  if (conv) {
-    await supabase.from("whatsapp_conversations")
-      .update({ messages: newHistory, updated_at: new Date().toISOString() })
-      .eq("id", conv.id);
-  } else {
-    await supabase.from("whatsapp_conversations")
-      .insert([{ phone: from, restaurant_id: rest.id, messages: newHistory }]);
-  }
+  // Historie ist nur Gedaechtnis — schlaegt das Speichern fehl, laeuft die
+  // Buchung trotzdem weiter. Nur loggen, den Gast nicht damit behelligen.
+  const { error: histErr } = conv
+    ? await supabase.from("whatsapp_conversations")
+        .update({ messages: newHistory, updated_at: new Date().toISOString() })
+        .eq("id", conv.id)
+    : await supabase.from("whatsapp_conversations")
+        .insert([{ phone: from, restaurant_id: rest.id, messages: newHistory }]);
+
+  if (histErr) console.error("Konversation speichern fehlgeschlagen:", histErr);
 
   // ===== STORNIERUNG =====
   const cancelMatch = aiMessage.match(/CANCEL_RESERVATION:\s*(\{[^}]*\})/i);
   if (cancelMatch) {
     // Letzte aktive (nicht stornierte) Reservierung dieser Telefonnummer suchen
-    const { data: activeRes } = await supabase
+    const { data: activeRes, error: findErr } = await supabase
       .from("reservations")
       .select("*")
       .eq("restaurant_id", rest.id)
@@ -184,14 +213,28 @@ KRITISCH — PERSONENZAHL PRÜFEN:
       .order("time", { ascending: false })
       .limit(1);
 
+    // Kritisch: bei einem Fehler NICHT "keine Reservierung gefunden" sagen —
+    // der Gast wuerde denken er sei storniert bzw. habe nie gebucht.
+    if (findErr) {
+      console.error("Reservierung zum Stornieren suchen fehlgeschlagen:", findErr);
+      await sendWhatsApp(from, "Entschuldigung, ich kann deine Reservierung gerade nicht abrufen. Deine Reservierung besteht weiterhin. Bitte ruf uns kurz an damit wir die Stornierung sicher erledigen.");
+      return NextResponse.json({ ok: true });
+    }
+
     const target = activeRes && activeRes.length > 0 ? activeRes[0] : null;
 
     if (target) {
       // Status auf cancelled setzen -> löst Dashboard-Popup aus (channel=whatsapp)
-      await supabase
+      const { error: cancelErr } = await supabase
         .from("reservations")
         .update({ status: "cancelled" })
         .eq("id", target.id);
+
+      if (cancelErr) {
+        console.error("Stornieren fehlgeschlagen:", cancelErr);
+        await sendWhatsApp(from, "Entschuldigung, die Stornierung hat gerade nicht geklappt — deine Reservierung besteht also weiterhin. Bitte ruf uns kurz an, dann erledigen wir das sofort für dich.");
+        return NextResponse.json({ ok: true });
+      }
 
       const cleanMsg = aiMessage.replace(/CANCEL_RESERVATION:\s*\{[^}]*\}/i, "").trim();
       await sendWhatsApp(from, cleanMsg || `Deine Reservierung wurde storniert. Schade dass es diesmal nicht klappt — wir freuen uns auf deinen nächsten Besuch!`);
@@ -207,7 +250,7 @@ KRITISCH — PERSONENZAHL PRÜFEN:
   if (largeGroupMatch) {
     try {
       const resData = JSON.parse(largeGroupMatch[1]);
-      await supabase.from("reservations").insert([{
+      const { error: insErr } = await supabase.from("reservations").insert([{
         restaurant_id: rest.id,
         guest_name: resData.name,
         guest_phone: from,
@@ -219,9 +262,15 @@ KRITISCH — PERSONENZAHL PRÜFEN:
         notes: "Großgruppe — manuelle Prüfung erforderlich",
         table_ids: [],
       }]);
+      if (insErr) {
+        console.error("Großgruppen-Anfrage speichern fehlgeschlagen:", insErr);
+        await sendWhatsApp(from, "Entschuldigung, deine Anfrage konnte gerade nicht gespeichert werden. Bitte ruf uns kurz an oder versuch es in ein paar Minuten nochmal — sonst geht deine Anfrage verloren.");
+        return NextResponse.json({ ok: true });
+      }
       await sendWhatsApp(from, `Vielen Dank für deine Anfrage, ${resData.name}! 🙏\n\nFür Gruppen ab ${resData.party_size} Personen meldet sich unser Team persönlich bei dir — wir prüfen die Verfügbarkeit und bestätigen deinen Wunschtermin so schnell wie möglich.\n\nWir freuen uns auf euch! 🍽️`);
-    } catch {
-      await sendWhatsApp(from, "Vielen Dank für deine Anfrage! Für Großgruppen meldet sich unser Team persönlich bei dir.");
+    } catch (e) {
+      console.error("Großgruppen-Anfrage verarbeiten fehlgeschlagen:", e);
+      await sendWhatsApp(from, "Entschuldigung, deine Anfrage konnte gerade nicht gespeichert werden. Bitte ruf uns kurz an oder versuch es in ein paar Minuten nochmal — sonst geht deine Anfrage verloren.");
     }
     return NextResponse.json({ ok: true });
   }
@@ -234,19 +283,32 @@ KRITISCH — PERSONENZAHL PRÜFEN:
       const stayDuration: number = rest.stay_duration || 150;
       const party: number = resData.party_size;
 
-      // Alle Reservierungen für das Datum laden
-      const { data: existingRes } = await supabase
+      // Alle Reservierungen für das Datum laden.
+      // Ohne diese Daten duerfen wir KEINEN Tisch vergeben — sonst Doppelbuchung.
+      const { data: existingRes, error: exErr } = await supabase
         .from("reservations")
         .select("table_id, table_ids, time")
         .eq("restaurant_id", rest.id)
         .eq("date", resData.date)
         .neq("status", "cancelled");
 
+      if (exErr) {
+        console.error("Belegung laden fehlgeschlagen:", exErr);
+        await sendWhatsApp(from, "Entschuldigung, ich kann die Tischverfügbarkeit gerade nicht prüfen. Bitte versuch es in ein paar Minuten nochmal oder ruf uns direkt an.");
+        return NextResponse.json({ ok: true });
+      }
+
       // Alle Tische laden mit combinable_with
-      const { data: allTables } = await supabase
+      const { data: allTables, error: tblErr } = await supabase
         .from("tables")
         .select("id, name, capacity, combinable_with")
         .eq("restaurant_id", rest.id);
+
+      if (tblErr) {
+        console.error("Tische laden fehlgeschlagen:", tblErr);
+        await sendWhatsApp(from, "Entschuldigung, ich kann die Tischverfügbarkeit gerade nicht prüfen. Bitte versuch es in ein paar Minuten nochmal oder ruf uns direkt an.");
+        return NextResponse.json({ ok: true });
+      }
 
       const reqStart = parseInt(resData.time.split(":")[0]) * 60 + parseInt(resData.time.split(":")[1]);
       const reqEnd = reqStart + stayDuration;
@@ -296,7 +358,7 @@ KRITISCH — PERSONENZAHL PRÜFEN:
       // Reservierung speichern
       if (assignedTableIds.length === 0) {
         // Kein Tisch verfügbar — Pending Status
-        await supabase.from("reservations").insert([{
+        const { error: pendErr } = await supabase.from("reservations").insert([{
           restaurant_id: rest.id,
           guest_name: resData.name,
           guest_phone: from,
@@ -308,10 +370,15 @@ KRITISCH — PERSONENZAHL PRÜFEN:
           notes: "Kein passender Tisch — manuelle Prüfung",
           table_ids: [],
         }]);
+        if (pendErr) {
+          console.error("Pending-Reservierung speichern fehlgeschlagen:", pendErr);
+          await sendWhatsApp(from, "Entschuldigung, deine Anfrage konnte gerade nicht gespeichert werden. Bitte ruf uns kurz an oder versuch es in ein paar Minuten nochmal — sonst geht deine Anfrage verloren.");
+          return NextResponse.json({ ok: true });
+        }
         await sendWhatsApp(from, `Hallo ${resData.name}! 🙏\n\nLeider sind zu dieser Zeit keine passenden Tische frei. Unser Team prüft das und meldet sich bei dir mit Alternativen.\n\nVielen Dank für deine Geduld!`);
       } else {
         // Tisch(e) zuweisen — confirmed
-        await supabase.from("reservations").insert([{
+        const { error: confErr } = await supabase.from("reservations").insert([{
           restaurant_id: rest.id,
           guest_name: resData.name,
           guest_phone: from,
@@ -323,10 +390,20 @@ KRITISCH — PERSONENZAHL PRÜFEN:
           channel: "whatsapp",
           status: "confirmed",
         }]);
+        // Niemals die KI-Bestaetigung senden wenn nichts gespeichert wurde —
+        // der Gast wuerde ohne Reservierung vor der Tuer stehen.
+        if (confErr) {
+          console.error("Reservierung speichern fehlgeschlagen:", confErr);
+          await sendWhatsApp(from, "Entschuldigung, deine Reservierung konnte gerade nicht gespeichert werden — sie ist also noch NICHT bestätigt. Bitte ruf uns kurz an oder versuch es in ein paar Minuten nochmal.");
+          return NextResponse.json({ ok: true });
+        }
         await sendWhatsApp(from, aiMessage.replace(/RESERVATION_DATA:\s*\{[^}]+\}/i, "").trim());
       }
-    } catch {
-      await sendWhatsApp(from, aiMessage.replace(/RESERVATION_DATA:\s*\{[^}]+\}/i, "").trim());
+    } catch (e) {
+      // Vorher wurde hier die KI-Bestaetigung gesendet — obwohl gar nichts
+      // gespeichert war. Der Gast muss wissen dass die Buchung offen ist.
+      console.error("Reservierung verarbeiten fehlgeschlagen:", e);
+      await sendWhatsApp(from, "Entschuldigung, bei der Reservierung ist etwas schiefgelaufen — sie ist noch NICHT bestätigt. Bitte ruf uns kurz an oder versuch es in ein paar Minuten nochmal.");
     }
     return NextResponse.json({ ok: true });
   }

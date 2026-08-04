@@ -1,24 +1,43 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 
 export default function Login() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<"idle"|"loading"|"error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const router = useRouter();
 
+  // Fehler aus dem OAuth-Callback anzeigen (?error=...) statt den Nutzer
+  // wortlos wieder auf dem Login-Formular landen zu lassen.
+  const callbackError = useSearchParams().get("error");
+  const shownError = errorMsg || callbackError || "";
+
   async function handleGoogleLogin() {
+    setErrorMsg("");
     const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: `${window.location.origin}/callback?next=/dashboard`,
       },
     });
+    if (error) {
+      console.error("Google-Login fehlgeschlagen:", error);
+      setStatus("error");
+      setErrorMsg("Google-Login fehlgeschlagen. Bitte nochmal versuchen oder mit E-Mail einloggen." + (error.message ? ` (${error.message})` : ""));
+    }
   }
 
   async function handleLogin() {
@@ -97,7 +116,7 @@ export default function Login() {
             </a>
           </div>
 
-          {errorMsg && <p style={styles.error}>{errorMsg}</p>}
+          {shownError && <p style={styles.error}>{shownError}</p>}
 
           <button
             style={{...styles.btn, opacity: status === "loading" ? 0.7 : 1}}

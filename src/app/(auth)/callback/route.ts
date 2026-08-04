@@ -30,7 +30,19 @@ export async function GET(request: Request) {
         },
       }
     );
-    await supabase.auth.exchangeCodeForSession(code);
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) {
+      // Ohne Session wuerde die Middleware direkt zurueck auf /login schicken —
+      // der Nutzer landet in einer Schleife ohne zu wissen warum.
+      console.error("OAuth-Callback fehlgeschlagen:", error);
+      const target = new URL("/login", origin);
+      target.searchParams.set("error", "Anmeldung über Google fehlgeschlagen. Bitte versuche es nochmal.");
+      return NextResponse.redirect(target.toString());
+    }
+  } else {
+    const target = new URL("/login", origin);
+    target.searchParams.set("error", "Die Anmeldung wurde abgebrochen oder ist abgelaufen. Bitte versuche es nochmal.");
+    return NextResponse.redirect(target.toString());
   }
 
   return NextResponse.redirect(`${origin}${next}`);

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
+import Toast, { useToast, errorText } from "@/components/Toast";
 
 const ADMIN_EMAIL = "michael@tablely.at";
 
@@ -38,34 +39,69 @@ export default function AdminPanel() {
   const [search, setSearch] = useState("");
   const [filterPlan, setFilterPlan] = useState<"all"|"trial"|"active"|"expired">("all");
   const [selectedRest, setSelectedRest] = useState<Restaurant | null>(null);
+  const [loadError, setLoadError] = useState("");
+  const { toast, showError, showSuccess, closeToast } = useToast();
 
-  useEffect(() => {
-    async function load() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user || user.email !== ADMIN_EMAIL) {
-        router.push("/dashboard");
-        return;
-      }
-      const { data: rests } = await supabase.from("restaurants").select("*").order("created_at", { ascending: false });
-      setRestaurants(rests || []);
-      const { data: reqs } = await supabase.from("number_requests").select("*").order("created_at", { ascending: false });
-      setNumberRequests(reqs || []);
+  const load = useCallback(async () => {
+    const supabase = createClient();
+    setLoadError("");
+
+    const { data: { user }, error: authErr } = await supabase.auth.getUser();
+    if (authErr) {
+      console.error("Auth-Fehler:", authErr);
+      setLoadError(errorText("Deine Sitzung konnte nicht geprüft werden.", authErr));
       setLoading(false);
+      return;
     }
-    load();
+    if (!user || user.email !== ADMIN_EMAIL) {
+      router.push("/dashboard");
+      return;
+    }
+    const { data: rests, error: restErr } = await supabase.from("restaurants").select("*").order("created_at", { ascending: false });
+    if (restErr) {
+      console.error("Restaurants laden fehlgeschlagen:", restErr);
+      setLoadError(errorText("Die Restaurants konnten nicht geladen werden.", restErr));
+      setLoading(false);
+      return;
+    }
+    setRestaurants(rests || []);
+
+    // number_requests hat laut Schema-Notiz evtl. keine RLS-Policy — dann kommt
+    // hier ein Fehler statt einer leeren Liste. Das muss sichtbar sein.
+    const { data: reqs, error: reqErr } = await supabase.from("number_requests").select("*").order("created_at", { ascending: false });
+    if (reqErr) {
+      console.error("Nummern-Anfragen laden fehlgeschlagen:", reqErr);
+      setLoadError(errorText("Die WhatsApp-Nummern-Anfragen konnten nicht geladen werden.", reqErr));
+      setLoading(false);
+      return;
+    }
+    setNumberRequests(reqs || []);
+    setLoading(false);
   }, [router]);
+
+  useEffect(() => { load(); }, [load]);
 
   async function toggleBlock(id: string, blocked: boolean) {
     const supabase = createClient();
-    await supabase.from("restaurants").update({ is_blocked: !blocked }).eq("id", id);
+    const { error } = await supabase.from("restaurants").update({ is_blocked: !blocked }).eq("id", id);
+    if (error) {
+      console.error("Sperrstatus ändern fehlgeschlagen:", error);
+      showError(errorText(`Das Restaurant konnte nicht ${blocked ? "entsperrt" : "gesperrt"} werden.`, error));
+      return;
+    }
     setRestaurants(prev => prev.map(r => r.id === id ? { ...r, is_blocked: !blocked } : r));
     if (selectedRest?.id === id) setSelectedRest({ ...selectedRest, is_blocked: !blocked });
+    showSuccess(blocked ? "Restaurant entsperrt." : "Restaurant gesperrt.");
   }
 
   async function updateNumberRequest(id: string, status: string) {
     const supabase = createClient();
-    await supabase.from("number_requests").update({ status }).eq("id", id);
+    const { error } = await supabase.from("number_requests").update({ status }).eq("id", id);
+    if (error) {
+      console.error("Anfrage-Status ändern fehlgeschlagen:", error);
+      showError(errorText("Der Status der Anfrage konnte nicht geändert werden.", error));
+      return;
+    }
     setNumberRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
   }
 
@@ -111,8 +147,25 @@ export default function AdminPanel() {
     </div>
   );
 
+  if (loadError) return (
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#0A0A12",fontFamily:"'DM Sans',sans-serif",padding:"24px"}}>
+      <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(248,113,113,.25)",borderRadius:"16px",padding:"32px",maxWidth:"460px",width:"100%",textAlign:"center"}}>
+        <div style={{width:"52px",height:"52px",borderRadius:"50%",background:"rgba(248,113,113,.12)",border:"1px solid rgba(248,113,113,.25)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="9" stroke="#F87171" strokeWidth="1.6"/><path d="M11 6.5v5.5M11 15v.5" stroke="#F87171" strokeWidth="1.8" strokeLinecap="round"/></svg>
+        </div>
+        <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"20px",fontWeight:700,color:"#FFFAF5",marginBottom:"8px"}}>Admin-Daten konnten nicht geladen werden</h2>
+        <p style={{fontSize:"13px",color:"rgba(255,255,255,.5)",lineHeight:1.6,marginBottom:"20px"}}>{loadError}</p>
+        <button onClick={() => { setLoading(true); load(); }} style={{
+          padding:"11px 24px",borderRadius:"10px",background:"#FF5C35",border:"none",color:"#fff",
+          fontSize:"14px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
+        }}>Erneut versuchen</button>
+      </div>
+    </div>
+  );
+
   return (
     <div style={{minHeight:"100vh",background:"#0A0A12",fontFamily:"'DM Sans',sans-serif",color:"#FFFAF5"}}>
+      <Toast toast={toast} onClose={closeToast}/>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap');
         *{box-sizing:border-box;margin:0;padding:0;}

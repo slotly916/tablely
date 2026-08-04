@@ -44,32 +44,45 @@ export async function POST(req: Request) {
         }).parent;
         const subscriptionId = parent?.subscription_details?.subscription || null;
 
-        // Restaurant über Customer ID finden
-        const { data: restaurant } = await supabase
+        // Restaurant über Customer ID finden.
+        // Fehler werden geworfen: Stripe wiederholt den Webhook dann automatisch,
+        // statt die bezahlte Freischaltung still zu verlieren.
+        const { data: restaurant, error: findErr } = await supabase
           .from("restaurants")
           .select("*")
           .eq("stripe_customer_id", customerId)
           .single();
 
-        if (restaurant) {
-          const plan = restaurant.selected_plan || "standard";
-          const periodEnd = invoice.lines?.data?.[0]?.period?.end;
-
-          await supabase
-            .from("restaurants")
-            .update({
-              plan: plan,
-              subscription_status: "active",
-              is_blocked: false,
-              stripe_subscription_id: subscriptionId || restaurant.stripe_subscription_id,
-              subscription_current_period_end: periodEnd
-                ? new Date(periodEnd * 1000).toISOString()
-                : null,
-            })
-            .eq("id", restaurant.id);
-
-          console.log(`Restaurant ${restaurant.name} -> Plan ${plan} aktiviert`);
+        if (findErr && findErr.code !== "PGRST116") {
+          throw new Error(`Restaurant zu Customer ${customerId} nicht ladbar: ${findErr.message}`);
         }
+
+        if (!restaurant) {
+          console.error(`invoice.paid: kein Restaurant zu Customer ${customerId} — Zahlung ohne Zuordnung!`);
+          break;
+        }
+
+        const plan = restaurant.selected_plan || "standard";
+        const periodEnd = invoice.lines?.data?.[0]?.period?.end;
+
+        const { error: updErr } = await supabase
+          .from("restaurants")
+          .update({
+            plan: plan,
+            subscription_status: "active",
+            is_blocked: false,
+            stripe_subscription_id: subscriptionId || restaurant.stripe_subscription_id,
+            subscription_current_period_end: periodEnd
+              ? new Date(periodEnd * 1000).toISOString()
+              : null,
+          })
+          .eq("id", restaurant.id);
+
+        if (updErr) {
+          throw new Error(`Plan ${plan} fuer ${restaurant.name} nicht aktivierbar: ${updErr.message}`);
+        }
+
+        console.log(`Restaurant ${restaurant.name} -> Plan ${plan} aktiviert`);
         break;
       }
 
@@ -78,17 +91,28 @@ export async function POST(req: Request) {
         const invoice = event.data.object as Stripe.Invoice;
         const customerId = invoice.customer as string;
 
-        const { data: restaurant } = await supabase
+        const { data: restaurant, error: findErr } = await supabase
           .from("restaurants")
           .select("id")
           .eq("stripe_customer_id", customerId)
           .single();
 
-        if (restaurant) {
-          await supabase
-            .from("restaurants")
-            .update({ subscription_status: "past_due" })
-            .eq("id", restaurant.id);
+        if (findErr && findErr.code !== "PGRST116") {
+          throw new Error(`Restaurant zu Customer ${customerId} nicht ladbar: ${findErr.message}`);
+        }
+
+        if (!restaurant) {
+          console.error(`payment_failed: kein Restaurant zu Customer ${customerId}`);
+          break;
+        }
+
+        const { error: updErr } = await supabase
+          .from("restaurants")
+          .update({ subscription_status: "past_due" })
+          .eq("id", restaurant.id);
+
+        if (updErr) {
+          throw new Error(`Status past_due fuer ${restaurant.id} nicht setzbar: ${updErr.message}`);
         }
         break;
       }
@@ -98,21 +122,32 @@ export async function POST(req: Request) {
         const subscription = event.data.object as Stripe.Subscription;
         const customerId = subscription.customer as string;
 
-        const { data: restaurant } = await supabase
+        const { data: restaurant, error: findErr } = await supabase
           .from("restaurants")
           .select("id")
           .eq("stripe_customer_id", customerId)
           .single();
 
-        if (restaurant) {
-          await supabase
-            .from("restaurants")
-            .update({
-              subscription_status: "canceled",
-              plan: "trial",
-              is_blocked: true,
-            })
-            .eq("id", restaurant.id);
+        if (findErr && findErr.code !== "PGRST116") {
+          throw new Error(`Restaurant zu Customer ${customerId} nicht ladbar: ${findErr.message}`);
+        }
+
+        if (!restaurant) {
+          console.error(`subscription.deleted: kein Restaurant zu Customer ${customerId}`);
+          break;
+        }
+
+        const { error: updErr } = await supabase
+          .from("restaurants")
+          .update({
+            subscription_status: "canceled",
+            plan: "trial",
+            is_blocked: true,
+          })
+          .eq("id", restaurant.id);
+
+        if (updErr) {
+          throw new Error(`Kuendigung fuer ${restaurant.id} nicht speicherbar: ${updErr.message}`);
         }
         break;
       }

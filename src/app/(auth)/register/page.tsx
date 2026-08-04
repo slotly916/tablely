@@ -11,13 +11,19 @@ export default function Register() {
   const [errorMsg, setErrorMsg] = useState("");
 
   async function handleGoogleLogin() {
+    setErrorMsg("");
     const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: `${window.location.origin}/onboarding`,
       },
     });
+    if (error) {
+      console.error("Google-Registrierung fehlgeschlagen:", error);
+      setStatus("error");
+      setErrorMsg("Registrierung über Google fehlgeschlagen. Bitte nochmal versuchen oder mit E-Mail registrieren." + (error.message ? ` (${error.message})` : ""));
+    }
   }
 
   async function handleRegister() {

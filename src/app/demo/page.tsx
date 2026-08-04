@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
+import Toast, { useToast, errorText } from "@/components/Toast";
 
 const DEMO_SLUG = "alpengasthof-";
 const WA_NUMBER = "+436705540779";
@@ -64,21 +65,46 @@ export default function DemoPage() {
   const [walkinTime, setWalkinTime] = useState("19:00");
   const [suggestedTable, setSuggestedTable] = useState<Table|null|undefined>(undefined);
   const [savingWalkin, setSavingWalkin] = useState(false);
+  const [loadError, setLoadError] = useState("");
+  const { toast, showError, showSuccess, closeToast } = useToast();
 
   const stayDuration = restaurantObj?.stay_duration || 150;
 
+  // Kein setLoadError("") am Anfang: das waere ein synchrones setState direkt
+  // im Effect. Zurueckgesetzt wird beim Retry-Klick.
   const loadData = useCallback(async () => {
     const supabase = createClient();
-    const { data: rest } = await supabase.from("restaurants").select("*").eq("slug", DEMO_SLUG).single();
-    if (!rest) return;
+
+    const { data: rest, error: restErr } = await supabase.from("restaurants").select("*").eq("slug", DEMO_SLUG).single();
+    // Frueher wurde hier nur "return" gemacht — die Demo blieb dann ewig im Spinner.
+    if (restErr || !rest) {
+      console.error("Demo-Restaurant laden fehlgeschlagen:", restErr);
+      setLoadError(errorText("Die Demo-Daten konnten nicht geladen werden.", restErr));
+      setLoading(false);
+      return;
+    }
     setRestaurantId(rest.id);
     setRestaurantName(rest.name);
     setRestaurantObj(rest);
-    const { data: res } = await supabase.from("reservations").select("*")
+
+    const { data: res, error: resErr } = await supabase.from("reservations").select("*")
       .eq("restaurant_id", rest.id).order("date").order("time");
+    if (resErr) {
+      console.error("Demo-Reservierungen laden fehlgeschlagen:", resErr);
+      setLoadError(errorText("Die Reservierungen der Demo konnten nicht geladen werden.", resErr));
+      setLoading(false);
+      return;
+    }
     setReservations(res || []);
-    const { data: tbls } = await supabase.from("tables").select("*")
+
+    const { data: tbls, error: tblErr } = await supabase.from("tables").select("*")
       .eq("restaurant_id", rest.id).order("name");
+    if (tblErr) {
+      console.error("Demo-Tische laden fehlgeschlagen:", tblErr);
+      setLoadError(errorText("Die Tische der Demo konnten nicht geladen werden.", tblErr));
+      setLoading(false);
+      return;
+    }
     setTables(tbls || []);
     setLoading(false);
   }, []);
@@ -105,7 +131,12 @@ export default function DemoPage() {
 
   async function updateStatus(id: string, status: string) {
     const supabase = createClient();
-    await supabase.from("reservations").update({ status }).eq("id", id);
+    const { error } = await supabase.from("reservations").update({ status }).eq("id", id);
+    if (error) {
+      console.error("Status ändern fehlgeschlagen:", error);
+      showError(errorText("Der Status konnte nicht geändert werden.", error));
+      return;
+    }
     setReservations(prev => prev.map(r => r.id===id ? {...r, status} : r));
   }
 
@@ -130,7 +161,7 @@ export default function DemoPage() {
     if (!walkinName || !restaurantId) return;
     setSavingWalkin(true);
     const supabase = createClient();
-    await supabase.from("reservations").insert([{
+    const { error } = await supabase.from("reservations").insert([{
       restaurant_id: restaurantId,
       guest_name: walkinName,
       party_size: parseInt(walkinParty),
@@ -140,7 +171,14 @@ export default function DemoPage() {
       channel: "walkin",
       status: "confirmed",
     }]);
+    if (error) {
+      console.error("Walk-in speichern fehlgeschlagen:", error);
+      showError(errorText("Der Walk-in konnte nicht gespeichert werden.", error));
+      setSavingWalkin(false);
+      return;
+    }
     await loadData();
+    showSuccess(`${walkinName} wurde eingetragen.`);
     setShowWalkin(false);
     setSuggestedTable(undefined);
     setWalkinName("");
@@ -171,8 +209,25 @@ export default function DemoPage() {
     </div>
   );
 
+  if (loadError) return (
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#0A0A0F",fontFamily:"'DM Sans',sans-serif",padding:"24px"}}>
+      <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(248,113,113,.25)",borderRadius:"16px",padding:"32px",maxWidth:"460px",width:"100%",textAlign:"center"}}>
+        <div style={{width:"52px",height:"52px",borderRadius:"50%",background:"rgba(248,113,113,.12)",border:"1px solid rgba(248,113,113,.25)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="9" stroke="#F87171" strokeWidth="1.6"/><path d="M11 6.5v5.5M11 15v.5" stroke="#F87171" strokeWidth="1.8" strokeLinecap="round"/></svg>
+        </div>
+        <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"20px",fontWeight:700,color:"#FFFAF5",marginBottom:"8px"}}>Demo gerade nicht verfügbar</h2>
+        <p style={{fontSize:"13px",color:"rgba(255,255,255,.5)",lineHeight:1.6,marginBottom:"20px"}}>{loadError}</p>
+        <button onClick={() => { setLoadError(""); setLoading(true); loadData(); }} style={{
+          padding:"11px 24px",borderRadius:"10px",background:"#FF5C35",border:"none",color:"#fff",
+          fontSize:"14px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
+        }}>Erneut versuchen</button>
+      </div>
+    </div>
+  );
+
   return (
     <div style={{minHeight:"100vh",background:"#0A0A0F",fontFamily:"'DM Sans',sans-serif"}}>
+      <Toast toast={toast} onClose={closeToast}/>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500&display=swap');
         *{box-sizing:border-box;margin:0;padding:0;}

@@ -43,13 +43,23 @@ export default function Onboarding() {
   useEffect(() => {
     async function checkExisting() {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: authErr } = await supabase.auth.getUser();
+      if (authErr) {
+        console.error("Auth-Fehler:", authErr);
+        setError("Deine Sitzung konnte nicht geprüft werden. Bitte lade die Seite neu bevor du fortfährst.");
+        return;
+      }
       if (!user) return;
-      const { data: existing } = await supabase
+      const { data: existing, error: existErr } = await supabase
         .from("restaurants")
         .select("id")
         .eq("email", user.email)
         .limit(1);
+      if (existErr) {
+        console.error("Bestehendes Restaurant prüfen fehlgeschlagen:", existErr);
+        setError("Wir konnten nicht prüfen ob du schon ein Restaurant hast. Bitte lade die Seite neu — sonst legst du es eventuell doppelt an.");
+        return;
+      }
       if (existing && existing.length > 0) {
         router.replace("/dashboard");
       }
@@ -93,15 +103,19 @@ export default function Onboarding() {
     setError("");
     try {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: authErr } = await supabase.auth.getUser();
+      if (authErr) throw new Error("Deine Sitzung konnte nicht geprüft werden. Bitte lade die Seite neu." + (authErr.message ? ` (${authErr.message})` : ""));
       if (!user) { router.push("/login"); return; }
 
       // Doppel-Check: existiert schon ein Restaurant für diese Mail? Dann nicht nochmal anlegen.
-      const { data: alreadyExists } = await supabase
+      // Bei einem Fehler brechen wir bewusst ab statt anzulegen — sonst entstehen
+      // genau die Duplikate die wir vermeiden wollen.
+      const { data: alreadyExists, error: existErr } = await supabase
         .from("restaurants")
         .select("id")
         .eq("email", user.email)
         .limit(1);
+      if (existErr) throw new Error("Wir konnten nicht prüfen ob du schon ein Restaurant hast. Bitte versuche es nochmal." + (existErr.message ? ` (${existErr.message})` : ""));
       if (alreadyExists && alreadyExists.length > 0) {
         router.push("/dashboard");
         return;
@@ -127,7 +141,9 @@ export default function Onboarding() {
         .select()
         .single();
 
-      if (rErr) throw rErr;
+      // PostgrestError ist kein Error-Objekt — sonst landet man im catch bei der
+      // generischen Meldung und der eigentliche Grund geht verloren.
+      if (rErr || !restaurant) throw new Error("Dein Restaurant konnte nicht angelegt werden." + (rErr?.message ? ` (${rErr.message})` : ""));
 
       let insertedTables: { id: string; name: string }[] = [];
       if (tables.length > 0) {
@@ -144,7 +160,7 @@ export default function Onboarding() {
             combinable_with: []
           })))
           .select();
-        if (tErr) throw tErr;
+        if (tErr) throw new Error("Deine Tische konnten nicht gespeichert werden." + (tErr.message ? ` (${tErr.message})` : ""));
         insertedTables = data || [];
       }
 
@@ -157,9 +173,10 @@ export default function Onboarding() {
         if (groupTableIds.length >= 2) {
           for (const tableId of groupTableIds) {
             const others = groupTableIds.filter(id => id !== tableId);
-            await supabase.from("tables")
+            const { error: gErr } = await supabase.from("tables")
               .update({ combinable_with: others })
               .eq("id", tableId);
+            if (gErr) throw new Error("Die Tisch-Gruppen konnten nicht gespeichert werden. Du kannst sie später in den Einstellungen anlegen." + (gErr.message ? ` (${gErr.message})` : ""));
           }
         }
       }
@@ -172,7 +189,7 @@ export default function Onboarding() {
           close_time: h.close,
           is_closed: h.closed,
         })));
-      if (hErr) throw hErr;
+      if (hErr) throw new Error("Deine Öffnungszeiten konnten nicht gespeichert werden. Du kannst sie in den Einstellungen nachtragen." + (hErr.message ? ` (${hErr.message})` : ""));
 
       try {
         await fetch("/api/welcome-email", {

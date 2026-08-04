@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
+import Toast, { useToast, errorText } from "@/components/Toast";
 
 type Reservation = {
   id: string;
@@ -78,6 +79,8 @@ export default function Dashboard() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [tables, setTables] = useState<Table[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const { toast, showError, showSuccess, closeToast } = useToast();
   const dark = false;
   const [view, setView] = useState<"list"|"tables">("list");
   const [filterChannel, setFilterChannel] = useState("all");
@@ -118,37 +121,70 @@ export default function Dashboard() {
         const resMins = timeToMinutes(r.time);
         const endMins = resMins + (restaurant?.stay_duration || 150);
         if (nowMins >= endMins) {
-          await supabase.from("reservations").update({ status: "completed" }).eq("id", r.id);
+          const { error } = await supabase.from("reservations").update({ status: "completed" }).eq("id", r.id);
+          if (error) {
+            console.error("Auto-Abschluss fehlgeschlagen:", error);
+            showError(errorText(`${r.guest_name} konnte nicht automatisch auf abgeschlossen gesetzt werden.`, error));
+            return;
+          }
           setReservations(prev => prev.map(x => x.id === r.id ? {...x, status: "completed"} : x));
         }
       });
     }, 60000);
     return () => clearInterval(interval);
-  }, [reservations, restaurant]);
+  }, [reservations, restaurant, showError]);
 
   const loadData = useCallback(async () => {
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    setLoadError("");
+
+    const { data: { user }, error: authErr } = await supabase.auth.getUser();
+    if (authErr) {
+      console.error("Auth-Fehler:", authErr);
+      setLoadError(errorText("Deine Sitzung konnte nicht geprüft werden.", authErr));
+      setLoading(false);
+      return;
+    }
     if (!user) { router.push("/login"); return; }
 
     // Restaurant suchen — tolerant gegen mehrere/keine Treffer (kein .single()).
     // .single() würde bei doppelten Restaurants mit gleicher Mail einen Fehler
     // werfen und eine Onboarding-Schleife auslösen. Wir nehmen das älteste.
-    const { data: rests } = await supabase
+    const { data: rests, error: restErr } = await supabase
       .from("restaurants")
       .select("*")
       .eq("email", user.email)
       .order("created_at", { ascending: true })
       .limit(1);
+    // Wichtig: bei einem Fehler NICHT nach /onboarding schicken — sonst landet
+    // ein Kunde mit Restaurant bei einem Netzwerkfehler im Onboarding.
+    if (restErr) {
+      console.error("Restaurant laden fehlgeschlagen:", restErr);
+      setLoadError(errorText("Dein Restaurant konnte nicht geladen werden.", restErr));
+      setLoading(false);
+      return;
+    }
     const rest = rests && rests.length > 0 ? rests[0] : null;
     if (!rest) { router.push("/onboarding"); return; }
     setRestaurant(rest);
 
-    const { data: res } = await supabase.from("reservations").select("*")
+    const { data: res, error: resErr } = await supabase.from("reservations").select("*")
       .eq("restaurant_id", rest.id).order("date").order("time");
+    if (resErr) {
+      console.error("Reservierungen laden fehlgeschlagen:", resErr);
+      setLoadError(errorText("Die Reservierungen konnten nicht geladen werden.", resErr));
+      setLoading(false);
+      return;
+    }
     setReservations(res || []);
 
-    const { data: tbls } = await supabase.from("tables").select("*").eq("restaurant_id", rest.id).order("name");
+    const { data: tbls, error: tblErr } = await supabase.from("tables").select("*").eq("restaurant_id", rest.id).order("name");
+    if (tblErr) {
+      console.error("Tische laden fehlgeschlagen:", tblErr);
+      setLoadError(errorText("Die Tische konnten nicht geladen werden.", tblErr));
+      setLoading(false);
+      return;
+    }
     if (tbls) {
       tbls.sort((a: {name: string}, b: {name: string}) => {
         const numA = parseInt(a.name.replace(/[^0-9]/g, "")) || 0;
@@ -199,14 +235,25 @@ export default function Dashboard() {
 
   async function handleLogout() {
     const supabase = createClient();
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error("Abmelden fehlgeschlagen:", error);
+      showError(errorText("Abmelden fehlgeschlagen. Bitte nochmal versuchen.", error));
+      return;
+    }
     router.push("/login");
   }
 
   async function confirmReservation(res: Reservation) {
     setConfirmingRes(true);
     const supabase = createClient();
-    await supabase.from("reservations").update({ status: "confirmed" }).eq("id", res.id);
+    const { error } = await supabase.from("reservations").update({ status: "confirmed" }).eq("id", res.id);
+    if (error) {
+      console.error("Bestätigen fehlgeschlagen:", error);
+      showError(errorText("Die Reservierung konnte nicht bestätigt werden.", error));
+      setConfirmingRes(false);
+      return;
+    }
     setReservations(prev => prev.map(r => r.id === res.id ? { ...r, status: "confirmed" } : r));
     if (res.guest_phone && res.channel === "whatsapp") {
       try {
@@ -227,7 +274,13 @@ export default function Dashboard() {
   async function cancelReservation(res: Reservation) {
     setConfirmingRes(true);
     const supabase = createClient();
-    await supabase.from("reservations").update({ status: "cancelled" }).eq("id", res.id);
+    const { error } = await supabase.from("reservations").update({ status: "cancelled" }).eq("id", res.id);
+    if (error) {
+      console.error("Stornieren fehlgeschlagen:", error);
+      showError(errorText("Die Reservierung konnte nicht storniert werden.", error));
+      setConfirmingRes(false);
+      return;
+    }
     setReservations(prev => prev.map(r => r.id === res.id ? { ...r, status: "cancelled" } : r));
     if (res.guest_phone && res.channel === "whatsapp") {
       try {
@@ -247,13 +300,23 @@ export default function Dashboard() {
 
   async function updateStatus(id: string, status: string): Promise<void> {
     const supabase = createClient();
-    await supabase.from("reservations").update({ status }).eq("id", id);
+    const { error } = await supabase.from("reservations").update({ status }).eq("id", id);
+    if (error) {
+      console.error("Status ändern fehlgeschlagen:", error);
+      showError(errorText("Der Status konnte nicht geändert werden.", error));
+      return;
+    }
     setReservations(prev => prev.map(r => r.id === id ? { ...r, status } : r));
   }
 
   async function deleteReservation(id: string): Promise<void> {
     const supabase = createClient();
-    await supabase.from("reservations").delete().eq("id", id);
+    const { error } = await supabase.from("reservations").delete().eq("id", id);
+    if (error) {
+      console.error("Löschen fehlgeschlagen:", error);
+      showError(errorText("Die Reservierung konnte nicht gelöscht werden.", error));
+      return;
+    }
     setReservations(prev => prev.filter(r => r.id !== id));
     setSelectedRes(null);
   }
@@ -262,8 +325,14 @@ export default function Dashboard() {
     const supabase = createClient();
     const cancelledIds = reservations.filter(r => r.status === "cancelled").map(r => r.id);
     if (cancelledIds.length === 0) return;
-    await supabase.from("reservations").delete().in("id", cancelledIds);
+    const { error } = await supabase.from("reservations").delete().in("id", cancelledIds);
+    if (error) {
+      console.error("Stornierte löschen fehlgeschlagen:", error);
+      showError(errorText("Die stornierten Reservierungen konnten nicht gelöscht werden.", error));
+      return;
+    }
     setReservations(prev => prev.filter(r => r.status !== "cancelled"));
+    showSuccess(`${cancelledIds.length} stornierte Reservierung${cancelledIds.length > 1 ? "en" : ""} gelöscht.`);
   }
 
   function suggestTable() {
@@ -331,7 +400,7 @@ export default function Dashboard() {
         : suggestedTable ? [suggestedTable.id] : [];
     }
 
-    await supabase.from("reservations").insert([{
+    const { error } = await supabase.from("reservations").insert([{
       restaurant_id: restaurant.id,
       guest_name: walkinName,
       guest_phone: walkinPhone || null,
@@ -343,7 +412,14 @@ export default function Dashboard() {
       channel: "walkin",
       status,
     }]);
+    if (error) {
+      console.error("Walk-in speichern fehlgeschlagen:", error);
+      showError(errorText("Der Walk-in konnte nicht gespeichert werden. Deine Eingaben bleiben erhalten.", error));
+      setSavingWalkin(false);
+      return;
+    }
     await loadData();
+    showSuccess(`${walkinName} wurde eingetragen.`);
     setShowWalkin(false);
     setSuggestedTable(null);
     setSuggestedCombo(null);
@@ -390,8 +466,25 @@ export default function Dashboard() {
     </div>
   );
 
+  if (loadError) return (
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#F5F0EB",fontFamily:"'DM Sans',sans-serif",padding:"24px"}}>
+      <div style={{background:"#fff",border:"1px solid #EDE8E3",borderRadius:"16px",padding:"32px",maxWidth:"460px",width:"100%",textAlign:"center"}}>
+        <div style={{width:"52px",height:"52px",borderRadius:"50%",background:"#FEE8E8",border:"1px solid rgba(226,75,74,.25)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="9" stroke="#E24B4A" strokeWidth="1.6"/><path d="M11 6.5v5.5M11 15v.5" stroke="#E24B4A" strokeWidth="1.8" strokeLinecap="round"/></svg>
+        </div>
+        <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"20px",fontWeight:700,color:"#1A1A2E",marginBottom:"8px"}}>Dashboard konnte nicht geladen werden</h2>
+        <p style={{fontSize:"13px",color:"#6B6B80",lineHeight:1.6,marginBottom:"20px"}}>{loadError}</p>
+        <button onClick={() => { setLoading(true); loadData(); }} style={{
+          padding:"11px 24px",borderRadius:"10px",background:"#FF5C35",border:"none",color:"#fff",
+          fontSize:"14px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
+        }}>Erneut versuchen</button>
+      </div>
+    </div>
+  );
+
   return (
     <div style={{minHeight:"100vh",background:bg,fontFamily:"'DM Sans',sans-serif",display:"flex"}}>
+      <Toast toast={toast} onClose={closeToast}/>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500&display=swap');
         *{box-sizing:border-box;margin:0;padding:0;}

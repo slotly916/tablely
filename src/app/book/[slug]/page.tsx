@@ -114,6 +114,7 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
   const [tables, setTables] = useState<Table[]>([]);
   const [hours, setHours] = useState<OpeningHour[]>([]);
   const [notFound, setNotFound] = useState(false);
+  const [loadError, setLoadError] = useState("");
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -133,12 +134,37 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
 
   async function loadRestaurant() {
     const supabase = createClient();
-    const { data: rest } = await supabase.from("restaurants").select("*").eq("slug", slug).single();
+    setLoadError("");
+
+    // .single() liefert PGRST116 wenn es keinen Treffer gibt — nur dann ist das
+    // Restaurant wirklich unbekannt. Jeder andere Fehler ist eine Stoerung und
+    // darf nicht als "Link ungueltig" angezeigt werden.
+    const { data: rest, error: restErr } = await supabase.from("restaurants").select("*").eq("slug", slug).single();
+    if (restErr && restErr.code !== "PGRST116") {
+      console.error("Restaurant laden fehlgeschlagen:", restErr);
+      setLoadError("Die Buchungsseite konnte gerade nicht geladen werden. Bitte versuche es in einem Moment nochmal.");
+      setLoading(false);
+      return;
+    }
     if (!rest) { setNotFound(true); setLoading(false); return; }
     setRestaurant(rest);
-    const { data: tbls } = await supabase.from("tables").select("*").eq("restaurant_id", rest.id);
+
+    const { data: tbls, error: tblErr } = await supabase.from("tables").select("*").eq("restaurant_id", rest.id);
+    if (tblErr) {
+      console.error("Tische laden fehlgeschlagen:", tblErr);
+      setLoadError("Die Tischverfügbarkeit konnte nicht geladen werden. Bitte versuche es in einem Moment nochmal.");
+      setLoading(false);
+      return;
+    }
     setTables(tbls || []);
-    const { data: hrs } = await supabase.from("opening_hours").select("*").eq("restaurant_id", rest.id);
+
+    const { data: hrs, error: hrsErr } = await supabase.from("opening_hours").select("*").eq("restaurant_id", rest.id);
+    if (hrsErr) {
+      console.error("Öffnungszeiten laden fehlgeschlagen:", hrsErr);
+      setLoadError("Die Öffnungszeiten konnten nicht geladen werden. Bitte versuche es in einem Moment nochmal.");
+      setLoading(false);
+      return;
+    }
     setHours(hrs || []);
     setLoading(false);
   }
@@ -168,19 +194,32 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
     return !!(hour && !hour.is_closed);
   }
 
-  async function findTableForBooking() {
-    if (!restaurant) return null;
+  // "error" wird bewusst von "full" unterschieden: wenn die Belegung nicht
+  // geladen werden kann, duerfen wir NICHT einfach einen Tisch vergeben —
+  // sonst entstehen Doppelbuchungen.
+  type TableSearch =
+    | { status: "ok"; table_ids: string[] }
+    | { status: "full" }
+    | { status: "error"; message: string };
+
+  async function findTableForBooking(): Promise<TableSearch> {
+    if (!restaurant) return { status: "error", message: "Restaurant nicht geladen." };
     const supabase = createClient();
     const stayDuration = restaurant.stay_duration || 150;
     const party = parseInt(partySize);
 
     // Lade alle Reservierungen für dieses Datum
-    const { data: existingRes } = await supabase
+    const { data: existingRes, error: resErr } = await supabase
       .from("reservations")
       .select("table_id, table_ids, time")
       .eq("restaurant_id", restaurant.id)
       .eq("date", date)
       .neq("status", "cancelled");
+
+    if (resErr) {
+      console.error("Belegung laden fehlgeschlagen:", resErr);
+      return { status: "error", message: "Die Tischverfügbarkeit konnte nicht geprüft werden. Bitte versuche es in einem Moment nochmal." };
+    }
 
     const reqStart = parseInt(time.split(":")[0]) * 60 + parseInt(time.split(":")[1]);
     const reqEnd = reqStart + stayDuration;
@@ -201,7 +240,7 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
       .sort((a, b) => a.capacity - b.capacity)[0];
 
     if (singleTable) {
-      return { table_ids: [singleTable.id], single: true };
+      return { status: "ok", table_ids: [singleTable.id] };
     }
 
     // 2. Versuche Tischkombinationen
@@ -215,11 +254,11 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
       if (!allFree) continue;
       const totalCapacity = t.capacity + combinableTables.reduce((sum, ct) => sum + ct.capacity, 0);
       if (totalCapacity >= party) {
-        return { table_ids: [t.id, ...combinableTables.map(ct => ct.id)], single: false };
+        return { status: "ok", table_ids: [t.id, ...combinableTables.map(ct => ct.id)] };
       }
     }
 
-    return null;
+    return { status: "full" };
   }
 
   async function handleSubmit() {
@@ -246,8 +285,13 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
         status: "pending",
         table_ids: [],
       }]);
-      if (err) { setError("Fehler beim Speichern."); setSubmitting(false); return; }
-      
+      if (err) {
+        console.error("Großgruppen-Anfrage speichern fehlgeschlagen:", err);
+        setError("Deine Anfrage konnte nicht gespeichert werden. Bitte versuche es nochmal." + (err.message ? ` (${err.message})` : ""));
+        setSubmitting(false);
+        return;
+      }
+
       // Bestätigungsmail an Gast
       if (guestEmail) {
         try {
@@ -275,7 +319,12 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
 
     // Normale Größe — Tisch finden
     const result = await findTableForBooking();
-    if (!result) {
+    if (result.status === "error") {
+      setError(result.message);
+      setSubmitting(false);
+      return;
+    }
+    if (result.status === "full") {
       setError("Leider ist zu dieser Zeit kein passender Tisch verfügbar. Bitte wähle eine andere Uhrzeit.");
       setSubmitting(false);
       return;
@@ -295,7 +344,12 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
       status: "confirmed",
     }]);
 
-    if (err) { setError("Fehler beim Speichern. Bitte nochmal versuchen."); setSubmitting(false); return; }
+    if (err) {
+      console.error("Reservierung speichern fehlgeschlagen:", err);
+      setError("Deine Reservierung konnte nicht gespeichert werden. Bitte versuche es nochmal." + (err.message ? ` (${err.message})` : ""));
+      setSubmitting(false);
+      return;
+    }
 
     // Bestätigungsmail an Gast
     if (guestEmail) {
@@ -327,6 +381,23 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
     <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#FFFAF5",fontFamily:"'DM Sans',sans-serif"}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <div style={{width:"24px",height:"24px",borderRadius:"50%",border:"2px solid #F0EBE3",borderTopColor:"#FF5C35",animation:"spin 0.7s linear infinite"}}/>
+    </div>
+  );
+
+  if (loadError) return (
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#FFFAF5",fontFamily:"'DM Sans',sans-serif",flexDirection:"column",gap:"16px",textAlign:"center",padding:"24px"}}>
+      <div style={{width:"52px",height:"52px",borderRadius:"50%",background:"#FEE8E8",border:"1px solid rgba(226,75,74,.25)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="9" stroke="#E24B4A" strokeWidth="1.6"/><path d="M11 6.5v5.5M11 15v.5" stroke="#E24B4A" strokeWidth="1.8" strokeLinecap="round"/></svg>
+      </div>
+      <div style={{fontFamily:"Georgia,serif",fontSize:"22px",fontWeight:700,color:"#1A1A2E"}}>Kurz nicht erreichbar</div>
+      <div style={{fontSize:"15px",color:"#6B6B80",maxWidth:"420px",lineHeight:1.6}}>{loadError}</div>
+      <button onClick={() => { setLoading(true); loadRestaurant(); }} style={{
+        padding:"12px 26px",borderRadius:"10px",background:"#FF5C35",border:"none",color:"#fff",
+        fontSize:"15px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",
+      }}>Erneut versuchen</button>
+      {restaurant?.phone && (
+        <div style={{fontSize:"13px",color:"#6B6B80"}}>Oder ruf uns direkt an: <strong style={{color:"#1A1A2E"}}>{restaurant.phone}</strong></div>
+      )}
     </div>
   );
 

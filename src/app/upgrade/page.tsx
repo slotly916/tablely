@@ -98,16 +98,40 @@ export default function UpgradePage() {
   useEffect(() => {
     async function load() {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: authErr } = await supabase.auth.getUser();
+      if (authErr) {
+        console.error("Auth-Fehler:", authErr);
+        setError("Deine Sitzung konnte nicht geprüft werden. Bitte lade die Seite neu.");
+        return;
+      }
       if (!user) { router.push("/login"); return; }
-      const { data: rest } = await supabase.from("restaurants").select("id, name, email").eq("email", user.email).single();
-      if (rest) setRestaurant(rest);
+
+      // Kein .single()-Crash bei Duplikaten: aeltesten Treffer nehmen.
+      const { data: rests, error: restErr } = await supabase
+        .from("restaurants")
+        .select("id, name, email")
+        .eq("email", user.email)
+        .order("created_at", { ascending: true })
+        .limit(1);
+      if (restErr) {
+        console.error("Restaurant laden fehlgeschlagen:", restErr);
+        setError("Dein Restaurant konnte nicht geladen werden — ohne diese Daten ist keine Zahlung möglich. Bitte lade die Seite neu." + (restErr.message ? ` (${restErr.message})` : ""));
+        return;
+      }
+      if (!rests || rests.length === 0) {
+        setError("Zu deinem Konto wurde kein Restaurant gefunden. Bitte schließe zuerst das Onboarding ab.");
+        return;
+      }
+      setRestaurant(rests[0]);
     }
     load();
   }, [router]);
 
   async function choosePlan(plan: typeof PLANS[0]) {
-    if (!restaurant) return;
+    if (!restaurant) {
+      setError("Deine Restaurant-Daten sind noch nicht geladen. Bitte lade die Seite neu und versuche es nochmal.");
+      return;
+    }
     setLoading(true);
     setError("");
     try {
