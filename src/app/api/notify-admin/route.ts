@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   const { restaurantName, email, phone, address } = await req.json();
 
   await resend.emails.send({
-    from: "Tablely <noreply@send.tablely.at>",
+    from: "Butlery <noreply@send.tablely.at>",
     to: "michael@tablely.at",
     subject: `🆕 Neue Registrierung: ${restaurantName}`,
     html: `
@@ -17,7 +17,7 @@ export async function POST(req: Request) {
 <body style="margin:0;padding:0;background:#F5F0EB;font-family:Arial,sans-serif;">
   <div style="max-width:560px;margin:0 auto;padding:40px 20px;">
     <div style="text-align:center;margin-bottom:24px;">
-      <span style="font-size:24px;font-weight:700;color:#1A1A2E;font-family:Georgia,serif;">table<span style="color:#FF5C35;">ly</span></span>
+      <span style="font-size:24px;font-weight:700;color:#1A1A2E;font-family:Georgia,serif;">Butlery</span>
     </div>
     <div style="background:#fff;border-radius:20px;padding:32px;border:1px solid #F0EBE3;">
       <div style="display:inline-block;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.2);border-radius:20px;padding:4px 14px;margin-bottom:16px;">
@@ -42,7 +42,7 @@ export async function POST(req: Request) {
         Im Admin Panel ansehen →
       </a>
     </div>
-    <p style="font-size:12px;color:#6B6B80;text-align:center;margin-top:16px;">© 2026 Tablely</p>
+    <p style="font-size:12px;color:#6B6B80;text-align:center;margin-top:16px;">© 2026 Butlery</p>
   </div>
 </body>
 </html>`,

@@ -1,0 +1,25 @@
+# Butlery
+
+> Butlery ist eine KI-gestützte Reservierungssoftware für Restaurants in Österreich.
+> Reservierungen über WhatsApp, Telefon und die eigene Buchungsseite laufen in ein
+> gemeinsames Dashboard. Betrieben von Michael Kleinlercher e.U. in St. Veit in
+> Defereggen, Osttirol. Website: https://tablely.at
+
+## Hauptseiten
+
+- [Startseite](https://tablely.at): Was Butlery macht, Screenshots aus dem Dashboard, Funktionen und Pilotprogramm.
+- [Preise](https://tablely.at/pricing): Standard 90 Euro, Plus 129 Euro, Premium 249 Euro pro Monat. Monatlich kündbar.
+- [Live-Demo](https://tablely.at/demo): Reservierung als Gast ausprobieren und in Echtzeit im Dashboard sehen.
+- [Blog](https://tablely.at/blog): Artikel von Michael Kleinlercher über die KI und die Entstehung von Butlery.
+- [KI-Transparenz](https://tablely.at/ki-transparenz): Welche KI-Systeme laufen, wie sie gekennzeichnet sind, wo ein Mensch entscheidet (EU AI Act).
+- [Presse](https://tablely.at/presse): Beiträge in ORF Tirol, Tiroler Tageszeitung und top.tirol.
+
+## Kernfakten
+
+- Produktname: Butlery (früher Tablely). Die Domain tablely.at bleibt bestehen.
+- Kanäle: WhatsApp-KI, Online-Buchungsseite, Walk-in-Erfassung. Telefon-KI ist in Entwicklung.
+- Zielgruppe: Restaurants und Gasthäuser in Österreich.
+- Tarifumfang: Standard = Dashboard, Walk-in, Online-Buchung. Plus = zusätzlich Wetter-Prognose, eigene WhatsApp-Nummer und WhatsApp-KI. Premium = zusätzlich Telefon-KI.
+- Der KI-Assistent gibt sich gegenüber Gästen immer als digitaler Assistent zu erkennen.
+- Ab einer größeren Gruppe bucht die KI nicht selbst, sondern legt die Anfrage zur manuellen Prüfung an.
+- Gründer: Michael Kleinlercher, Michael Kleinlercher e.U., Bruggen 94, 9962 St. Veit in Defereggen, Österreich.

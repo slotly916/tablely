@@ -64,9 +64,9 @@ function LoginForm() {
   return (
     <div style={styles.wrap}>
       <div style={styles.card}>
-        <a href="/" style={styles.logo}>table<span style={{color:"#FF5C35"}}>ly</span></a>
+        <a href="/" style={styles.logo}><img src="/butlery-logo-dunkel.png" alt="Butlery" style={{height:"24px",width:"auto",display:"inline-block",verticalAlign:"middle"}}/></a>
         <h1 style={styles.title}>Willkommen zurück</h1>
-        <p style={styles.sub}>Melde dich in deinem Tablely Konto an.</p>
+        <p style={styles.sub}>Melde dich in deinem Butlery Konto an.</p>
 
         <button onClick={handleGoogleLogin} style={{
           width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:"10px",
@@ -144,7 +144,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     justifyContent: "center",
     padding: "24px",
-    fontFamily: "'DM Sans', sans-serif",
+    fontFamily: "var(--font-sans)",
   },
   card: {
     background: "#FFFAF5",

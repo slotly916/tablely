@@ -1,31 +1,33 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Allgemeine Geschäftsbedingungen – Tablely",
-  description: "AGB von Tablely, betrieben von Michael Kleinlercher e.U.",
-  robots: { index: false, follow: false },
-};
+export const metadata: Metadata = pageMeta({
+  path: "/agb",
+  title: "Allgemeine Geschäftsbedingungen | Butlery",
+  description: "AGB von Butlery, betrieben von Michael Kleinlercher e.U.",
+  index: false,
+});
 
 export default function AGB() {
   return (
-    <div style={{fontFamily:"'DM Sans',sans-serif",background:"#FFFAF5",minHeight:"100vh",color:"#1A1A2E"}}>
+    <div style={{fontFamily:"var(--font-sans)",background:"#FFFAF5",minHeight:"100vh",color:"#1A1A2E"}}>
       <nav style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 48px",borderBottom:"1px solid #F0EBE3",background:"rgba(255,250,245,0.97)"}}>
         <a href="/" style={{fontFamily:"Georgia,serif",fontSize:"22px",fontWeight:700,color:"#1A1A2E",textDecoration:"none",letterSpacing:"-0.5px"}}>
-          table<span style={{color:"#FF5C35"}}>ly</span>
+          <img src="/butlery-logo-dunkel.png" alt="Butlery" style={{height:"24px",width:"auto",display:"inline-block",verticalAlign:"middle"}}/>
         </a>
         <a href="/" style={{fontSize:"14px",color:"#6B6B80",textDecoration:"none"}}>← Zurück</a>
       </nav>
 
       <div style={{maxWidth:"720px",margin:"0 auto",padding:"64px 24px"}}>
         <h1 style={{fontFamily:"Georgia,serif",fontSize:"40px",fontWeight:700,letterSpacing:"-1px",marginBottom:"8px"}}>Allgemeine Geschäftsbedingungen</h1>
-        <p style={{fontSize:"14px",color:"#6B6B80",marginBottom:"48px"}}>Stand: März 2026 – Michael Kleinlercher e.U., Tablely</p>
+        <p style={{fontSize:"14px",color:"#6B6B80",marginBottom:"48px"}}>Stand: März 2026 – Michael Kleinlercher e.U., Butlery</p>
 
         <Section title="1. Geltungsbereich">
-          <p style={p}>Diese Allgemeinen Geschäftsbedingungen (AGB) gelten für alle Leistungen der Michael Kleinlercher e.U. (nachfolgend „Anbieter") im Rahmen des Dienstes Tablely (tablely.at) gegenüber Unternehmern im Sinne des § 1 UGB (nachfolgend „Kunde"). Abweichende Bedingungen des Kunden werden nicht anerkannt, es sei denn, der Anbieter stimmt ihrer Geltung ausdrücklich schriftlich zu.</p>
+          <p style={p}>Diese Allgemeinen Geschäftsbedingungen (AGB) gelten für alle Leistungen der Michael Kleinlercher e.U. (nachfolgend „Anbieter") im Rahmen des Dienstes Butlery (tablely.at) gegenüber Unternehmern im Sinne des § 1 UGB (nachfolgend „Kunde"). Abweichende Bedingungen des Kunden werden nicht anerkannt, es sei denn, der Anbieter stimmt ihrer Geltung ausdrücklich schriftlich zu.</p>
         </Section>
 
         <Section title="2. Leistungsbeschreibung">
-          <p style={p}>Tablely ist eine webbasierte SaaS-Lösung (Software as a Service) zur automatisierten Verwaltung von Tischreservierungen für Gastronomiebetriebe. Der Funktionsumfang umfasst insbesondere:</p>
+          <p style={p}>Butlery ist eine webbasierte SaaS-Lösung (Software as a Service) zur automatisierten Verwaltung von Tischreservierungen für Gastronomiebetriebe. Der Funktionsumfang umfasst insbesondere:</p>
           <ul style={{paddingLeft:"20px",marginTop:"12px"}}>
             {[
               "Automatische Entgegennahme von Reservierungen per WhatsApp mittels KI",
@@ -45,7 +47,7 @@ export default function AGB() {
         </Section>
 
         <Section title="4. Vergütung und Zahlungsbedingungen">
-          <p style={p}>Die Preise für die Nutzung von Tablely richten sich nach dem jeweils gültigen Preisblatt. Alle Preise verstehen sich in Euro exklusive der gesetzlichen Umsatzsteuer (soweit anwendbar). Die Vergütung ist monatlich im Voraus fällig. Bei Zahlungsverzug ist der Anbieter berechtigt, den Zugang zum Dienst zu sperren.</p>
+          <p style={p}>Die Preise für die Nutzung von Butlery richten sich nach dem jeweils gültigen Preisblatt. Alle Preise verstehen sich in Euro exklusive der gesetzlichen Umsatzsteuer (soweit anwendbar). Die Vergütung ist monatlich im Voraus fällig. Bei Zahlungsverzug ist der Anbieter berechtigt, den Zugang zum Dienst zu sperren.</p>
         </Section>
 
         <Section title="5. Laufzeit und Kündigung">
@@ -106,7 +108,7 @@ function Footer() {
   return (
     <footer style={{padding:"24px 48px",borderTop:"1px solid #F0EBE3",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:"8px"}}>
       <a href="/" style={{fontFamily:"Georgia,serif",fontSize:"17px",fontWeight:700,color:"#1A1A2E",textDecoration:"none"}}>
-        table<span style={{color:"#FF5C35"}}>ly</span>
+        <img src="/butlery-logo-dunkel.png" alt="Butlery" style={{height:"24px",width:"auto",display:"inline-block",verticalAlign:"middle"}}/>
       </a>
       <div style={{display:"flex",gap:"24px",fontSize:"13px"}}>
         <a href="/impressum" style={{color:"#6B6B80",textDecoration:"none"}}>Impressum</a>

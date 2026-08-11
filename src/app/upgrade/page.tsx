@@ -9,8 +9,12 @@ import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 const PLANS = [
-  { id: "standard", name: "Standard", price: 99, tagline: "Für kleine Restaurants", features: ["Online Buchungsseite", "Dashboard", "E-Mail Erinnerungen", "Walk-in Assistent"] },
-  { id: "plus", name: "Plus", price: 129, tagline: "Die meisten wählen Plus", popular: true, features: ["Alles aus Standard", "WhatsApp KI", "Automatische Erinnerungen", "Bis zu 60% weniger No-Shows", "Eigene WhatsApp Nummer"] },
+  // ACHTUNG: Diese Preise sind nur Anzeige. Abgebucht wird, was im Stripe-Price
+  // hinter STRIPE_PRICE_STANDARD/_PLUS/_PREMIUM steht — die Zahlen hier muessen
+  // bei jeder Preisaenderung mit Stripe UND mit pricing/page.tsx abgeglichen
+  // werden. Standard stand hier auf 99, auf der Preisseite auf 79.
+  { id: "standard", name: "Standard", price: 90, tagline: "Für kleine Restaurants", features: ["Online Buchungsseite", "Dashboard", "E-Mail Erinnerungen", "Walk-in Assistent"] },
+  { id: "plus", name: "Plus", price: 129, tagline: "Empfohlen", popular: true, features: ["Alles aus Standard", "WhatsApp KI", "Eigene WhatsApp Nummer", "Automatische Erinnerungen", "Wetter-Prognose & Schlechtwetter-Puffer"] },
   { id: "premium", name: "Premium", price: 249, tagline: "Maximaler Komfort", features: ["Alles aus Plus", "KI Telefon (bald)", "Prioritäts-Support", "Persönliches Onboarding"] },
 ];
 
@@ -152,14 +156,14 @@ export default function UpgradePage() {
   }
 
   return (
-    <div style={{minHeight:"100vh",background:"#F0EBE3",fontFamily:"'DM Sans',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');*{box-sizing:border-box;margin:0;padding:0;}`}</style>
+    <div style={{minHeight:"100vh",background:"#F0EBE3",fontFamily:"var(--font-sans)",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&display=swap');*{box-sizing:border-box;margin:0;padding:0;}`}</style>
 
       <div style={{width:"100%",maxWidth: selectedPlan ? "480px" : "1000px"}}>
 
         <div style={{textAlign:"center",marginBottom:"32px"}}>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:"28px",fontWeight:700,color:"#1A1A2E",marginBottom:"10px"}}>
-            table<span style={{color:"#FF5C35",fontStyle:"italic"}}>ly</span>
+            <img src="/butlery-logo-dunkel.png" alt="Butlery" style={{height:"24px",width:"auto",display:"inline-block",verticalAlign:"middle"}}/>
           </div>
           {!selectedPlan ? (
             <>
@@ -167,7 +171,7 @@ export default function UpgradePage() {
                 Deine Testphase ist vorbei
               </h1>
               <p style={{fontSize:"15px",color:"#6B6B80",fontWeight:300,maxWidth:"480px",margin:"0 auto",lineHeight:1.6}}>
-                Wähle einen Plan um Tablely weiter zu nutzen. Alle deine Daten und Einstellungen bleiben erhalten.
+                Wähle einen Plan um Butlery weiter zu nutzen. Alle deine Daten und Einstellungen bleiben erhalten.
               </p>
             </>
           ) : (
@@ -232,7 +236,7 @@ export default function UpgradePage() {
                 clientSecret,
                 appearance: {
                   theme: "flat",
-                  variables: { colorPrimary: "#FF5C35", fontFamily: "DM Sans, sans-serif", borderRadius: "10px" },
+                  variables: { colorPrimary: "#FF5C35", fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif", borderRadius: "10px" },
                 },
               }}>
                 <CheckoutForm plan={selectedPlan} onBack={()=>{setSelectedPlan(null);setClientSecret("");}} />

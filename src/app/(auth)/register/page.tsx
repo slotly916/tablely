@@ -71,7 +71,7 @@ export default function Register() {
     return (
       <div style={styles.wrap}>
         <div style={styles.card}>
-          <div style={styles.logo}>table<span style={{color:"#FF5C35"}}>ly</span></div>
+          <div style={styles.logo}><img src="/butlery-logo-dunkel.png" alt="Butlery" style={{height:"24px",width:"auto",display:"inline-block",verticalAlign:"middle"}}/></div>
           <div style={{textAlign:"center", padding:"20px 0"}}>
             <div style={{width:"56px",height:"56px",borderRadius:"50%",background:"#E8F8F1",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px"}}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#25C281" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -87,9 +87,9 @@ export default function Register() {
   return (
     <div style={styles.wrap}>
       <div style={styles.card}>
-        <a href="/" style={styles.logo}>table<span style={{color:"#FF5C35"}}>ly</span></a>
+        <a href="/" style={styles.logo}><img src="/butlery-logo-dunkel.png" alt="Butlery" style={{height:"24px",width:"auto",display:"inline-block",verticalAlign:"middle"}}/></a>
         <h1 style={styles.title}>Konto erstellen</h1>
-        <p style={styles.sub}>Starte deinen kostenlosen Zugang zu Tablely.</p>
+        <p style={styles.sub}>Starte deinen kostenlosen Zugang zu Butlery.</p>
 
         <button onClick={handleGoogleLogin} style={{
           width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:"10px",
@@ -181,7 +181,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     justifyContent: "center",
     padding: "24px",
-    fontFamily: "'DM Sans', sans-serif",
+    fontFamily: "var(--font-sans)",
   },
   card: {
     background: "#FFFAF5",

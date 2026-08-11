@@ -26,7 +26,7 @@ export async function POST(req: Request) {
   const html = '<!DOCTYPE html><html><head><meta charset="utf-8"></head>' +
     '<body style="margin:0;padding:0;background:#F5F0EB;font-family:Arial,sans-serif;">' +
     '<div style="max-width:560px;margin:0 auto;padding:40px 20px;">' +
-    '<div style="text-align:center;margin-bottom:32px;"><span style="font-size:28px;font-weight:700;color:#1A1A2E;font-family:Georgia,serif;">table<span style="color:#FF5C35;">ly</span></span></div>' +
+    '<div style="text-align:center;margin-bottom:32px;"><span style="font-size:28px;font-weight:700;color:#1A1A2E;font-family:Georgia,serif;">Butlery</span></div>' +
     '<div style="background:#fff;border-radius:20px;padding:40px;border:1px solid #F0EBE3;">' +
     '<div style="display:inline-block;background:' + headerBg + ';border-radius:20px;padding:5px 14px;margin-bottom:18px;">' +
     '<span style="font-size:12px;color:' + headerTextColor + ';font-weight:600;">' + headerIcon + ' ' + headerTitle + '</span></div>' +
@@ -44,11 +44,11 @@ export async function POST(req: Request) {
     (!isLargeGroup ? '<div style="background:#F5F0EB;border-radius:12px;padding:14px 18px;margin-bottom:20px;"><div style="font-size:12px;font-weight:600;color:#1A1A2E;margin-bottom:4px;">Tipp</div><div style="font-size:13px;color:#6B6B80;line-height:1.6;">Wir erinnern dich 24 Stunden und 2 Stunden vor deiner Reservierung.</div></div>' : '') +
     (restaurantPhone ? '<p style="font-size:13px;color:#6B6B80;text-align:center;margin:0;">Bei Fragen: <strong style="color:#1A1A2E;">' + restaurantPhone + '</strong></p>' : '') +
     '</div>' +
-    '<div style="text-align:center;margin-top:24px;"><p style="font-size:12px;color:#6B6B80;margin:0;">© 2026 Tablely · Michael Kleinlercher e.U.</p></div>' +
+    '<div style="text-align:center;margin-top:24px;"><p style="font-size:12px;color:#6B6B80;margin:0;">© 2026 Butlery · Michael Kleinlercher e.U.</p></div>' +
     '</div></body></html>';
 
   await resend.emails.send({
-    from: "Tablely <noreply@send.tablely.at>",
+    from: "Butlery <noreply@send.tablely.at>",
     to: email,
     subject,
     html,

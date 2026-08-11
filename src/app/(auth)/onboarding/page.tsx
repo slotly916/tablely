@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
+import { geocodeAddress } from "@/lib/geocode";
 
 const STEPS = ["Restaurant", "Tische", "Gruppen", "Öffnungszeiten", "Einstellungen", "WhatsApp", "App"];
 const DAYS = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"];
@@ -22,10 +23,11 @@ export default function Onboarding() {
     { name: "Tisch 2", capacity: 4 },
   ]);
 
-  // Tisch-Gruppen — array of arrays of table names
-  const [groups, setGroups] = useState<string[][]>([]);
+  // Tisch-Gruppen — Tischnamen pro Gruppe, plus Flag ob es ein Außenbereich ist
+  const [groups, setGroups] = useState<Array<{names: string[]; isOutdoor: boolean}>>([]);
   const [showNewGroup, setShowNewGroup] = useState(false);
   const [groupSelection, setGroupSelection] = useState<string[]>([]);
+  const [newGroupOutdoor, setNewGroupOutdoor] = useState(false);
 
   const [hours, setHours] = useState(
     DAYS.map((_, i) => ({ day: i, open: "11:00", close: "22:00", closed: i === 6 }))
@@ -77,7 +79,11 @@ export default function Onboarding() {
     const tableName = tables[i].name;
     setTables(tables.filter((_, idx) => idx !== i));
     // Auch aus Gruppen entfernen
-    setGroups(groups.map(g => g.filter(n => n !== tableName)).filter(g => g.length >= 2));
+    setGroups(
+      groups
+        .map(g => ({ ...g, names: g.names.filter(n => n !== tableName) }))
+        .filter(g => g.names.length >= 2)
+    );
   }
   function updateTable(i: number, field: string, value: string | number) {
     setTables(tables.map((t, idx) => idx === i ? { ...t, [field]: value } : t));
@@ -88,13 +94,14 @@ export default function Onboarding() {
 
   // Tables that are already in a group
   const tablesInGroups = new Set<string>();
-  groups.forEach(g => g.forEach(n => tablesInGroups.add(n)));
+  groups.forEach(g => g.names.forEach(n => tablesInGroups.add(n)));
 
   function saveNewGroup() {
     if (groupSelection.length < 2) return;
-    setGroups([...groups, groupSelection]);
+    setGroups([...groups, { names: groupSelection, isOutdoor: newGroupOutdoor }]);
     setShowNewGroup(false);
     setGroupSelection([]);
+    setNewGroupOutdoor(false);
   }
 
   function deleteGroup(idx: number) {
@@ -145,6 +152,11 @@ export default function Onboarding() {
 
       const slug = restaurantName.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-") + "-";
 
+      // Koordinaten für die Wettervorhersage. Findet die Geocoding-API nichts,
+      // wird ohne gespeichert — dann erscheint im Dashboard nur kein
+      // Wetter-Widget, das Onboarding läuft normal durch.
+      const coords = address.trim() ? await geocodeAddress(address) : null;
+
       const { data: restaurant, error: rErr } = await supabase
         .from("restaurants")
         .insert([{
@@ -152,6 +164,8 @@ export default function Onboarding() {
           email: user.email,
           phone,
           address,
+          latitude: coords?.latitude ?? null,
+          longitude: coords?.longitude ?? null,
           slug,
           stay_duration: stayDuration,
           large_group_threshold: largeGroupThreshold,
@@ -188,10 +202,10 @@ export default function Onboarding() {
 
       // Apply groups — for each group, update combinable_with
       for (const group of groups) {
-        const groupTableIds = group
+        const groupTableIds = group.names
           .map(name => insertedTables.find(t => t.name === name)?.id)
           .filter(Boolean) as string[];
-        
+
         if (groupTableIds.length >= 2) {
           for (const tableId of groupTableIds) {
             const others = groupTableIds.filter(id => id !== tableId);
@@ -212,6 +226,30 @@ export default function Onboarding() {
           is_closed: h.closed,
         })));
       if (hErr) throw new Error("Deine Öffnungszeiten konnten nicht gespeichert werden. Du kannst sie in den Einstellungen nachtragen." + (hErr.message ? ` (${hErr.message})` : ""));
+
+      // Als Außenbereich markierte Gruppen landen im Bereich "Terrasse".
+      // Bereiche sind ein eigenes Konzept — die Detailpflege (umbenennen,
+      // weitere Bereiche) passiert in den Einstellungen. Bewusst als LETZTER
+      // Schritt: schlaegt er fehl (z. B. weil migrations/bereiche.sql noch
+      // nicht eingespielt ist), ist alles andere bereits gespeichert.
+      const outdoorTableIds = groups
+        .filter(g => g.isOutdoor)
+        .flatMap(g => g.names.map(name => insertedTables.find(t => t.name === name)?.id))
+        .filter(Boolean) as string[];
+
+      if (outdoorTableIds.length > 0) {
+        const { data: area, error: aErr } = await supabase.from("areas")
+          .insert([{ restaurant_id: restaurant.id, name: "Terrasse", is_outdoor: true }])
+          .select().single();
+        if (aErr || !area) throw new Error("Alles gespeichert — nur der Außenbereich konnte nicht angelegt werden. Du kannst ihn in den Einstellungen unter Tisch-Gruppen anlegen." + (aErr?.message ? ` (${aErr.message})` : ""));
+
+        // is_outdoor bleibt mit dem Bereich synchron — daran haengt die
+        // Wetter-Warnung im Dashboard.
+        const { error: assignErr } = await supabase.from("tables")
+          .update({ area_id: area.id, is_outdoor: true })
+          .in("id", outdoorTableIds);
+        if (assignErr) throw new Error("Alles gespeichert — nur die Tische konnten dem Außenbereich nicht zugeordnet werden. Du kannst das in den Einstellungen nachholen." + (assignErr.message ? ` (${assignErr.message})` : ""));
+      }
 
       try {
         await fetch("/api/welcome-email", {
@@ -239,13 +277,13 @@ export default function Onboarding() {
   return (
     <div style={wrap}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap');
         *{box-sizing:border-box;}
         input:focus,select:focus{border-color:#FF5C35!important;outline:none;}
         select{appearance:none;-webkit-appearance:none;}
       `}</style>
       <div style={card}>
-        <a href="/" style={logo}>table<span style={{color:"#FF5C35"}}>ly</span></a>
+        <a href="/" style={logo}><img src="/butlery-logo-dunkel.png" alt="Butlery" style={{height:"24px",width:"auto",display:"inline-block",verticalAlign:"middle"}}/></a>
 
         <div style={{display:"flex",gap:"4px",marginBottom:"32px"}}>
           {STEPS.map((s, i) => (
@@ -302,16 +340,16 @@ export default function Onboarding() {
         {step === 2 && (
           <>
             <h1 style={title}>Tisch-Gruppen</h1>
-            <p style={sub}>Welche Tische können zusammen geschoben werden? Das hilft Tablely bei größeren Gruppen.</p>
+            <p style={sub}>Welche Tische können zusammen geschoben werden? Das hilft Butlery bei größeren Gruppen.</p>
             
             <div style={{background:"rgba(255,92,53,.08)",border:"1px solid rgba(255,92,53,.15)",borderRadius:"10px",padding:"12px 16px",fontSize:"12px",color:"#FF5C35",lineHeight:1.6,marginBottom:"16px"}}>
-              💡 Beispiel: Tisch 5 + Tisch 6 stehen nebeneinander und ergeben zusammen 10 Plätze. Tablely nutzt das automatisch wenn eine Gruppe von 8 Personen kommt.
+              💡 Beispiel: Tisch 5 + Tisch 6 stehen nebeneinander und ergeben zusammen 10 Plätze. Butlery nutzt das automatisch wenn eine Gruppe von 8 Personen kommt. Terrasse, Garten oder Schanigarten kannst du als Außenbereich markieren — dann warnt dich das Dashboard bei Regenprognose.
             </div>
 
             <div style={{display:"flex",flexDirection:"column",gap:"10px",marginBottom:"14px"}}>
               {/* Existing groups */}
               {groups.map((g, i) => {
-                const totalCapacity = g.reduce((sum, name) => sum + (tables.find(t => t.name === name)?.capacity || 0), 0);
+                const totalCapacity = g.names.reduce((sum, name) => sum + (tables.find(t => t.name === name)?.capacity || 0), 0);
                 return (
                   <div key={i} style={{background:"#fff",border:"1px solid #F0EBE3",borderRadius:"12px",padding:"14px 16px"}}>
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"8px"}}>
@@ -324,7 +362,7 @@ export default function Onboarding() {
                       <button onClick={() => deleteGroup(i)} style={{background:"none",border:"none",cursor:"pointer",color:"#E24B4A",fontSize:"18px",lineHeight:1}}>×</button>
                     </div>
                     <div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>
-                      {g.map(name => {
+                      {g.names.map(name => {
                         const cap = tables.find(t => t.name === name)?.capacity || 0;
                         return (
                           <div key={name} style={{padding:"4px 10px",background:"#FFF0EB",border:"1px solid rgba(255,92,53,.15)",borderRadius:"6px",fontSize:"12px",color:"#1A1A2E",fontWeight:500}}>
@@ -333,6 +371,11 @@ export default function Onboarding() {
                         );
                       })}
                     </div>
+                    {g.isOutdoor && (
+                      <div style={{fontSize:"11px",color:"#6B6B80",marginTop:"8px"}}>
+                        Außenbereich (wetterabhängig)
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -366,8 +409,15 @@ export default function Onboarding() {
                       = {groupSelection.reduce((sum, name) => sum + (tables.find(t => t.name === name)?.capacity || 0), 0)} Personen zusammen
                     </div>
                   )}
+                  <label style={{display:"flex",alignItems:"center",gap:"8px",fontSize:"12px",color:"#1A1A2E",cursor:"pointer"}}>
+                    <input type="checkbox" checked={newGroupOutdoor} onChange={e=>setNewGroupOutdoor(e.target.checked)}/>
+                    Außenbereich (wetterabhängig)
+                  </label>
+                  <div style={{fontSize:"11px",color:"#6B6B80",margin:"4px 0 12px 24px",lineHeight:1.5}}>
+                    Legt den Bereich Terrasse an. Bereiche kannst du später in den Einstellungen umbenennen und ergänzen.
+                  </div>
                   <div style={{display:"flex",gap:"8px"}}>
-                    <button onClick={() => { setShowNewGroup(false); setGroupSelection([]); }} style={{padding:"7px 14px",borderRadius:"8px",background:"transparent",border:"1px solid #F0EBE3",color:"#6B6B80",fontSize:"12px",cursor:"pointer",fontFamily:"inherit"}}>Abbrechen</button>
+                    <button onClick={() => { setShowNewGroup(false); setGroupSelection([]); setNewGroupOutdoor(false); }} style={{padding:"7px 14px",borderRadius:"8px",background:"transparent",border:"1px solid #F0EBE3",color:"#6B6B80",fontSize:"12px",cursor:"pointer",fontFamily:"inherit"}}>Abbrechen</button>
                     <button onClick={saveNewGroup} disabled={groupSelection.length < 2} style={{padding:"7px 16px",borderRadius:"8px",background:"#FF5C35",border:"none",color:"#fff",fontSize:"12px",fontWeight:500,cursor:"pointer",fontFamily:"inherit",opacity:groupSelection.length < 2 ? 0.5 : 1}}>✓ Erstellen</button>
                   </div>
                 </div>
@@ -513,7 +563,7 @@ export default function Onboarding() {
         {step === 6 && (
           <>
             <h1 style={title}>App installieren</h1>
-            <p style={sub}>Tablely kann wie eine App installiert werden. So hast du das Dashboard immer griffbereit.</p>
+            <p style={sub}>Butlery kann wie eine App installiert werden. So hast du das Dashboard immer griffbereit.</p>
             <div style={{display:"flex",flexDirection:"column",gap:"14px"}}>
               <div style={{background:"#F5F0EB",borderRadius:"14px",padding:"18px",border:"1px solid #F0EBE3"}}>
                 <div style={{fontSize:"13px",fontWeight:600,color:"#1A1A2E",marginBottom:"10px"}}>iPhone / iPad</div>
@@ -571,7 +621,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-const wrap: React.CSSProperties = { minHeight:"100vh",background:"#F0EBE3",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px",fontFamily:"'DM Sans',sans-serif" };
+const wrap: React.CSSProperties = { minHeight:"100vh",background:"#F0EBE3",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px",fontFamily:"var(--font-sans)" };
 const card: React.CSSProperties = { background:"#FFFAF5",borderRadius:"20px",padding:"40px",width:"100%",maxWidth:"560px",boxShadow:"0 8px 40px rgba(26,26,46,0.08)" };
 const logo: React.CSSProperties = { fontFamily:"'Playfair Display',serif",fontSize:"24px",fontWeight:700,color:"#1A1A2E",textDecoration:"none",display:"block",marginBottom:"28px" };
 const title: React.CSSProperties = { fontFamily:"'Playfair Display',serif",fontSize:"24px",fontWeight:700,color:"#1A1A2E",letterSpacing:"-0.5px",marginBottom:"8px" };

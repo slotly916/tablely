@@ -11,6 +11,7 @@ type Restaurant = {
   slug: string;
   stay_duration?: number;
   large_group_threshold?: number;
+  allow_pets?: boolean;
 };
 
 type Table = {
@@ -128,6 +129,7 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
   const [guestPhone, setGuestPhone] = useState("");
   const [guestEmail, setGuestEmail] = useState("");
   const [notes, setNotes] = useState("");
+  const [hasPet, setHasPet] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => { loadRestaurant(); }, []);
@@ -284,6 +286,7 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
         notes: notes || null,
         status: "pending",
         table_ids: [],
+        has_pet: restaurant?.allow_pets ? hasPet : false,
       }]);
       if (err) {
         console.error("Großgruppen-Anfrage speichern fehlgeschlagen:", err);
@@ -342,6 +345,7 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
       channel: "online",
       notes: notes || null,
       status: "confirmed",
+      has_pet: restaurant?.allow_pets ? hasPet : false,
     }]);
 
     if (err) {
@@ -378,14 +382,14 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
   const availableTimes = getAvailableTimes();
 
   if (loading) return (
-    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#FFFAF5",fontFamily:"'DM Sans',sans-serif"}}>
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#FFFAF5",fontFamily:"var(--font-sans)"}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <div style={{width:"24px",height:"24px",borderRadius:"50%",border:"2px solid #F0EBE3",borderTopColor:"#FF5C35",animation:"spin 0.7s linear infinite"}}/>
     </div>
   );
 
   if (loadError) return (
-    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#FFFAF5",fontFamily:"'DM Sans',sans-serif",flexDirection:"column",gap:"16px",textAlign:"center",padding:"24px"}}>
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#FFFAF5",fontFamily:"var(--font-sans)",flexDirection:"column",gap:"16px",textAlign:"center",padding:"24px"}}>
       <div style={{width:"52px",height:"52px",borderRadius:"50%",background:"#FEE8E8",border:"1px solid rgba(226,75,74,.25)",display:"flex",alignItems:"center",justifyContent:"center"}}>
         <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="9" stroke="#E24B4A" strokeWidth="1.6"/><path d="M11 6.5v5.5M11 15v.5" stroke="#E24B4A" strokeWidth="1.8" strokeLinecap="round"/></svg>
       </div>
@@ -402,7 +406,7 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
   );
 
   if (notFound) return (
-    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#FFFAF5",fontFamily:"'DM Sans',sans-serif",flexDirection:"column",gap:"16px",textAlign:"center",padding:"24px"}}>
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#FFFAF5",fontFamily:"var(--font-sans)",flexDirection:"column",gap:"16px",textAlign:"center",padding:"24px"}}>
       <div style={{fontFamily:"Georgia,serif",fontSize:"22px",fontWeight:700,color:"#1A1A2E"}}>Restaurant nicht gefunden</div>
       <div style={{fontSize:"15px",color:"#6B6B80"}}>Dieser Buchungslink ist nicht gültig.</div>
       <a href="/" style={{color:"#FF5C35",fontSize:"14px",textDecoration:"none",fontWeight:500}}>← tablely.at</a>
@@ -410,8 +414,7 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
   );
 
   if (success) return (
-    <div style={{minHeight:"100vh",background:"#FFFAF5",fontFamily:"'DM Sans',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500&display=swap');`}</style>
+    <div style={{minHeight:"100vh",background:"#FFFAF5",fontFamily:"var(--font-sans)",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
       <div style={{maxWidth:"480px",width:"100%",textAlign:"center"}}>
         <div style={{width:"72px",height:"72px",borderRadius:"50%",background:isLargeGroup?"#FFF7E0":"#E8F8F1",border:`2px solid ${isLargeGroup?"#FCD34D":"#25C281"}`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 24px"}}>
           {isLargeGroup ? (
@@ -452,9 +455,11 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
   );
 
   return (
-    <div style={{minHeight:"100vh",background:"#FFFAF5",fontFamily:"'DM Sans',sans-serif"}}>
+    <div style={{minHeight:"100vh",background:"#FFFAF5",fontFamily:"var(--font-sans)"}}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap');
+        /* Kein Google-Fonts-@import mehr: die Buchungsseite setzt durchgehend
+           Georgia und hat Playfair nie verwendet. Der Request hat den
+           Seitenaufbau nur verzögert. */
         * { box-sizing: border-box; }
         input:focus, select:focus, textarea:focus { border-color: #FF5C35 !important; outline: none; }
         select { appearance: none; -webkit-appearance: none; }
@@ -465,11 +470,14 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
 
       <header style={{borderBottom:"1px solid #F0EBE3",padding:"16px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",background:"#fff"}}>
         <div>
-          <div style={{fontFamily:"Georgia,serif",fontSize:"18px",fontWeight:700,color:"#1A1A2E"}}>{restaurant?.name}</div>
+          {/* Der Restaurantname ist die Überschrift dieser Seite. Vorher ein
+              div, also hatte die Buchungsseite gar keine H1. Styles bleiben
+              identisch (inkl. margin:0), die Darstellung ändert sich nicht. */}
+          <h1 style={{fontFamily:"Georgia,serif",fontSize:"18px",fontWeight:700,color:"#1A1A2E",margin:0}}>{restaurant?.name}</h1>
           {restaurant?.address && <div style={{fontSize:"12px",color:"#6B6B80",marginTop:"2px"}}>{restaurant.address}</div>}
         </div>
         <a href="/" style={{fontFamily:"Georgia,serif",fontSize:"14px",color:"#6B6B80",textDecoration:"none"}}>
-          powered by <span style={{color:"#FF5C35"}}>tablely</span>
+          powered by <span style={{color:"#FF5C35"}}>Butlery</span>
         </a>
       </header>
 
@@ -549,6 +557,22 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
               <div><label style={{fontSize:"12px",fontWeight:500,color:"#6B6B80",textTransform:"uppercase",letterSpacing:"0.5px",display:"block",marginBottom:"6px"}}>Name *</label><input style={{width:"100%",padding:"12px 14px",border:"1.5px solid #F0EBE3",borderRadius:"10px",fontSize:"15px",fontFamily:"inherit",color:"#1A1A2E",background:"#fff"}} type="text" placeholder="Maria Muster" value={guestName} onChange={e => setGuestName(e.target.value)}/></div>
               <div><label style={{fontSize:"12px",fontWeight:500,color:"#6B6B80",textTransform:"uppercase",letterSpacing:"0.5px",display:"block",marginBottom:"6px"}}>Telefon</label><input style={{width:"100%",padding:"12px 14px",border:"1.5px solid #F0EBE3",borderRadius:"10px",fontSize:"15px",fontFamily:"inherit",color:"#1A1A2E",background:"#fff"}} type="tel" placeholder="+43 660 123456" value={guestPhone} onChange={e => setGuestPhone(e.target.value)}/></div>
               <div><label style={{fontSize:"12px",fontWeight:500,color:"#6B6B80",textTransform:"uppercase",letterSpacing:"0.5px",display:"block",marginBottom:"6px"}}>E-Mail</label><input style={{width:"100%",padding:"12px 14px",border:"1.5px solid #F0EBE3",borderRadius:"10px",fontSize:"15px",fontFamily:"inherit",color:"#1A1A2E",background:"#fff"}} type="email" placeholder="maria@email.at" value={guestEmail} onChange={e => setGuestEmail(e.target.value)}/></div>
+              {restaurant?.allow_pets && (
+                <div>
+                  <label style={{fontSize:"12px",fontWeight:500,color:"#6B6B80",textTransform:"uppercase",letterSpacing:"0.5px",display:"block",marginBottom:"6px"}}>Bringen Sie ein Haustier mit?</label>
+                  <div style={{display:"flex",gap:"8px"}}>
+                    {[{v:false,l:"Nein"},{v:true,l:"Ja"}].map(o => (
+                      <button key={o.l} onClick={() => setHasPet(o.v)} style={{
+                        flex:1,padding:"10px",borderRadius:"10px",fontSize:"14px",fontWeight:500,cursor:"pointer",
+                        fontFamily:"inherit",border:"1.5px solid",transition:"all 0.15s",
+                        background: hasPet===o.v ? "#FF5C35" : "#fff",
+                        color: hasPet===o.v ? "#fff" : "#1A1A2E",
+                        borderColor: hasPet===o.v ? "#FF5C35" : "#F0EBE3",
+                      }}>{o.l}</button>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div><label style={{fontSize:"12px",fontWeight:500,color:"#6B6B80",textTransform:"uppercase",letterSpacing:"0.5px",display:"block",marginBottom:"6px"}}>Sonderwünsche</label><textarea style={{width:"100%",padding:"12px 14px",border:"1.5px solid #F0EBE3",borderRadius:"10px",fontSize:"15px",fontFamily:"inherit",color:"#1A1A2E",background:"#fff",minHeight:"80px",resize:"vertical",lineHeight:"1.5"}} placeholder="Allergien, Anlass, Sitzplatzwunsch..." value={notes} onChange={e => setNotes(e.target.value)}/></div>
             </div>
             {error && <p style={{color:"#E24B4A",fontSize:"13px",marginTop:"10px"}}>{error}</p>}
@@ -572,6 +596,7 @@ export default function BookingPage({ params }: { params: Promise<{ slug: string
                 {l:"Name", v:guestName},
                 ...(guestPhone ? [{l:"Telefon", v:guestPhone}] : []),
                 ...(guestEmail ? [{l:"E-Mail", v:guestEmail}] : []),
+                ...(restaurant?.allow_pets ? [{l:"Haustier", v:hasPet ? "Ja" : "Nein"}] : []),
                 ...(notes ? [{l:"Notizen", v:notes}] : []),
               ].map((r,i,arr) => (
                 <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:i<arr.length-1?"1px solid #F0EBE3":"none",fontSize:"14px",gap:"16px"}}>

@@ -202,7 +202,7 @@ export default function DemoPage() {
   };
 
   if (loading) return (
-    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#0A0A0F",fontFamily:"'DM Sans',sans-serif",flexDirection:"column",gap:"12px"}}>
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#0A0A0F",fontFamily:"var(--font-sans)",flexDirection:"column",gap:"12px"}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <div style={{width:"24px",height:"24px",borderRadius:"50%",border:"2px solid rgba(255,255,255,.1)",borderTopColor:"#FF5C35",animation:"spin .7s linear infinite"}}/>
       <div style={{color:"rgba(255,255,255,.3)",fontSize:"13px"}}>Demo wird geladen...</div>
@@ -210,12 +210,12 @@ export default function DemoPage() {
   );
 
   if (loadError) return (
-    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#0A0A0F",fontFamily:"'DM Sans',sans-serif",padding:"24px"}}>
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#0A0A0F",fontFamily:"var(--font-sans)",padding:"24px"}}>
       <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(248,113,113,.25)",borderRadius:"16px",padding:"32px",maxWidth:"460px",width:"100%",textAlign:"center"}}>
         <div style={{width:"52px",height:"52px",borderRadius:"50%",background:"rgba(248,113,113,.12)",border:"1px solid rgba(248,113,113,.25)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="9" stroke="#F87171" strokeWidth="1.6"/><path d="M11 6.5v5.5M11 15v.5" stroke="#F87171" strokeWidth="1.8" strokeLinecap="round"/></svg>
         </div>
-        <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"20px",fontWeight:700,color:"#FFFAF5",marginBottom:"8px"}}>Demo gerade nicht verfügbar</h2>
+        <h2 style={{fontFamily:"var(--font-playfair),Georgia,serif",fontSize:"20px",fontWeight:700,color:"#FFFAF5",marginBottom:"8px"}}>Demo gerade nicht verfügbar</h2>
         <p style={{fontSize:"13px",color:"rgba(255,255,255,.5)",lineHeight:1.6,marginBottom:"20px"}}>{loadError}</p>
         <button onClick={() => { setLoadError(""); setLoading(true); loadData(); }} style={{
           padding:"11px 24px",borderRadius:"10px",background:"#FF5C35",border:"none",color:"#fff",
@@ -226,10 +226,10 @@ export default function DemoPage() {
   );
 
   return (
-    <div style={{minHeight:"100vh",background:"#0A0A0F",fontFamily:"'DM Sans',sans-serif"}}>
+    <div style={{minHeight:"100vh",background:"#0A0A0F",fontFamily:"var(--font-sans)"}}>
       <Toast toast={toast} onClose={closeToast}/>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500&display=swap');
+        /* Playfair kommt selbst gehostet aus dem Root-Layout (--font-playfair). */
         *{box-sizing:border-box;margin:0;padding:0;}
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
@@ -249,8 +249,8 @@ export default function DemoPage() {
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
             Zurück
           </a>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:"18px",fontWeight:700,color:"#FFFAF5"}}>
-            table<span style={{color:"#FF5C35"}}>ly</span>
+          <div style={{fontFamily:"var(--font-playfair),Georgia,serif",fontSize:"18px",fontWeight:700,color:"#FFFAF5"}}>
+            <img src="/butlery-logo-dunkel.png" alt="Butlery" style={{height:"24px",width:"auto",display:"inline-block",verticalAlign:"middle"}}/>
             <span style={{fontSize:"11px",fontWeight:400,color:"rgba(255,255,255,.25)",marginLeft:"8px"}}>Demo</span>
           </div>
         </div>
@@ -265,7 +265,7 @@ export default function DemoPage() {
         <div style={{display:"inline-flex",alignItems:"center",gap:"8px",background:"rgba(255,92,53,.1)",border:"1px solid rgba(255,92,53,.2)",borderRadius:"20px",padding:"5px 14px",marginBottom:"16px"}}>
           <span style={{fontSize:"11px",color:"#FF5C35",fontWeight:600,textTransform:"uppercase",letterSpacing:"1px"}}>Interaktive Demo</span>
         </div>
-        <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(32px,5vw,52px)",fontWeight:700,color:"#FFFAF5",letterSpacing:"-2px",lineHeight:1.05,marginBottom:"16px"}}>
+        <h1 style={{fontFamily:"var(--font-playfair),Georgia,serif",fontSize:"clamp(32px,5vw,52px)",fontWeight:700,color:"#FFFAF5",letterSpacing:"-2px",lineHeight:1.05,marginBottom:"16px"}}>
           Buch oben — sieh es sofort unten.
         </h1>
         <p style={{fontSize:"16px",color:"rgba(255,255,255,.35)",fontWeight:300,maxWidth:"520px",margin:"0 auto 28px",lineHeight:1.75}}>
@@ -330,7 +330,7 @@ export default function DemoPage() {
                   transform:"scale(0.814)",
                   transformOrigin:"top left",
                 }}
-                title="Tablely Booking"
+                title="Butlery Booking"
               />
             </div>
           </div>
@@ -386,8 +386,8 @@ export default function DemoPage() {
 
               {/* SIDEBAR */}
               <div style={{width:"200px",background:"#1A1A2E",display:"flex",flexDirection:"column",padding:"16px 12px",flexShrink:0}}>
-                <div style={{fontFamily:"'Playfair Display',serif",fontSize:"18px",fontWeight:700,color:"#FFFAF5",marginBottom:"28px",paddingLeft:"6px"}}>
-                  table<span style={{color:"#FF5C35"}}>ly</span>
+                <div style={{fontFamily:"var(--font-playfair),Georgia,serif",fontSize:"18px",fontWeight:700,color:"#FFFAF5",marginBottom:"28px",paddingLeft:"6px"}}>
+                  <img src="/butlery-logo-dunkel.png" alt="Butlery" style={{height:"24px",width:"auto",display:"inline-block",verticalAlign:"middle"}}/>
                 </div>
                 {[
                   {l:"Dashboard",a:true,icon:<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.3"/><rect x="9" y="1" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.3"/><rect x="1" y="9" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.3"/><rect x="9" y="9" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.3"/></svg>},
@@ -418,7 +418,7 @@ export default function DemoPage() {
                 {/* TOPBAR */}
                 <div style={{background:"rgba(245,240,235,.97)",borderBottom:"1px solid #EDE8E3",padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
                   <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-                    <span style={{fontSize:"11px",color:"#6B6B80"}}>tablely</span>
+                    <span style={{fontSize:"11px",color:"#6B6B80"}}>Butlery</span>
                     <span style={{color:"#6B6B80",fontSize:"10px"}}>›</span>
                     <span style={{fontSize:"11px",color:"#1A1A2E",fontWeight:500}}>Dashboard</span>
                   </div>
@@ -440,7 +440,7 @@ export default function DemoPage() {
 
                 {/* GREETING */}
                 <div style={{padding:"12px 16px 8px",background:"#F5F0EB",flexShrink:0}}>
-                  <div style={{fontFamily:"'Playfair Display',serif",fontSize:"18px",fontWeight:700,color:"#1A1A2E",letterSpacing:"-.3px"}}>
+                  <div style={{fontFamily:"var(--font-playfair),Georgia,serif",fontSize:"18px",fontWeight:700,color:"#1A1A2E",letterSpacing:"-.3px"}}>
                     {new Date().getHours()<12?"Guten Morgen":new Date().getHours()<18?"Guten Tag":"Guten Abend"}, {restaurantName}
                   </div>
                   <div style={{fontSize:"11px",color:"#6B6B80",fontWeight:300}}>{new Date().toLocaleDateString("de-AT",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</div>
@@ -456,7 +456,7 @@ export default function DemoPage() {
                     {l:"Ausstehend",v:stats.pending,c:"#FCD34D"},
                   ].map((s,i)=>(
                     <div key={i} style={{background:"#fff",border:"1px solid #EDE8E3",borderRadius:"10px",padding:"10px 8px",textAlign:"center"}}>
-                      <div style={{fontFamily:"'Playfair Display',serif",fontSize:"20px",fontWeight:700,color:s.c,letterSpacing:"-1px",lineHeight:1,marginBottom:"3px"}}>{s.v}</div>
+                      <div style={{fontFamily:"var(--font-playfair),Georgia,serif",fontSize:"20px",fontWeight:700,color:s.c,letterSpacing:"-1px",lineHeight:1,marginBottom:"3px"}}>{s.v}</div>
                       <div style={{fontSize:"9px",color:"#6B6B80"}}>{s.l}</div>
                     </div>
                   ))}
@@ -591,7 +591,7 @@ export default function DemoPage() {
           onClick={e=>{if(e.target===e.currentTarget){setShowWalkin(false);setSuggestedTable(undefined);}}}>
           <div style={{background:"#fff",borderRadius:"16px",padding:"28px",width:"100%",maxWidth:"440px",boxShadow:"0 40px 80px rgba(0,0,0,.3)"}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"20px"}}>
-              <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:"20px",fontWeight:700,color:"#1A1A2E"}}>Walk-in</h3>
+              <h3 style={{fontFamily:"var(--font-playfair),Georgia,serif",fontSize:"20px",fontWeight:700,color:"#1A1A2E"}}>Walk-in</h3>
               <button onClick={()=>{setShowWalkin(false);setSuggestedTable(undefined);}} style={{background:"transparent",border:"none",color:"#6B6B80",cursor:"pointer",fontSize:"18px"}}>✕</button>
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:"12px",marginBottom:"16px"}}>
@@ -656,7 +656,7 @@ export default function DemoPage() {
       <div style={{maxWidth:"700px",margin:"0 auto",padding:"0 24px 100px",textAlign:"center"}}>
         <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.07)",borderRadius:"20px",padding:"40px 32px",marginBottom:"16px"}}>
           <div style={{fontSize:"11px",fontWeight:600,textTransform:"uppercase",letterSpacing:"1px",color:"#FF5C35",marginBottom:"12px"}}>Bereit loszulegen?</div>
-          <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(22px,4vw,30px)",fontWeight:700,color:"#FFFAF5",letterSpacing:"-.5px",marginBottom:"12px"}}>Das willst du für dein Restaurant.</h3>
+          <h3 style={{fontFamily:"var(--font-playfair),Georgia,serif",fontSize:"clamp(22px,4vw,30px)",fontWeight:700,color:"#FFFAF5",letterSpacing:"-.5px",marginBottom:"12px"}}>Das willst du für dein Restaurant.</h3>
           <p style={{fontSize:"15px",color:"rgba(255,255,255,.4)",fontWeight:300,marginBottom:"24px",lineHeight:1.7}}>30 Tage kostenlos testen. Nur 20 Plätze verfügbar.</p>
           <a href="/#waitlist" style={{display:"inline-flex",alignItems:"center",gap:"8px",background:"#FF5C35",color:"#fff",padding:"13px 28px",borderRadius:"10px",fontSize:"15px",fontWeight:500,textDecoration:"none"}}>
             Jetzt Platz sichern — 30 Tage kostenlos →

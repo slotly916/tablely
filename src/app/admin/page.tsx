@@ -148,7 +148,7 @@ export default function AdminPanel() {
   );
 
   if (loadError) return (
-    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#0A0A12",fontFamily:"'DM Sans',sans-serif",padding:"24px"}}>
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#0A0A12",fontFamily:"var(--font-sans)",padding:"24px"}}>
       <div style={{background:"rgba(255,255,255,.03)",border:"1px solid rgba(248,113,113,.25)",borderRadius:"16px",padding:"32px",maxWidth:"460px",width:"100%",textAlign:"center"}}>
         <div style={{width:"52px",height:"52px",borderRadius:"50%",background:"rgba(248,113,113,.12)",border:"1px solid rgba(248,113,113,.25)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="9" stroke="#F87171" strokeWidth="1.6"/><path d="M11 6.5v5.5M11 15v.5" stroke="#F87171" strokeWidth="1.8" strokeLinecap="round"/></svg>
@@ -164,10 +164,10 @@ export default function AdminPanel() {
   );
 
   return (
-    <div style={{minHeight:"100vh",background:"#0A0A12",fontFamily:"'DM Sans',sans-serif",color:"#FFFAF5"}}>
+    <div style={{minHeight:"100vh",background:"#0A0A12",fontFamily:"var(--font-sans)",color:"#FFFAF5"}}>
       <Toast toast={toast} onClose={closeToast}/>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap');
         *{box-sizing:border-box;margin:0;padding:0;}
         select,input{appearance:none;-webkit-appearance:none;}
         input:focus{border-color:rgba(255,92,53,.5)!important;outline:none;}
@@ -189,7 +189,7 @@ export default function AdminPanel() {
       }}>
         <div style={{display:"flex",alignItems:"center",gap:"14px"}}>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:"20px",fontWeight:700}}>
-            table<span style={{color:"#FF5C35"}}>ly</span>
+            <img src="/butlery-logo-dunkel.png" alt="Butlery" style={{height:"24px",width:"auto",display:"inline-block",verticalAlign:"middle"}}/>
           </div>
           <span style={{fontSize:"10px",background:"rgba(255,92,53,.12)",color:"#FF5C35",border:"1px solid rgba(255,92,53,.2)",padding:"3px 10px",borderRadius:"20px",fontWeight:600,letterSpacing:".5px",textTransform:"uppercase"}}>Admin</span>
         </div>

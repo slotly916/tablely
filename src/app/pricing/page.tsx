@@ -5,17 +5,25 @@ import { useState, useEffect } from "react";
 
 export default function Pricing() {
   const router = useRouter();
-  const [slotsLeft, setSlotsLeft] = useState(5);
+  // Echte Wartelisten-Zahl aus der Datenbank. Vorher stand hier eine feste 27
+  // neben vier erfundenen Avataren, und die "Early Access Plaetze" kamen aus
+  // einem localStorage-Key, den nichts je geschrieben hat — die Zahl war also
+  // dauerhaft 5. Beides war ein Beleg, den es nicht gab.
+  const [waitlist, setWaitlist] = useState<number | null>(null);
 
   useEffect(() => {
-    const s = localStorage.getItem("slots_left");
-    if (s) setSlotsLeft(parseInt(s));
+    let active = true;
+    fetch("/api/waitlist-count")
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (active && d && typeof d.count === "number") setWaitlist(d.count); })
+      .catch(() => {});
+    return () => { active = false; };
   }, []);
 
   const plans = [
     {
       name: "Standard",
-      price: 79,
+      price: 90,
       tagline: "Für kleinere Restaurants die online sichtbar werden wollen",
       cta: "Online sichtbar werden",
       badge: null,
@@ -24,12 +32,13 @@ export default function Pricing() {
         { text: "Online-Reservierungen 24/7 annehmen", included: true, top: true },
         { text: "Schluss mit verlorenen Zetteln und Notizbüchern", included: true, top: true },
         { text: "Übersichtliches Dashboard für dein Team", included: true },
+        { text: "Walk-in Assistent für spontane Gäste", included: true },
         { text: "E-Mail Bestätigungen automatisch", included: true },
         { text: "Tisch- und Kapazitätsverwaltung", included: true },
         { text: "App fürs Smartphone & Tablet", included: true },
-        { text: "WhatsApp KI", included: false },
+        { text: "Wetter-Prognose & Schlechtwetter-Puffer", included: false },
+        { text: "WhatsApp KI & eigene WhatsApp Nummer", included: false },
         { text: "Telefon KI", included: false },
-        { text: "Persönliches Onboarding", included: false },
       ],
     },
     {
@@ -37,7 +46,9 @@ export default function Pricing() {
       price: 129,
       tagline: "Für Restaurants die endlich Ruhe im Service wollen",
       cta: "Kein Reservierungsstress mehr",
-      badge: "Die meisten Restaurants wählen Plus",
+      // Vorher: "Die meisten Restaurants waehlen Plus" — eine Aussage ueber
+      // Kundenverhalten, die es bei drei Pilotbetrieben noch nicht geben kann.
+      badge: "Empfohlen",
       isDark: true,
       features: [
         { text: "Reservierungen rund um die Uhr automatisch", included: true, top: true, bold: true },
@@ -47,6 +58,7 @@ export default function Pricing() {
         { text: "Eigene österreichische WhatsApp Nummer", included: true },
         { text: "Versteht natürliche Sprache (morgen, abends, Familie)", included: true },
         { text: "Automatische WhatsApp Bestätigungen", included: true },
+        { text: "Wetter-Prognose & Schlechtwetter-Puffer für den Außenbereich", included: true },
         { text: "Alles aus Standard inklusive", included: true },
         { text: "Telefon KI", included: false },
       ],
@@ -75,9 +87,11 @@ export default function Pricing() {
   const muted = "#6B6B80";
 
   return (
-    <div style={{minHeight:"100vh",background:"#F5F0EB",fontFamily:"'DM Sans',sans-serif"}}>
+    <div style={{minHeight:"100vh",background:"#F5F0EB",fontFamily:"var(--font-sans)"}}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;700i&family=DM+Sans:wght@300;400;500;600&display=swap');
+        /* Playfair kommt selbst gehostet aus dem Root-Layout (--font-playfair).
+           Der frühere Google-Fonts-@import war ein render-blockierender
+           Fremdrequest auf einer indexierbaren Seite. */
         *{box-sizing:border-box;margin:0;padding:0;}
         @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
@@ -92,8 +106,8 @@ export default function Pricing() {
 
       {/* NAV */}
       <nav style={{padding:"20px 32px",display:"flex",alignItems:"center",justifyContent:"space-between",maxWidth:"1280px",margin:"0 auto"}}>
-        <a href="/" style={{textDecoration:"none",fontFamily:"'Playfair Display',serif",fontSize:"22px",fontWeight:700,color:"#1A1A2E"}}>
-          table<span style={{color:"#FF5C35"}}>ly</span>
+        <a href="/" style={{textDecoration:"none",fontFamily:"var(--font-playfair),Georgia,serif",fontSize:"22px",fontWeight:700,color:"#1A1A2E"}}>
+          <img src="/butlery-logo-dunkel.png" alt="Butlery" style={{height:"24px",width:"auto",display:"inline-block",verticalAlign:"middle"}}/>
         </a>
         <div style={{display:"flex",gap:"28px",alignItems:"center"}}>
           <a href="/#funktionen" className="nav-link" style={{textDecoration:"none",fontSize:"14px",color:muted,fontWeight:500}}>Funktionen</a>
@@ -111,35 +125,35 @@ export default function Pricing() {
           <span className="pulse-dot" style={{display:"inline-block",width:"6px",height:"6px",borderRadius:"50%",background:"#FF5C35"}}/>
           Spezialist für Restaurants im DACH-Raum
         </div>
-        <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(36px,5vw,54px)",fontWeight:700,color:"#1A1A2E",letterSpacing:"-1.5px",lineHeight:1.1,marginBottom:"18px"}}>
+        <h1 style={{fontFamily:"var(--font-playfair),Georgia,serif",fontSize:"clamp(36px,5vw,54px)",fontWeight:700,color:"#1A1A2E",letterSpacing:"-1.5px",lineHeight:1.1,marginBottom:"18px"}}>
           Schluss mit verlorenen Reservierungen.<br/>
           <span style={{fontStyle:"italic",color:"#FF5C35"}}>Ein Plan für jede Größe.</span>
         </h1>
         <p style={{fontSize:"17px",color:muted,fontWeight:300,lineHeight:1.6,marginBottom:"20px",maxWidth:"600px",margin:"0 auto 20px"}}>
-          Nur eine verpasste 4er-Reservierung pro Woche kostet oft mehr als Tablely.<br/>
+          Nur eine verpasste 4er-Reservierung pro Woche kostet oft mehr als Butlery.<br/>
           Sieh es nicht als Kosten — sondern als <strong style={{color:"#1A1A2E"}}>Schutz vor Umsatzverlust</strong>.
         </p>
 
-        {/* Social Proof Bar */}
-        <div style={{display:"inline-flex",alignItems:"center",gap:"16px",padding:"10px 18px",background:"#fff",border:"1px solid #EDE8E3",borderRadius:"12px",marginBottom:"12px",flexWrap:"wrap",justifyContent:"center"}}>
-          <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-            <div style={{display:"flex"}}>
-              {[1,2,3,4].map(i => (
-                <div key={i} style={{width:"24px",height:"24px",borderRadius:"50%",background:`hsl(${i*60},60%,55%)`,border:"2px solid #fff",marginLeft:i>1?"-8px":"0",fontSize:"10px",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:600}}>
-                  {String.fromCharCode(64+i)}
-                </div>
-              ))}
-            </div>
-            <span style={{fontSize:"12px",color:"#1A1A2E",fontWeight:500}}>27 Restaurants auf der Warteliste</span>
-          </div>
-          <div style={{width:"1px",height:"16px",background:"#EDE8E3"}}/>
-          <div style={{fontSize:"12px",color:"#FF5C35",fontWeight:600}}>
-            Noch {slotsLeft} von 10 Plätzen für Early Access
-          </div>
+        {/* Belege — ausschliesslich nachpruefbare: die Presseberichte sind
+            verlinkt, die Wartelisten-Zahl kommt aus der Datenbank und wird
+            weggelassen solange sie klein oder nicht ladbar ist. */}
+        <div style={{display:"inline-flex",alignItems:"center",gap:"14px",padding:"10px 18px",background:"#fff",border:"1px solid #EDE8E3",borderRadius:"12px",marginBottom:"12px",flexWrap:"wrap",justifyContent:"center"}}>
+          <span style={{fontSize:"12px",color:muted}}>Berichtet über Butlery:</span>
+          <a href="https://on.orf.at/video/14326374/tirol-heute-vom-07062026" target="_blank" rel="noopener noreferrer" style={{fontSize:"12px",color:"#1A1A2E",fontWeight:600,textDecoration:"none"}}>ORF Tirol</a>
+          <div style={{width:"1px",height:"14px",background:"#EDE8E3"}}/>
+          <a href="https://www.tt.com/artikel/30935315/noch-lehrling-und-schon-sein-eigener-chef-19-jaehriger-startet-mit-app-firma-durch" target="_blank" rel="noopener noreferrer" style={{fontSize:"12px",color:"#1A1A2E",fontWeight:600,textDecoration:"none"}}>Tiroler Tageszeitung</a>
+          <div style={{width:"1px",height:"14px",background:"#EDE8E3"}}/>
+          <a href="https://top.tirol/news/reservierungen-besser-im-blick" target="_blank" rel="noopener noreferrer" style={{fontSize:"12px",color:"#1A1A2E",fontWeight:600,textDecoration:"none"}}>top.tirol</a>
+          {waitlist !== null && waitlist >= 10 && (
+            <>
+              <div style={{width:"1px",height:"14px",background:"#EDE8E3"}}/>
+              <span style={{fontSize:"12px",color:"#FF5C35",fontWeight:600}}>{waitlist} auf der Warteliste</span>
+            </>
+          )}
         </div>
 
         <div style={{fontSize:"12px",color:muted,marginTop:"6px"}}>
-          30 Tage gratis · Monatlich kündbar · Inkl. MwSt
+          Monatlich kündbar · Keine Einrichtungsgebühr · Inkl. MwSt
         </div>
       </section>
 
@@ -192,7 +206,7 @@ export default function Pricing() {
                 </div>
                 <div style={{display:"flex",alignItems:"baseline",gap:"4px",marginBottom:"8px"}}>
                   <span style={{
-                    fontFamily:"'Playfair Display',serif",
+                    fontFamily:"var(--font-playfair),Georgia,serif",
                     fontSize: plan.isDark ? "56px" : "48px",
                     fontWeight:700,
                     color: plan.isDark ? "#FFFAF5" : "#1A1A2E",
@@ -288,7 +302,7 @@ export default function Pricing() {
         }}>
           {[
             {title:"Keine Setup-Gebühr", desc:"Onboarding und Migration sind kostenlos"},
-            {title:"30 Tage gratis testen", desc:"Volle Funktionalität — null Risiko"},
+            {title:"Kostenlos testen", desc:"Volle Funktionalität, keine Kreditkarte"},
             {title:"Monatlich kündbar", desc:"Keine Mindestvertragslaufzeit"},
             {title:"Made in Österreich", desc:"Support direkt vom Gründer aus Osttirol"},
           ].map((item, i) => (
@@ -308,7 +322,7 @@ export default function Pricing() {
         <div style={{maxWidth:"960px",margin:"0 auto"}}>
           <div style={{textAlign:"center",marginBottom:"40px"}}>
             <div style={{fontSize:"12px",color:"#FF5C35",fontWeight:600,textTransform:"uppercase",letterSpacing:"1px",marginBottom:"10px"}}>Du kennst das?</div>
-            <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"32px",fontWeight:700,color:"#1A1A2E",letterSpacing:"-1px",lineHeight:1.2}}>
+            <h2 style={{fontFamily:"var(--font-playfair),Georgia,serif",fontSize:"32px",fontWeight:700,color:"#1A1A2E",letterSpacing:"-1px",lineHeight:1.2}}>
               Reservierungschaos kostet dich täglich Geld.
             </h2>
           </div>
@@ -338,17 +352,17 @@ export default function Pricing() {
 
       {/* FAQ */}
       <section style={{padding:"60px 24px 40px",maxWidth:"720px",margin:"0 auto"}}>
-        <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"32px",fontWeight:700,color:"#1A1A2E",textAlign:"center",marginBottom:"32px",letterSpacing:"-1px"}}>
+        <h2 style={{fontFamily:"var(--font-playfair),Georgia,serif",fontSize:"32px",fontWeight:700,color:"#1A1A2E",textAlign:"center",marginBottom:"32px",letterSpacing:"-1px"}}>
           Häufige Fragen
         </h2>
         <div style={{display:"flex",flexDirection:"column",gap:"12px"}}>
           {[
-            {q:"Lohnt sich Tablely wirklich für mein Restaurant?", a:"Schon eine einzige verpasste 4er-Reservierung pro Woche kostet bei einem durchschnittlichen Bonwert mehr als ein Plus-Abo. Tablely ist kein Kostenfaktor — es ist Schutz vor Umsatzverlust."},
+            {q:"Lohnt sich Butlery wirklich für mein Restaurant?", a:"Schon eine einzige verpasste 4er-Reservierung pro Woche kostet bei einem durchschnittlichen Bonwert mehr als ein Plus-Abo. Butlery ist kein Kostenfaktor — es ist Schutz vor Umsatzverlust."},
             {q:"Kann ich später wechseln?", a:"Ja, jederzeit. Upgrade oder Downgrade einfach in den Einstellungen, die Änderung gilt ab dem nächsten Monat."},
-            {q:"Was passiert nach den 30 Tagen?", a:"Nichts automatisch. Wir fragen dich rechtzeitig ob du weitermachen willst und welcher Plan zu dir passt. Keine versteckten Abbuchungen."},
+            {q:"Was passiert nach der Testphase?", a:"Nichts automatisch. Wir fragen dich rechtzeitig ob du weitermachen willst und welcher Plan zu dir passt. Keine versteckten Abbuchungen. Wie lang deine Testphase ist, siehst du bei der Anmeldung auf der Startseite."},
             {q:"Wie schnell ist die WhatsApp Nummer einsatzbereit?", a:"Innerhalb von 12-24 Stunden nach deiner Anmeldung bekommst du eine eigene österreichische WhatsApp Business Nummer — komplett von uns eingerichtet."},
             {q:"Brauche ich technische Kenntnisse?", a:"Nein. Das Onboarding dauert 5 Minuten, die App funktioniert auf jedem Smartphone und Tablet. Bei Premium machen wir das Setup persönlich mit dir am Telefon."},
-            {q:"Warum sollte ich Tablely und nicht eine internationale Lösung wählen?", a:"Wir sind Spezialist für Restaurants im DACH-Raum. Die KI versteht Dialekt, kennt österreichische Eigenheiten, und wir sprechen Deutsch — keine Hotline in Indien, sondern direkter Draht zum Gründer."},
+            {q:"Warum sollte ich Butlery und nicht eine internationale Lösung wählen?", a:"Wir sind Spezialist für Restaurants im DACH-Raum. Die KI versteht Dialekt, kennt österreichische Eigenheiten, und wir sprechen Deutsch — keine Hotline in Indien, sondern direkter Draht zum Gründer."},
           ].map((faq, i) => (
             <details key={i} style={{background:"#fff",border:"1px solid #EDE8E3",borderRadius:"12px",padding:"16px 20px",cursor:"pointer"}}>
               <summary style={{fontSize:"14px",fontWeight:600,color:"#1A1A2E",listStyle:"none"}}>
@@ -365,15 +379,16 @@ export default function Pricing() {
       {/* CTA FINAL */}
       <section style={{padding:"40px 24px 80px",textAlign:"center"}}>
         <div style={{maxWidth:"640px",margin:"0 auto",background:"#1A1A2E",borderRadius:"24px",padding:"44px 32px",color:"#fff",position:"relative",overflow:"hidden"}}>
-          <div style={{fontSize:"11px",color:"#FF5C35",fontWeight:600,textTransform:"uppercase",letterSpacing:"1.5px",marginBottom:"14px"}}>
-            ★ Nur noch {slotsLeft} Early-Access Plätze
-          </div>
-          <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:"30px",fontWeight:700,marginBottom:"12px",letterSpacing:"-.5px",lineHeight:1.2}}>
+          <h3 style={{fontFamily:"var(--font-playfair),Georgia,serif",fontSize:"30px",fontWeight:700,marginBottom:"12px",letterSpacing:"-.5px",lineHeight:1.2}}>
             Bereit, nie wieder eine Reservierung zu verlieren?
           </h3>
+          {/* Vorher stand hier "die ersten 10 Kunden — 30 Tage gratis + 3 Monate
+              10% Rabatt", waehrend die Startseite "die ersten 3 — 6 Monate
+              gratis" versprach. Zwei Angebote, einen Klick voneinander entfernt.
+              Die Startseite fuehrt das Angebot, hier steht nur der Verweis. */}
           <p style={{fontSize:"14px",color:"rgba(255,255,255,.7)",marginBottom:"24px",fontWeight:300,lineHeight:1.6,maxWidth:"480px",margin:"0 auto 24px"}}>
-            Sei einer der ersten 10 Kunden — 30 Tage gratis + 3 Monate 10% Rabatt.<br/>
-            Ab dem 11. Kunden nur noch 14 Tage Testphase ohne Rabatt.
+            Du testest ohne Kreditkarte und kannst monatlich kündigen.<br/>
+            Eingerichtet wird persönlich — <a href="/#gruender" style={{color:"#fff",textDecoration:"underline"}}>von mir</a>.
           </p>
           <a href="/register" style={{
             display:"inline-block",padding:"14px 32px",background:"#FF5C35",color:"#fff",
@@ -387,7 +402,7 @@ export default function Pricing() {
       {/* FOOTER */}
       <footer style={{padding:"40px 24px",textAlign:"center",borderTop:"1px solid #EDE8E3"}}>
         <div style={{fontSize:"12px",color:muted,lineHeight:1.8}}>
-          © 2026 Tablely · Michael Kleinlercher e.U. · St. Veit in Defereggen<br/>
+          © 2026 Butlery · Michael Kleinlercher e.U. · St. Veit in Defereggen<br/>
           <a href="/impressum" style={{color:muted,textDecoration:"none",marginRight:"12px"}}>Impressum</a>
           <a href="/datenschutz" style={{color:muted,textDecoration:"none",marginRight:"12px"}}>Datenschutz</a>
           <a href="/agb" style={{color:muted,textDecoration:"none"}}>AGB</a>

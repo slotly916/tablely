@@ -3,16 +3,26 @@
 @tailwind utilities;
 
 :root {
+  /* Body-Schrift: System-Stack. Bewusst KEIN Webfont-Sans (DM Sans/Inter/Geist) —
+     die Display-Schrift Playfair Display traegt die Persoenlichkeit, der Body
+     bleibt neutral und laedt null Bytes nach. */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
   --orange: #FF5C35;
   --orange-light: #FF7A5A;
   --orange-pale: #FFF0EB;
-  --cream: #FFFAF5;
+
+  /* Flaechen: reines Weiss als Primaerflaeche, kuehles Near-White als
+     Wechselflaeche. Kein warmes Off-White. */
+  --paper: #FFFFFF;
+  --paper-alt: #F5F6F8;
   --dark: #1A1A2E;
-  --muted: #6B6B80;
-  --border: #F0EBE3;
+  --muted: #5F5F73;
+  --border: #E6E8EC;
 }
 
 body {
-  background: var(--cream);
+  background: var(--paper);
   color: var(--dark);
+  font-family: var(--font-sans);
 }

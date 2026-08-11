@@ -1,10 +1,13 @@
 {
-  "name": "Tablely",
-  "short_name": "Tablely",
-  "description": "Reservierungssoftware für Restaurants",
+  "name": "Butlery",
+  "short_name": "Butlery",
+  "description": "KI-gestützte Reservierungssoftware für Restaurants: WhatsApp, Telefon und Online in einem Dashboard.",
+  "lang": "de-AT",
+  "id": "/",
+  "scope": "/",
   "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#F5F0EB",
+  "background_color": "#FFFFFF",
   "theme_color": "#1A1A2E",
   "orientation": "portrait-primary",
   "icons": [
@@ -23,10 +26,11 @@
   ],
   "screenshots": [
     {
-      "src": "/mac_iohon.png",
-      "sizes": "1280x800",
+      "src": "/dashboard.png",
+      "sizes": "1697x780",
       "type": "image/png",
-      "form_factor": "wide"
+      "form_factor": "wide",
+      "label": "Reservierungsliste im Butlery Dashboard"
     }
   ]
 }

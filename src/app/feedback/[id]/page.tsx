@@ -83,14 +83,14 @@ export default function FeedbackPage() {
   if (loading) {
     return (
       <div style={{minHeight:"100vh",background:"#F5F0EB",display:"flex",alignItems:"center",justifyContent:"center"}}>
-        <div style={{color:"#6B6B80",fontFamily:"DM Sans, sans-serif"}}>Laden...</div>
+        <div style={{color:"#6B6B80",fontFamily:"var(--font-sans)"}}>Laden...</div>
       </div>
     );
   }
 
   if (loadError) {
     return (
-      <div style={{minHeight:"100vh",background:"#F5F0EB",fontFamily:"'DM Sans',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
+      <div style={{minHeight:"100vh",background:"#F5F0EB",fontFamily:"var(--font-sans)",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
         <div style={{maxWidth:"420px",width:"100%",background:"#fff",borderRadius:"20px",padding:"36px 28px",border:"1px solid #F0EBE3",textAlign:"center"}}>
           <div style={{width:"52px",height:"52px",borderRadius:"50%",background:"#FEE8E8",border:"1px solid rgba(226,75,74,.25)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
             <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="9" stroke="#E24B4A" strokeWidth="1.6"/><path d="M11 6.5v5.5M11 15v.5" stroke="#E24B4A" strokeWidth="1.8" strokeLinecap="round"/></svg>
@@ -107,16 +107,16 @@ export default function FeedbackPage() {
   }
 
   return (
-    <div style={{minHeight:"100vh",background:"#F5F0EB",fontFamily:"'DM Sans',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
+    <div style={{minHeight:"100vh",background:"#F5F0EB",fontFamily:"var(--font-sans)",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap');
         *{box-sizing:border-box;margin:0;padding:0;}
         textarea:focus{border-color:#FF5C35!important;outline:none;}
       `}</style>
       <div style={{maxWidth:"480px",width:"100%"}}>
         <div style={{textAlign:"center",marginBottom:"24px"}}>
           <span style={{fontFamily:"'Playfair Display',serif",fontSize:"28px",fontWeight:700,color:"#1A1A2E"}}>
-            table<span style={{color:"#FF5C35"}}>ly</span>
+            <img src="/butlery-logo-dunkel.png" alt="Butlery" style={{height:"24px",width:"auto",display:"inline-block",verticalAlign:"middle"}}/>
           </span>
         </div>
 
@@ -192,7 +192,7 @@ export default function FeedbackPage() {
         </div>
 
         <div style={{textAlign:"center",marginTop:"20px",fontSize:"11px",color:"#6B6B80"}}>
-          Powered by <strong>Tablely</strong>
+          Powered by <strong>Butlery</strong>
         </div>
       </div>
     </div>

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($p='c:\\\\Users\\\\mklei\\\\tablely\\\\.env.local'; if\\(-not \\(Test-Path $p\\)\\){\"FEHLT: $p\"; exit}; $b=[System.IO.File]::ReadAllBytes\\($p\\); \"Groesse: $\\($b.Length\\) Bytes\"; \"Erste 8 Bytes: \" + \\(\\($b[0..7] | ForEach-Object { $_.ToString\\('X2'\\) }\\) -join ' '\\); $txt=[System.Text.Encoding]::UTF8.GetString\\($b\\); \"Zeilen: \" + \\($txt -split \"`n\"\\).Count)",
+      "Bash(node -e ' *)"
+    ]
+  }
+}

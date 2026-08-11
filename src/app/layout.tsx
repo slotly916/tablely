@@ -1,20 +1,39 @@
-import type { Metadata } from "next";
-import { Playfair_Display, DM_Sans } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Playfair_Display } from "next/font/google";
 import "./globals.css";
+import {
+  SITE_LANG,
+  SITE_LOCALE,
+  SITE_NAME,
+  SITE_URL,
+  founderSchema,
+  jsonLdGraph,
+  organizationSchema,
+  softwareSchema,
+  websiteSchema,
+} from "@/lib/seo";
 
+// Nur die Display-Schrift wird geladen. Der Body laeuft auf dem System-Stack
+// (--font-sans in globals.css) — kein zweiter Webfont, kein Google-Sans-Look.
+// normal + italic, weil die Preis- und Presseseite kursive Playfair-Akzente
+// setzen. Vorher haben diese Seiten dafuer zusaetzlich Google Fonts per
+// @import nachgeladen — ein render-blockierender Fremdrequest pro Seite.
 const playfair = Playfair_Display({
   subsets: ["latin"],
+  style: ["normal", "italic"],
   variable: "--font-playfair",
+  display: "swap",
 });
 
-const dmSans = DM_Sans({
-  subsets: ["latin"],
-  variable: "--font-dm-sans",
-});
-
+// ACHTUNG (SEO): Was hier steht, beschreibt die STARTSEITE und wird von Next.js
+// an jede Route vererbt, die das Feld nicht selbst setzt. Jede neue Seite muss
+// deshalb ihr eigenes Canonical + openGraph setzen — am einfachsten ueber
+// pageMeta() aus src/lib/seo.ts. Sonst zeigt sie auf die Startseite.
 export const metadata: Metadata = {
-  title: "Tablely – Reservierungen auf Autopilot | Für Restaurants in Österreich",
-  description: "Tablely automatisiert Reservierungen per WhatsApp, Telefon und Online. Die KI antwortet automatisch, trägt alles ins Dashboard ein und erinnert deine Gäste. Kein Stress mehr in der Stoßzeit.",
+  // Titel 61 Zeichen, Description 136: beides bleibt in der Google-Vorschau
+  // vollstaendig stehen. Vorher: 69 und 190 Zeichen, beides abgeschnitten.
+  title: "Reservierungssoftware für Restaurants in Österreich | Butlery",
+  description: "Butlery nimmt Reservierungen per WhatsApp, Telefon und Online automatisch entgegen, trägt sie ins Dashboard ein und erinnert deine Gäste.",
   keywords: [
     "Restaurant Reservierung System Österreich",
     "WhatsApp Reservierung Restaurant",
@@ -25,34 +44,25 @@ export const metadata: Metadata = {
     "KI Telefon Restaurant",
     "Gastronomie Software",
   ],
-  authors: [{ name: "Tablely", url: "https://tablely.at" }],
-  creator: "Tablely",
-  publisher: "Tablely",
-  metadataBase: new URL("https://tablely.at"),
+  authors: [{ name: SITE_NAME, url: SITE_URL }],
+  creator: SITE_NAME,
+  publisher: "Michael Kleinlercher e.U.",
+  metadataBase: new URL(SITE_URL),
   alternates: {
-    canonical: "https://tablely.at",
+    canonical: SITE_URL,
   },
   openGraph: {
     type: "website",
-    locale: "de_AT",
-    url: "https://tablely.at",
-    siteName: "Tablely",
-    title: "Tablely – Dein Restaurant auf Autopilot",
-    description: "Reservierungen per WhatsApp, Telefon und Online — vollautomatisch. Kein Anruf mehr in der Stoßzeit. Kein No-Show mehr. Tablely übernimmt alles.",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "Tablely – Reservierungen auf Autopilot",
-      },
-    ],
+    locale: SITE_LOCALE,
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    title: "Butlery: Dein Restaurant auf Autopilot",
+    description: "Reservierungen per WhatsApp, Telefon und Online, vollautomatisch. Kein Anruf mehr in der Stoßzeit. Kein No-Show mehr. Butlery übernimmt alles.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Tablely – Dein Restaurant auf Autopilot",
-    description: "Reservierungen per WhatsApp, Telefon und Online — vollautomatisch.",
-    images: ["/og-image.png"],
+    title: "Butlery: Dein Restaurant auf Autopilot",
+    description: "Reservierungen per WhatsApp, Telefon und Online, vollautomatisch.",
   },
   robots: {
     index: true,
@@ -60,18 +70,30 @@ export const metadata: Metadata = {
     googleBot: {
       index: true,
       follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
     },
+  },
+  verification: {
+    google: "-XaSjn6X11sApCYbt0TT03zvh7MhqFR93FECzOfM8jg",
   },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Tablely",
+    title: SITE_NAME,
   },
   icons: {
     icon: "/icon-192.png",
     apple: "/icon-192.png",
   },
+  formatDetection: { telephone: false },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#1A1A2E",
+  colorScheme: "light",
 };
 
 export default function RootLayout({
@@ -80,43 +102,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="de">
+    <html lang={SITE_LANG}>
       <head>
-        <meta name="google-site-verification" content="-XaSjn6X11sApCYbt0TT03zvh7MhqFR93FECzOfM8jg" />
-        <link rel="icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" href="/icon-192.png" />
-        <meta name="theme-color" content="#1A1A2E" />
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="Tablely" />
+        {/* Ein @graph statt mehrerer Einzelblöcke: Organisation, Gründer,
+            Website und Produkt sind über @id verknüpft. Das hilft Google und
+            den KI-Suchen, Butlery als eine Entität zu erkennen. */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "SoftwareApplication",
-              name: "Tablely",
-              applicationCategory: "BusinessApplication",
-              operatingSystem: "Web",
-              url: "https://tablely.at",
-              description: "Automatische Reservierungen per WhatsApp, Telefon und Online für Restaurants in Österreich.",
-              offers: {
-                "@type": "Offer",
-                price: "0",
-                priceCurrency: "EUR",
-                description: "Warteliste — kostenloser Frühzugang",
-              },
-              provider: {
-                "@type": "Organization",
-                name: "Tablely",
-                url: "https://tablely.at",
-              },
-            }),
+            __html: jsonLdGraph(
+              organizationSchema,
+              founderSchema,
+              websiteSchema,
+              softwareSchema
+            ),
           }}
         />
       </head>
-      <body className={`${playfair.variable} ${dmSans.variable}`}>
+      <body className={playfair.variable}>
         {children}
       </body>
     </html>

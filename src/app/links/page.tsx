@@ -6,7 +6,9 @@ const links = [
   {
     label: "Webseite",
     sublabel: "tablely.at",
-    url: "https://www.tablely.at",
+    // Ohne www: das Canonical der Seite ist die Apex-Domain. Ein interner
+    // Link auf die www-Variante zeigt auf eine Weiterleitung.
+    url: "https://tablely.at",
     icon: (
       <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
         <circle cx="11" cy="11" r="9" stroke="currentColor" strokeWidth="1.5"/>
@@ -33,8 +35,8 @@ const links = [
   },
   {
     label: "Instagram",
-    sublabel: "@tablely.app",
-    url: "https://www.instagram.com/tablely.app?igsh=MW5xNjBlN3ozdjUxYw%3D%3D&utm_source=qr",
+    sublabel: "@Butlery.app",
+    url: "https://www.instagram.com/Butlery.app?igsh=MW5xNjBlN3ozdjUxYw%3D%3D&utm_source=qr",
     icon: (
       <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
         <rect x="2" y="2" width="18" height="18" rx="5" stroke="currentColor" strokeWidth="1.5"/>
@@ -48,8 +50,8 @@ const links = [
   },
   {
     label: "TikTok",
-    sublabel: "@tablely",
-    url: "https://www.tiktok.com/@tablely?_r=1&_t=ZN-96svwc6H5za",
+    sublabel: "@Butlery",
+    url: "https://www.tiktok.com/@Butlery?_r=1&_t=ZN-96svwc6H5za",
     icon: (
       <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
         <path d="M15 3c0 2 1.5 3.5 3.5 3.5v3c-1.5 0-3-.5-4-1.3V14a5 5 0 1 1-5-5c.2 0 .3 0 .5.02V12a2 2 0 1 0 2 2V3h3z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -76,7 +78,7 @@ export default function LinkTree() {
     <div style={{
       minHeight: "100vh",
       background: "#0F0F1A",
-      fontFamily: "'DM Sans', sans-serif",
+      fontFamily: "var(--font-sans)",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -85,7 +87,7 @@ export default function LinkTree() {
       overflow: "hidden",
     }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         @keyframes float-glow {
           0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.4; }
@@ -128,7 +130,7 @@ export default function LinkTree() {
             letterSpacing:"-1.5px",
             lineHeight:1,
           }}>
-            table<span style={{color:"#FF5C35",fontStyle:"italic"}}>ly</span>
+            <img src="/butlery-logo-dunkel.png" alt="Butlery" style={{height:"24px",width:"auto",display:"inline-block",verticalAlign:"middle"}}/>
           </div>
         </div>
 
@@ -179,7 +181,7 @@ export default function LinkTree() {
         {/* Footer */}
         <div style={{textAlign:"center",marginTop:"40px"}}>
           <div style={{fontSize:"12px",color:"rgba(255,255,255,0.2)",lineHeight:1.6}}>
-            © 2026 Tablely · Made in Austria
+            © 2026 Butlery · Made in Austria
           </div>
         </div>
       </div>

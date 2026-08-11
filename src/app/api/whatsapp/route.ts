@@ -16,6 +16,7 @@ type RestaurantRow = {
   name: string;
   stay_duration: number;
   large_group_threshold: number;
+  allow_pets: boolean | null;
 };
 
 type ReservationRow = {
@@ -109,6 +110,10 @@ export async function POST(req: Request) {
 
   const history: { role: string; content: string }[] = conv?.messages || [];
 
+  // Neue Konversation = es gibt noch keine gespeicherte Historie zu dieser Nummer.
+  // Steuert die KI-Kennzeichnung nach EU AI Act Art. 50 (siehe unten).
+  const isNewConversation = history.length === 0;
+
   // Öffnungszeiten
   const { data: hours, error: hoursErr } = await supabase
     .from("opening_hours").select("*").eq("restaurant_id", rest.id);
@@ -129,11 +134,18 @@ export async function POST(req: Request) {
   const today = new Date();
   const todayStr = today.toLocaleDateString("de-AT", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
 
+  const petsText = rest.allow_pets
+    ? "Haustiere erlaubt: ja — Gäste dürfen ihren Hund oder ein anderes Haustier mitbringen. Sag das freundlich zu, wenn jemand danach fragt."
+    : "Haustiere erlaubt: nein — Haustiere können leider nicht mitgebracht werden (Assistenzhunde ausgenommen, das klärt das Team persönlich). Sag das höflich, wenn jemand danach fragt.";
+
   const systemPrompt = `Du bist der freundliche Reservierungsassistent von "${rest.name}" in Österreich.
 Heute ist ${todayStr} (${today.toISOString().split("T")[0]}).
 
 Öffnungszeiten:
 ${hoursText}
+
+Haus-Info:
+${petsText}
 
 DEINE AUFGABE:
 Du sammelst alle 4 wichtigen Infos vom Gast: Name, Datum, Uhrzeit, Personenzahl.
@@ -164,7 +176,13 @@ KRITISCH — PERSONENZAHL PRÜFEN:
 - NIEMALS LARGE_GROUP bei weniger als ${largeGroupThreshold} Personen verwenden!
 
 4. Antworte immer auf Deutsch, kurz und freundlich — max 3 Sätze.
-5. Schreibe RESERVATION_DATA, LARGE_GROUP und CANCEL_RESERVATION immer exakt so — niemals auf Deutsch übersetzen.`;
+5. Schreibe RESERVATION_DATA, LARGE_GROUP und CANCEL_RESERVATION immer exakt so — niemals auf Deutsch übersetzen.
+
+KI-KENNZEICHNUNG (EU AI Act Art. 50 — verpflichtend):
+${isNewConversation
+  ? `- Das hier ist die ERSTE Nachricht dieser Unterhaltung. Stelle dich zu Beginn deiner Antwort in einem kurzen Satz als digitaler Assistent vor, z.B.: "Hier ist der digitale Assistent vom ${rest.name}." Danach gehst du normal auf das Anliegen ein.`
+  : `- Du hast dich in dieser Unterhaltung bereits als digitaler Assistent vorgestellt. Stelle dich NICHT erneut vor.`}
+- Gib dich niemals als Mensch aus. Fragt der Gast, ob er mit einem Menschen oder einer KI schreibt, sage ehrlich, dass du ein digitaler Assistent bist und das Restaurant persönlich erreichbar ist.`;
 
   const messages = [
     { role: "system", content: systemPrompt },
@@ -179,7 +197,17 @@ KRITISCH — PERSONENZAHL PRÜFEN:
   });
 
   const aiData = await aiResponse.json();
-  const aiMessage: string = aiData.choices?.[0]?.message?.content || "Entschuldigung, bitte versuch es nochmal.";
+  let aiMessage: string = aiData.choices?.[0]?.message?.content || "Entschuldigung, bitte versuch es nochmal.";
+
+  // EU AI Act Art. 50: Die Kennzeichnung darf nicht davon abhaengen, ob das
+  // Sprachmodell die Prompt-Regel befolgt. Bei der ersten Nachricht deshalb
+  // deterministisch pruefen und den Hinweis notfalls voranstellen.
+  // Voranstellen ist unkritisch: die RESERVATION_DATA/LARGE_GROUP/CANCEL-Marker
+  // werden weiter unten per Regex gesucht und bleiben davon unberuehrt.
+  const SELF_ID = /digitale[rn]?\s+(telefon)?assistent|künstliche[rn]?\s+intelligenz|\bKI\b/i;
+  if (isNewConversation && !SELF_ID.test(aiMessage)) {
+    aiMessage = `Hier ist der digitale Assistent vom ${rest.name}. ${aiMessage}`;
+  }
 
   // History aktualisieren
   const newHistory = [

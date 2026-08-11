@@ -1,17 +1,19 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Datenschutzerklärung – Tablely",
-  description: "Datenschutzerklärung von Tablely gemäß DSGVO und österreichischem Datenschutzgesetz.",
-  robots: { index: false, follow: false },
-};
+export const metadata: Metadata = pageMeta({
+  path: "/datenschutz",
+  title: "Datenschutzerklärung | Butlery",
+  description: "Datenschutzerklärung von Butlery gemäß DSGVO und österreichischem Datenschutzgesetz.",
+  index: false,
+});
 
 export default function Datenschutz() {
   return (
-    <div style={{fontFamily:"'DM Sans',sans-serif",background:"#FFFAF5",minHeight:"100vh",color:"#1A1A2E"}}>
+    <div style={{fontFamily:"var(--font-sans)",background:"#FFFAF5",minHeight:"100vh",color:"#1A1A2E"}}>
       <nav style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 48px",borderBottom:"1px solid #F0EBE3",background:"rgba(255,250,245,0.97)"}}>
         <a href="/" style={{fontFamily:"Georgia,serif",fontSize:"22px",fontWeight:700,color:"#1A1A2E",textDecoration:"none",letterSpacing:"-0.5px"}}>
-          table<span style={{color:"#FF5C35"}}>ly</span>
+          <img src="/butlery-logo-dunkel.png" alt="Butlery" style={{height:"24px",width:"auto",display:"inline-block",verticalAlign:"middle"}}/>
         </a>
         <a href="/" style={{fontSize:"14px",color:"#6B6B80",textDecoration:"none"}}>← Zurück</a>
       </nav>
@@ -44,7 +46,7 @@ export default function Datenschutz() {
           <p style={p}>Die erhobenen Daten werden ausschließlich für folgende Zwecke verwendet:</p>
           <ul style={{paddingLeft:"20px",marginTop:"12px"}}>
             {[
-              "Verwaltung der Warteliste für den Frühzugang zu Tablely",
+              "Verwaltung der Warteliste für den Frühzugang zu Butlery",
               "Kontaktaufnahme bei Verfügbarkeit des Produkts",
               "Versand einer Bestätigungsmail nach der Anmeldung",
             ].map((item, i) => (
@@ -133,7 +135,7 @@ function Footer() {
   return (
     <footer style={{padding:"24px 48px",borderTop:"1px solid #F0EBE3",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:"8px"}}>
       <a href="/" style={{fontFamily:"Georgia,serif",fontSize:"17px",fontWeight:700,color:"#1A1A2E",textDecoration:"none"}}>
-        table<span style={{color:"#FF5C35"}}>ly</span>
+        <img src="/butlery-logo-dunkel.png" alt="Butlery" style={{height:"24px",width:"auto",display:"inline-block",verticalAlign:"middle"}}/>
       </a>
       <div style={{display:"flex",gap:"24px",fontSize:"13px"}}>
         <a href="/impressum" style={{color:"#6B6B80",textDecoration:"none"}}>Impressum</a>

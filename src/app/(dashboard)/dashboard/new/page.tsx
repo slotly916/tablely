@@ -145,9 +145,9 @@ export default function NewReservation() {
   };
 
   return (
-    <div style={{minHeight:"100vh",background:bg,fontFamily:"'DM Sans',sans-serif",display:"flex",transition:"background 0.3s"}}>
+    <div style={{minHeight:"100vh",background:bg,fontFamily:"var(--font-sans)",display:"flex",transition:"background 0.3s"}}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap');
         * { box-sizing: border-box; }
         input::placeholder, textarea::placeholder { color: ${muted}; }
         input:focus, select:focus, textarea:focus { border-color: #FF5C35 !important; }

@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     }
 
     await resend.emails.send({
-      from: "Tablely <noreply@send.tablely.at>",
+      from: "Butlery <noreply@send.tablely.at>",
       to: "info@tablely.at",
       subject: `Neue Nummer-Anfrage: ${name}`,
       html: `

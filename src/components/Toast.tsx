@@ -70,7 +70,7 @@ export default function Toast({ toast, onClose }: { toast: ToastState; onClose: 
         display: "flex", alignItems: "flex-start", gap: "10px",
         background: c.bg, border: `1px solid ${c.border}`, borderRadius: "12px",
         padding: "12px 14px", boxShadow: "0 12px 32px rgba(26,26,46,0.18)",
-        fontFamily: "'DM Sans', sans-serif", fontSize: "13px", lineHeight: 1.5, color: c.text,
+        fontFamily: "var(--font-sans)", fontSize: "13px", lineHeight: 1.5, color: c.text,
       }}
     >
       <span style={{ flexShrink: 0, marginTop: "1px" }}>

@@ -22,7 +22,7 @@ export async function POST(req: Request) {
   const html = '<!DOCTYPE html><html><head><meta charset="utf-8"></head>' +
     '<body style="margin:0;padding:0;background:#F5F0EB;font-family:Arial,sans-serif;">' +
     '<div style="max-width:560px;margin:0 auto;padding:40px 20px;">' +
-    '<div style="text-align:center;margin-bottom:32px;"><span style="font-size:28px;font-weight:700;color:#1A1A2E;font-family:Georgia,serif;">table<span style="color:#FF5C35;">ly</span></span></div>' +
+    '<div style="text-align:center;margin-bottom:32px;"><span style="font-size:28px;font-weight:700;color:#1A1A2E;font-family:Georgia,serif;">Butlery</span></div>' +
     '<div style="background:#fff;border-radius:20px;padding:40px;border:1px solid #F0EBE3;text-align:center;">' +
     '<div style="font-size:42px;margin-bottom:18px;">🙏</div>' +
     '<h1 style="font-family:Georgia,serif;font-size:28px;font-weight:700;color:#1A1A2E;margin:0 0 14px;">Hallo ' + guestName + '!</h1>' +
@@ -40,11 +40,11 @@ export async function POST(req: Request) {
     '</div></div>' +
     '<p style="font-size:12px;color:#6B6B80;margin:20px 0 0;line-height:1.6;">Dein Feedback hilft uns besser zu werden und anderen Gästen bei der Entscheidung.</p>' +
     '</div>' +
-    '<div style="text-align:center;margin-top:24px;"><p style="font-size:11px;color:#6B6B80;margin:0;">© 2026 Tablely · Michael Kleinlercher e.U.</p></div>' +
+    '<div style="text-align:center;margin-top:24px;"><p style="font-size:11px;color:#6B6B80;margin:0;">© 2026 Butlery · Michael Kleinlercher e.U.</p></div>' +
     '</div></body></html>';
 
   await resend.emails.send({
-    from: "Tablely <noreply@send.tablely.at>",
+    from: "Butlery <noreply@send.tablely.at>",
     to: email,
     subject,
     html,

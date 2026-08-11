@@ -32,7 +32,7 @@ export default function UpdatePassword() {
     return (
       <div style={styles.wrap}>
         <div style={styles.card}>
-          <a href="/" style={styles.logo}>table<span style={{color:"#FF5C35"}}>ly</span></a>
+          <a href="/" style={styles.logo}><img src="/butlery-logo-dunkel.png" alt="Butlery" style={{height:"24px",width:"auto",display:"inline-block",verticalAlign:"middle"}}/></a>
           <div style={{textAlign:"center",padding:"20px 0"}}>
             <div style={{width:"56px",height:"56px",borderRadius:"50%",background:"#E8F8F1",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px"}}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 7" stroke="#25C281" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -48,9 +48,9 @@ export default function UpdatePassword() {
   return (
     <div style={styles.wrap}>
       <div style={styles.card}>
-        <a href="/" style={styles.logo}>table<span style={{color:"#FF5C35"}}>ly</span></a>
+        <a href="/" style={styles.logo}><img src="/butlery-logo-dunkel.png" alt="Butlery" style={{height:"24px",width:"auto",display:"inline-block",verticalAlign:"middle"}}/></a>
         <h1 style={styles.title}>Neues Passwort</h1>
-        <p style={styles.sub}>Wähle ein neues sicheres Passwort für dein Tablely Konto.</p>
+        <p style={styles.sub}>Wähle ein neues sicheres Passwort für dein Butlery Konto.</p>
 
         <div style={styles.form}>
           <div style={styles.field}>
@@ -93,7 +93,7 @@ export default function UpdatePassword() {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  wrap: { minHeight:"100vh", background:"#F0EBE3", display:"flex", alignItems:"center", justifyContent:"center", padding:"24px", fontFamily:"'DM Sans',sans-serif" },
+  wrap: { minHeight:"100vh", background:"#F0EBE3", display:"flex", alignItems:"center", justifyContent:"center", padding:"24px", fontFamily:"var(--font-sans)" },
   card: { background:"#FFFAF5", borderRadius:"20px", padding:"40px", width:"100%", maxWidth:"440px", boxShadow:"0 8px 40px rgba(26,26,46,0.08)" },
   logo: { fontFamily:"Georgia,serif", fontSize:"24px", fontWeight:700, color:"#1A1A2E", textDecoration:"none", display:"block", marginBottom:"28px" },
   title: { fontFamily:"Georgia,serif", fontSize:"26px", fontWeight:700, color:"#1A1A2E", letterSpacing:"-0.5px", marginBottom:"8px" },

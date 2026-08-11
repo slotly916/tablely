@@ -1,17 +1,23 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Impressum – Tablely",
-  description: "Impressum von Tablely, betrieben von Michael Kleinlercher e.U.",
-  robots: { index: false, follow: false },
-};
+// noindex bleibt wie gehabt, aber mit follow: die Links im Footer sollen
+// weiterverfolgt werden. Zusaetzlich ein Canonical auf die Seite selbst.
+// Ohne das erbte sie das Canonical der Startseite, und ein noindex auf einer
+// Seite, die auf die Startseite kanonisiert, ist ein gefaehrliches Signal.
+export const metadata: Metadata = pageMeta({
+  path: "/impressum",
+  title: "Impressum | Butlery",
+  description: "Impressum von Butlery, betrieben von Michael Kleinlercher e.U.",
+  index: false,
+});
 
 export default function Impressum() {
   return (
-    <div style={{fontFamily:"'DM Sans',sans-serif",background:"#FFFAF5",minHeight:"100vh",color:"#1A1A2E"}}>
+    <div style={{fontFamily:"var(--font-sans)",background:"#FFFAF5",minHeight:"100vh",color:"#1A1A2E"}}>
       <nav style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 48px",borderBottom:"1px solid #F0EBE3",background:"rgba(255,250,245,0.97)"}}>
         <a href="/" style={{fontFamily:"Georgia,serif",fontSize:"22px",fontWeight:700,color:"#1A1A2E",textDecoration:"none",letterSpacing:"-0.5px"}}>
-          table<span style={{color:"#FF5C35"}}>ly</span>
+          <img src="/butlery-logo-dunkel.png" alt="Butlery" style={{height:"24px",width:"auto",display:"inline-block",verticalAlign:"middle"}}/>
         </a>
         <a href="/" style={{fontSize:"14px",color:"#6B6B80",textDecoration:"none"}}>← Zurück</a>
       </nav>
@@ -22,7 +28,7 @@ export default function Impressum() {
 
         <Section title="Unternehmensangaben">
           <Row label="Unternehmensname" value="Michael Kleinlercher e.U." />
-          <Row label="Betriebsbezeichnung" value="Tablely" />
+          <Row label="Betriebsbezeichnung" value="Butlery" />
           <Row label="Inhaberin" value="Michael Kleinlercher" />
           <Row label="Adresse" value="Bruggen 94, 9962 St. Veit in Defereggen, Österreich" />
           <Row label="Firmenbuchnummer" value="639461i" />
@@ -100,7 +106,7 @@ function Footer() {
   return (
     <footer style={{padding:"24px 48px",borderTop:"1px solid #F0EBE3",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:"8px"}}>
       <a href="/" style={{fontFamily:"Georgia,serif",fontSize:"17px",fontWeight:700,color:"#1A1A2E",textDecoration:"none"}}>
-        table<span style={{color:"#FF5C35"}}>ly</span>
+        <img src="/butlery-logo-dunkel.png" alt="Butlery" style={{height:"24px",width:"auto",display:"inline-block",verticalAlign:"middle"}}/>
       </a>
       <div style={{display:"flex",gap:"24px",fontSize:"13px"}}>
         <a href="/impressum" style={{color:"#6B6B80",textDecoration:"none"}}>Impressum</a>

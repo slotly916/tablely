@@ -34,12 +34,12 @@ export async function POST(req: Request) {
 
     // Mail an dich (Benachrichtigung)
     await resend.emails.send({
-      from: "Tablely <noreply@send.tablely.at>",
+      from: "Butlery <noreply@send.tablely.at>",
       to: process.env.NOTIFY_EMAIL!,
       subject: `🍽️ Neue Warteliste Anmeldung — ${restaurant}`,
       html: `
         <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #FFFAF5; border-radius: 12px;">
-          <h2 style="color: #1A1A2E; font-size: 20px; margin-bottom: 24px;">Neue Anmeldung auf der Tablely Warteliste</h2>
+          <h2 style="color: #1A1A2E; font-size: 20px; margin-bottom: 24px;">Neue Anmeldung auf der Butlery Warteliste</h2>
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
               <td style="padding: 10px 0; color: #6B6B80; font-size: 14px; border-bottom: 1px solid #F0EBE3;">Name</td>
@@ -54,14 +54,14 @@ export async function POST(req: Request) {
               <td style="padding: 10px 0; color: #FF5C35; font-size: 14px; font-weight: 600;">${email}</td>
             </tr>
           </table>
-          <p style="margin-top: 24px; font-size: 13px; color: #6B6B80;">Tablely · tablely.at</p>
+          <p style="margin-top: 24px; font-size: 13px; color: #6B6B80;">Butlery · tablely.at</p>
         </div>
       `,
     });
 
     // Bestätigungsmail an den Nutzer
     await resend.emails.send({
-      from: "Tablely <noreply@send.tablely.at>",
+      from: "Butlery <noreply@send.tablely.at>",
       to: email,
       subject: "Du bist auf der Warteliste 🎉",
       html: `
@@ -78,7 +78,7 @@ export async function POST(req: Request) {
                   <tr>
                     <td style="background:#1A1A2E;border-radius:16px 16px 0 0;padding:32px 40px;text-align:center;">
                       <div style="font-family:Georgia,serif;font-size:28px;font-weight:700;color:#FFFAF5;letter-spacing:-0.5px;">
-                        table<span style="color:#FF5C35;">ly</span>
+                        Butlery
                       </div>
                       <div style="margin-top:8px;font-family:sans-serif;font-size:12px;color:rgba(255,255,255,0.4);letter-spacing:1px;text-transform:uppercase;">tablely.at</div>
                     </td>
@@ -98,11 +98,11 @@ export async function POST(req: Request) {
                       </h1>
 
                       <p style="font-family:sans-serif;font-size:16px;color:#6B6B80;line-height:1.7;margin:0 0 24px;font-weight:300;">
-                        Wir haben dich und <strong style="color:#1A1A2E;font-weight:500;">${restaurant}</strong> erfolgreich auf der Tablely Warteliste eingetragen.
+                        Wir haben dich und <strong style="color:#1A1A2E;font-weight:500;">${restaurant}</strong> erfolgreich auf der Butlery Warteliste eingetragen.
                       </p>
 
                       <p style="font-family:sans-serif;font-size:16px;color:#6B6B80;line-height:1.7;margin:0 0 32px;font-weight:300;">
-                        Sobald Tablely für den Test bereit ist, melden wir uns persönlich bei dir — mit allem was du brauchst um direkt loszulegen.
+                        Sobald Butlery für den Test bereit ist, melden wir uns persönlich bei dir — mit allem was du brauchst um direkt loszulegen.
                       </p>
 
                       <!-- Info Box -->
@@ -146,7 +146,7 @@ export async function POST(req: Request) {
                       </div>
 
                       <p style="font-family:sans-serif;font-size:15px;color:#1A1A2E;margin:0 0 4px;font-weight:500;">Bis bald,</p>
-                      <p style="font-family:Georgia,serif;font-size:17px;color:#FF5C35;margin:0;font-weight:600;">Michael — Gründer von Tablely</p>
+                      <p style="font-family:Georgia,serif;font-size:17px;color:#FF5C35;margin:0;font-weight:600;">Michael — Gründer von Butlery</p>
                     </td>
                   </tr>
 
@@ -154,7 +154,7 @@ export async function POST(req: Request) {
                   <tr>
                     <td style="background:#1A1A2E;border-radius:0 0 16px 16px;padding:20px 40px;text-align:center;">
                       <p style="font-family:sans-serif;font-size:12px;color:rgba(255,255,255,0.35);margin:0;">
-                        © 2026 Tablely · <a href="https://tablely.at" style="color:#FF5C35;text-decoration:none;">tablely.at</a> · Ein Produkt aus Österreich
+                        © 2026 Butlery · <a href="https://tablely.at" style="color:#FF5C35;text-decoration:none;">tablely.at</a> · Ein Produkt aus Österreich
                       </p>
                     </td>
                   </tr>

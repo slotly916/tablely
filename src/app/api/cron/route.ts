@@ -46,7 +46,7 @@ export async function GET(req: Request) {
   for (const res of res24h || []) {
     try {
       await resend.emails.send({
-        from: "Tablely <noreply@send.tablely.at>",
+        from: "Butlery <noreply@send.tablely.at>",
         to: res.guest_email,
         subject: `Erinnerung: Deine Reservierung morgen bei ${res.restaurants?.name}`,
         html: reminderEmail({
@@ -106,7 +106,7 @@ export async function GET(req: Request) {
 
     try {
       await resend.emails.send({
-        from: "Tablely <noreply@send.tablely.at>",
+        from: "Butlery <noreply@send.tablely.at>",
         to: res.guest_email,
         subject: `Heute in 2 Stunden: Deine Reservierung bei ${res.restaurants?.name}`,
         html: reminderEmail({
@@ -250,7 +250,7 @@ function reminderEmail({ guestName, restaurantName, restaurantPhone, date, time,
             <tr>
               <td style="background:#1A1A2E;border-radius:16px 16px 0 0;padding:28px 40px;text-align:center;">
                 <div style="font-family:Georgia,serif;font-size:26px;font-weight:700;color:#FFFAF5;">
-                  table<span style="color:#FF5C35;">ly</span>
+                  Butlery
                 </div>
               </td>
             </tr>
@@ -283,7 +283,7 @@ function reminderEmail({ guestName, restaurantName, restaurantPhone, date, time,
             <tr>
               <td style="background:#1A1A2E;border-radius:0 0 16px 16px;padding:20px 40px;text-align:center;">
                 <p style="font-family:sans-serif;font-size:12px;color:rgba(255,255,255,0.35);margin:0;">
-                  © 2026 Tablely · <a href="https://tablely.at" style="color:#FF5C35;text-decoration:none;">tablely.at</a>
+                  © 2026 Butlery · <a href="https://tablely.at" style="color:#FF5C35;text-decoration:none;">tablely.at</a>
                 </p>
               </td>
             </tr>
