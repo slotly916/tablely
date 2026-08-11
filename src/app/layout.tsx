@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Playfair_Display } from "next/font/google";
 import "./globals.css";
+import CookieConsent from "@/components/CookieConsent";
 import {
   SITE_LANG,
   SITE_LOCALE,
@@ -121,6 +122,11 @@ export default function RootLayout({
       </head>
       <body className={playfair.variable}>
         {children}
+        {/* Steht im Layout, nicht auf der Landing Page: die Einwilligung gilt
+            fuer die ganze Seite, also muss der Banner auch auf Blog, Presse,
+            Preisen und Buchungsseite erscheinen. Vorher lag er nur in
+            page.tsx — wer ueber einen Blogartikel einstieg, sah ihn nie. */}
+        <CookieConsent />
       </body>
     </html>
   );

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { pageMeta } from "@/lib/seo";
+import { CookieSettingsLink } from "@/components/CookieConsent";
 
 export const metadata: Metadata = pageMeta({
   path: "/datenschutz",
@@ -74,7 +75,17 @@ export default function Datenschutz() {
         </Section>
 
         <Section title="6. Cookies und Tracking">
-          <p style={p}>Unsere Website verwendet keine Tracking-Cookies und keine Analyse-Tools wie Google Analytics. Es werden ausschließlich technisch notwendige Cookies verwendet, die für den Betrieb der Website erforderlich sind.</p>
+          <p style={p}>Technisch notwendige Cookies werden immer gesetzt, sie sind für den Betrieb der Website erforderlich (etwa für die Anmeldung und um Ihre Cookie-Entscheidung zu speichern). Für diese Cookies ist keine Einwilligung nötig, Rechtsgrundlage ist unser berechtigtes Interesse am Betrieb der Website (Art. 6 Abs. 1 lit. f DSGVO).</p>
+          <p style={{...p, marginTop:"14px"}}>Zusätzlich verwenden wir Google Analytics, um zu verstehen, welche Seiten aufgerufen werden und wie die Website genutzt wird. Anbieter ist Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland. Google Analytics setzt Cookies und verarbeitet dabei unter anderem Ihre gekürzte IP-Adresse, aufgerufene Seiten, Verweildauer sowie Angaben zu Browser und Gerät. Eine Übermittlung in die USA an Google LLC kann dabei nicht ausgeschlossen werden.</p>
+          <p style={{...p, marginTop:"14px"}}>Google Analytics wird ausschließlich nach Ihrer ausdrücklichen Einwilligung geladen (Art. 6 Abs. 1 lit. a DSGVO, § 165 Abs. 3 TKG 2021). Solange Sie nicht zugestimmt haben, wird kein Skript von Google geladen und es werden keine Daten an Google übertragen. Lehnen Sie ab, bleibt die Website vollständig nutzbar.</p>
+          <p style={{...p, marginTop:"14px"}}>Ihre Entscheidung können Sie jederzeit mit Wirkung für die Zukunft ändern. Widerrufen Sie Ihre Einwilligung, werden die von Google Analytics gesetzten Cookies gelöscht und es findet keine weitere Messung statt.</p>
+          {/* Der Widerruf gehoert direkt hierher, nicht nur in den Footer:
+              Impressum, AGB, Presse und Preise haben eigene Footer ohne den
+              Link — die Datenschutzseite verlinken sie aber alle. */}
+          <CookieSettingsLink style={{
+            fontSize:"15px",color:"#FF5C35",fontWeight:500,marginTop:"18px",
+            textDecoration:"underline",textUnderlineOffset:"3px",
+          }}/>
         </Section>
 
         <Section title="7. Ihre Rechte">

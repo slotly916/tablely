@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { openCookieSettings } from "@/components/CookieConsent";
 
 /* ============ HOOKS ============ */
 
@@ -581,69 +582,6 @@ function RegisterModal({ onClose, pilot }: { onClose: () => void; pilot: PilotSt
   );
 }
 
-/* ============ COOKIE BANNER ============ */
-
-function CookieBanner() {
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    try {
-      const choice = localStorage.getItem("tablely_cookie_consent");
-      if (!choice) setVisible(true);
-    } catch {
-      setVisible(true);
-    }
-  }, []);
-
-  function decide(value: "accepted" | "declined") {
-    try { localStorage.setItem("tablely_cookie_consent", value); } catch {}
-    setVisible(false);
-  }
-
-  if (!visible) return null;
-
-  return (
-    <div style={{position:"fixed",left:"20px",right:"20px",bottom:"20px",zIndex:600,display:"flex",justifyContent:"center",fontFamily:"var(--font-sans)",pointerEvents:"none"}}>
-      <div style={{
-        pointerEvents:"auto",
-        background:"var(--paper)",
-        border:"1px solid var(--border)",borderRadius:"20px",
-        boxShadow:"0 20px 60px rgba(26,26,46,.16)",padding:"22px 26px",
-        maxWidth:"720px",width:"100%",
-        display:"flex",alignItems:"center",gap:"24px",flexWrap:"wrap",
-      }}>
-        <div style={{flex:1,minWidth:"240px"}}>
-          <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"6px"}}>
-            <div style={{width:"22px",height:"22px",borderRadius:"7px",background:"rgba(255,92,53,.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="#FF5C35" strokeWidth="1.2"/><circle cx="4.5" cy="5" r=".8" fill="#FF5C35"/><circle cx="7.5" cy="7" r=".8" fill="#FF5C35"/><circle cx="5" cy="8" r=".6" fill="#FF5C35"/></svg>
-            </div>
-            <span style={{fontSize:"14px",fontWeight:600,color:"#1A1A2E"}}>Wir verwenden Cookies</span>
-          </div>
-          <p style={{fontSize:"13px",color:"var(--muted)",lineHeight:1.6,fontWeight:300}}>
-            Wir nutzen notwendige Cookies, damit die Seite funktioniert, sowie optionale Cookies um die Nutzung zu analysieren und Butlery zu verbessern. Du kannst selbst entscheiden. Mehr dazu in unserer{" "}
-            <a href="/datenschutz" style={{color:"#FF5C35",textDecoration:"none",fontWeight:500}}>Datenschutzerklärung</a>.
-          </p>
-        </div>
-        <div style={{display:"flex",gap:"10px",flexShrink:0}}>
-          <button onClick={()=>decide("declined")} className="btn-hover-light" style={{
-            background:"#fff",color:"#1A1A2E",border:"1px solid var(--border)",
-            padding:"11px 20px",borderRadius:"100px",fontSize:"13px",fontWeight:500,
-            cursor:"pointer",fontFamily:"inherit",transition:"all .2s",
-          }}>
-            Nur notwendige
-          </button>
-          <button onClick={()=>decide("accepted")} className="btn-hover-primary" style={{
-            background:"#FF5C35",color:"#fff",border:"none",
-            padding:"11px 22px",borderRadius:"100px",fontSize:"13px",fontWeight:500,
-            cursor:"pointer",fontFamily:"inherit",
-          }}>
-            Alle akzeptieren
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /* ============ PILOT-POPUP (automatisch beim Betreten) ============ */
 
@@ -1546,8 +1484,15 @@ export default function Home() {
                 loading="lazy"
                 decoding="async"
                 alt="Michael Kleinlercher beim Programmieren von Butlery"
+                /* height:auto ist hier PFLICHT, nicht Kosmetik. Die Attribute
+                   width/height oben stehen gegen Layout-Shift und wirken als
+                   Praesentations-Hinweis: ohne height:auto gewinnt height={874}
+                   gegen die CSS-Breite von 62% und zieht das Querformat auf
+                   874px Hoehe. Wer hier ein Bild mit fixen Attributen einsetzt,
+                   muss height:auto immer mitschreiben (das Portraet darueber
+                   hat es, deshalb steht nur dieses eine falsch). */
                 style={{
-                  position:"absolute",right:"-10px",bottom:0,width:"62%",
+                  position:"absolute",right:"-10px",bottom:0,width:"62%",height:"auto",
                   borderRadius:"14px",display:"block",
                   border:"7px solid var(--paper-alt)",
                   boxShadow:"0 18px 44px rgba(26,26,46,.18)",
@@ -1681,6 +1626,12 @@ export default function Home() {
             {[["Blog","/blog"],["Presse","/presse"],["KI-Transparenz","/ki-transparenz"],["Impressum","/impressum"],["Datenschutz","/datenschutz"],["AGB","/agb"]].map(([l,h])=>(
               <a key={h} href={h} className="nav-link" style={{fontSize:"12.5px",color:"var(--muted)",textDecoration:"none"}}>{l}</a>
             ))}
+            {/* Die Einwilligung muss so leicht widerrufbar sein, wie sie erteilt
+                wurde. Ohne diesen Einstieg gaebe es nach dem ersten Klick keinen
+                Weg zurueck — der Banner kommt dann nie wieder. */}
+            <button onClick={openCookieSettings} className="nav-link" style={{fontSize:"12.5px",color:"var(--muted)",background:"transparent",border:"none",padding:0,cursor:"pointer",fontFamily:"inherit"}}>
+              Cookie-Einstellungen
+            </button>
           </div>
           <p style={{fontSize:"12.5px",color:"var(--muted)"}}>© 2026 Butlery · Michael Kleinlercher e.U.</p>
         </div>
@@ -1701,7 +1652,8 @@ export default function Home() {
           onRegister={()=>{ dismissPilot(); setShowModal(true); }}
         />
       )}
-      <CookieBanner />
+      {/* Der Cookie-Banner steht jetzt im Root-Layout und gilt fuer alle
+          Seiten — hier stand er vorher doppelt gemoppelt nur fuer die Landing. */}
     </>
   );
 }

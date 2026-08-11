@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CookieSettingsLink } from "@/components/CookieConsent";
 
 // Gemeinsame Nav + Footer für die Unterseiten (Blog, KI-Transparenz).
 // Übernimmt das Landing-Design nach dem Slop-Fix: weisse Fläche, kühle Border,
@@ -53,6 +54,7 @@ export function SiteFooter() {
           {FOOTER_LINKS.map(([label, href]) => (
             <Link key={href} href={href} style={{ fontSize: "12.5px", color: "var(--muted)", textDecoration: "none" }}>{label}</Link>
           ))}
+          <CookieSettingsLink />
         </div>
         <p style={{ fontSize: "12.5px", color: "var(--muted)" }}>© 2026 Butlery · Michael Kleinlercher e.U.</p>
       </div>
