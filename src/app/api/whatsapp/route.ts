@@ -31,6 +31,15 @@ const GENERIC_DISCLOSURE = "Hallo, ich bin ein digitaler Reservierungsassistent.
 // Unterhaltung und bekommt die Kennzeichnung erneut.
 const RE_DISCLOSE_AFTER_HOURS = 24;
 
+// whatsapp_conversations.updated_at ist "timestamp without time zone": PostgREST
+// liefert den Wert OHNE Offset ("2026-08-12T18:05:08.763"). new Date() liest so
+// einen String als LOKALZEIT — auf Vercel (UTC) zufaellig richtig, auf einem
+// Rechner in Wien um zwei Stunden daneben. Gespeichert wird UTC
+// (new Date().toISOString()), also explizit als UTC parsen.
+function parseStamp(s: string): number {
+  return new Date(/(Z|[+-]\d{2}:?\d{2})$/.test(s) ? s : `${s}Z`).getTime();
+}
+
 type RestaurantRow = {
   id: string;
   name: string;
@@ -132,15 +141,15 @@ export async function POST(req: Request) {
 
   // Neue Konversation = noch keine Historie zu dieser Nummer, oder der letzte
   // Kontakt liegt laenger als RE_DISCLOSE_AFTER_HOURS zurueck. Steuert die
-  // KI-Kennzeichnung nach EU AI Act Art. 50. Fehlt der Zeitstempel, entscheidet
-  // allein die Historie (NaN-Vergleich ist false, also kein Fehlalarm).
-  const lastContact: string | null = conv?.updated_at || conv?.created_at || null;
-  const hoursSinceLastContact = lastContact
-    ? (Date.now() - new Date(lastContact).getTime()) / 3_600_000
-    : 0;
-  const isNewConversation = history.length === 0 || hoursSinceLastContact > RE_DISCLOSE_AFTER_HOURS;
+  // KI-Kennzeichnung nach EU AI Act Art. 50. Fehlt der Zeitstempel, wird
+  // gekennzeichnet: im Zweifel lieber einmal zu viel als die Pflicht verfehlen.
+  const lastContact: string | null = conv?.updated_at || null;
+  const hoursSinceLastContact = lastContact ? (Date.now() - parseStamp(lastContact)) / 3_600_000 : Infinity;
+  const isNewConversation = history.length === 0 || !(hoursSinceLastContact <= RE_DISCLOSE_AFTER_HOURS);
 
-  const AI_DISCLOSURE = `Hallo, ich bin der digitale Assistent von ${rest.name}.`;
+  // .trim(): mehrere Restaurantnamen haben ein Leerzeichen am Ende ("Alpengasthof "),
+  // sonst steht im Satz eine Luecke vor dem Punkt.
+  const AI_DISCLOSURE = `Hallo, ich bin der digitale Assistent von ${rest.name.trim()}.`;
 
   // EINZIGE Ausgangstuer fuer Nachrichten an den Gast ab hier. Bei der ersten
   // Interaktion traegt jede davon die Kennzeichnung — auch die fest verdrahteten
