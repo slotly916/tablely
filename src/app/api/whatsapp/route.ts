@@ -11,6 +11,26 @@ const WA_TOKEN = process.env.WHATSAPP_TOKEN!;
 const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID!;
 const GROQ_KEY = process.env.GROQ_API_KEY!;
 
+// ===== KI-KENNZEICHNUNG (EU AI Act Art. 50 Abs. 1) =====
+// Wer mit diesem Dienst schreibt, muss bei der ERSTEN Interaktion erfahren,
+// dass er mit einem KI-System schreibt. Die Pflicht darf nicht davon abhaengen,
+// ob das Sprachmodell eine Prompt-Regel befolgt oder welchen Antwortpfad der
+// Gast zufaellig trifft — deshalb laeuft JEDE ausgehende Nachricht durch reply()
+// bzw. traegt den generischen Hinweis.
+
+// Erkennt, ob eine Nachricht die Kennzeichnung bereits enthaelt (dann wird sie
+// nicht doppelt vorangestellt). \S* deckt Zusammensetzungen wie
+// "digitaler Reservierungsassistent" mit ab.
+const SELF_ID = /digitale[rn]?\s+\S*assistent|künstliche[rn]?\s+intelligenz|\bKI\b/i;
+
+// Fuer Antworten, die faellig werden bevor (oder weil) das Restaurant nicht
+// geladen werden konnte. Ohne Namen, weil es keinen gibt.
+const GENERIC_DISCLOSURE = "Hallo, ich bin ein digitaler Reservierungsassistent.";
+
+// Meldet sich ein Gast nach dieser Zeit wieder, beginnt praktisch eine neue
+// Unterhaltung und bekommt die Kennzeichnung erneut.
+const RE_DISCLOSE_AFTER_HOURS = 24;
+
 type RestaurantRow = {
   id: string;
   name: string;
@@ -72,7 +92,7 @@ export async function POST(req: Request) {
 
   if (restErr && restErr.code !== "PGRST116") {
     console.error("Restaurant laden fehlgeschlagen:", restErr);
-    await sendWhatsApp(from, "Entschuldigung, bei uns gibt es gerade eine technische Störung. Bitte versuch es in ein paar Minuten nochmal oder ruf uns direkt an.");
+    await sendWhatsApp(from, `${GENERIC_DISCLOSURE}\n\nEntschuldigung, bei uns gibt es gerade eine technische Störung. Bitte versuch es in ein paar Minuten nochmal oder ruf uns direkt an.`);
     return NextResponse.json({ ok: true });
   }
 
@@ -83,14 +103,14 @@ export async function POST(req: Request) {
       .from("restaurants").select("*").order("created_at", { ascending: true }).limit(1).single();
     if (fbErr && fbErr.code !== "PGRST116") {
       console.error("Fallback-Restaurant laden fehlgeschlagen:", fbErr);
-      await sendWhatsApp(from, "Entschuldigung, bei uns gibt es gerade eine technische Störung. Bitte versuch es in ein paar Minuten nochmal oder ruf uns direkt an.");
+      await sendWhatsApp(from, `${GENERIC_DISCLOSURE}\n\nEntschuldigung, bei uns gibt es gerade eine technische Störung. Bitte versuch es in ein paar Minuten nochmal oder ruf uns direkt an.`);
       return NextResponse.json({ ok: true });
     }
     restaurant = fallback;
   }
 
   if (!restaurant) {
-    await sendWhatsApp(from, "Entschuldigung, dieses Restaurant konnte nicht gefunden werden.");
+    await sendWhatsApp(from, `${GENERIC_DISCLOSURE}\n\nEntschuldigung, dieses Restaurant konnte nicht gefunden werden.`);
     return NextResponse.json({ ok: true });
   }
 
@@ -110,9 +130,29 @@ export async function POST(req: Request) {
 
   const history: { role: string; content: string }[] = conv?.messages || [];
 
-  // Neue Konversation = es gibt noch keine gespeicherte Historie zu dieser Nummer.
-  // Steuert die KI-Kennzeichnung nach EU AI Act Art. 50 (siehe unten).
-  const isNewConversation = history.length === 0;
+  // Neue Konversation = noch keine Historie zu dieser Nummer, oder der letzte
+  // Kontakt liegt laenger als RE_DISCLOSE_AFTER_HOURS zurueck. Steuert die
+  // KI-Kennzeichnung nach EU AI Act Art. 50. Fehlt der Zeitstempel, entscheidet
+  // allein die Historie (NaN-Vergleich ist false, also kein Fehlalarm).
+  const lastContact: string | null = conv?.updated_at || conv?.created_at || null;
+  const hoursSinceLastContact = lastContact
+    ? (Date.now() - new Date(lastContact).getTime()) / 3_600_000
+    : 0;
+  const isNewConversation = history.length === 0 || hoursSinceLastContact > RE_DISCLOSE_AFTER_HOURS;
+
+  const AI_DISCLOSURE = `Hallo, ich bin der digitale Assistent von ${rest.name}.`;
+
+  // EINZIGE Ausgangstuer fuer Nachrichten an den Gast ab hier. Bei der ersten
+  // Interaktion traegt jede davon die Kennzeichnung — auch die fest verdrahteten
+  // Bestaetigungs- und Fehlertexte weiter unten, die aiMessage gar nicht senden.
+  // Hat das Modell sich schon selbst vorgestellt, erkennt SELF_ID das und der
+  // Hinweis wird nicht doppelt gesetzt.
+  async function reply(msg: string) {
+    const out = isNewConversation && !SELF_ID.test(msg)
+      ? `${AI_DISCLOSURE}\n\n${msg}`
+      : msg;
+    await sendWhatsApp(from, out);
+  }
 
   // Öffnungszeiten
   const { data: hours, error: hoursErr } = await supabase
@@ -120,7 +160,7 @@ export async function POST(req: Request) {
 
   if (hoursErr) {
     console.error("Öffnungszeiten laden fehlgeschlagen:", hoursErr);
-    await sendWhatsApp(from, "Entschuldigung, ich kann gerade nicht auf unsere Öffnungszeiten zugreifen. Bitte versuch es in ein paar Minuten nochmal oder ruf uns direkt an.");
+    await reply("Entschuldigung, ich kann gerade nicht auf unsere Öffnungszeiten zugreifen. Bitte versuch es in ein paar Minuten nochmal oder ruf uns direkt an.");
     return NextResponse.json({ ok: true });
   }
 
@@ -177,10 +217,11 @@ KRITISCH — PERSONENZAHL PRÜFEN:
 
 4. Antworte immer auf Deutsch, kurz und freundlich — max 3 Sätze.
 5. Schreibe RESERVATION_DATA, LARGE_GROUP und CANCEL_RESERVATION immer exakt so — niemals auf Deutsch übersetzen.
+6. Antworte NIE mit einer leeren Nachricht: schreibe immer auch einen Satz für den Gast, nicht nur den Marker.
 
 KI-KENNZEICHNUNG (EU AI Act Art. 50 — verpflichtend):
 ${isNewConversation
-  ? `- Das hier ist die ERSTE Nachricht dieser Unterhaltung. Stelle dich zu Beginn deiner Antwort in einem kurzen Satz als digitaler Assistent vor, z.B.: "Hier ist der digitale Assistent vom ${rest.name}." Danach gehst du normal auf das Anliegen ein.`
+  ? `- Das hier ist die ERSTE Nachricht dieser Unterhaltung. Beginne deine Antwort mit genau diesem Satz: "${AI_DISCLOSURE}" Danach gehst du normal auf das Anliegen ein.`
   : `- Du hast dich in dieser Unterhaltung bereits als digitaler Assistent vorgestellt. Stelle dich NICHT erneut vor.`}
 - Gib dich niemals als Mensch aus. Fragt der Gast, ob er mit einem Menschen oder einer KI schreibt, sage ehrlich, dass du ein digitaler Assistent bist und das Restaurant persönlich erreichbar ist.`;
 
@@ -197,19 +238,11 @@ ${isNewConversation
   });
 
   const aiData = await aiResponse.json();
-  let aiMessage: string = aiData.choices?.[0]?.message?.content || "Entschuldigung, bitte versuch es nochmal.";
+  const aiMessage: string = aiData.choices?.[0]?.message?.content || "Entschuldigung, bitte versuch es nochmal.";
 
-  // EU AI Act Art. 50: Die Kennzeichnung darf nicht davon abhaengen, ob das
-  // Sprachmodell die Prompt-Regel befolgt. Bei der ersten Nachricht deshalb
-  // deterministisch pruefen und den Hinweis notfalls voranstellen.
-  // Voranstellen ist unkritisch: die RESERVATION_DATA/LARGE_GROUP/CANCEL-Marker
-  // werden weiter unten per Regex gesucht und bleiben davon unberuehrt.
-  const SELF_ID = /digitale[rn]?\s+(telefon)?assistent|künstliche[rn]?\s+intelligenz|\bKI\b/i;
-  if (isNewConversation && !SELF_ID.test(aiMessage)) {
-    aiMessage = `Hier ist der digitale Assistent vom ${rest.name}. ${aiMessage}`;
-  }
-
-  // History aktualisieren
+  // History bewusst OHNE vorangestellte Kennzeichnung speichern: sie ist reiner
+  // Modell-Output. Die Kennzeichnung setzt reply() beim Senden, damit die
+  // Leerprüfungen der Marker-Pfade unten nicht den Hinweis für Inhalt halten.
   const newHistory = [
     ...history,
     { role: "user", content: text },
@@ -218,12 +251,14 @@ ${isNewConversation
 
   // Historie ist nur Gedaechtnis — schlaegt das Speichern fehl, laeuft die
   // Buchung trotzdem weiter. Nur loggen, den Gast nicht damit behelligen.
+  // updated_at auch beim Insert setzen, sonst fehlt der Zeitstempel, an dem
+  // die erneute Kennzeichnung nach 24h haengt.
   const { error: histErr } = conv
     ? await supabase.from("whatsapp_conversations")
         .update({ messages: newHistory, updated_at: new Date().toISOString() })
         .eq("id", conv.id)
     : await supabase.from("whatsapp_conversations")
-        .insert([{ phone: from, restaurant_id: rest.id, messages: newHistory }]);
+        .insert([{ phone: from, restaurant_id: rest.id, messages: newHistory, updated_at: new Date().toISOString() }]);
 
   if (histErr) console.error("Konversation speichern fehlgeschlagen:", histErr);
 
@@ -245,7 +280,7 @@ ${isNewConversation
     // der Gast wuerde denken er sei storniert bzw. habe nie gebucht.
     if (findErr) {
       console.error("Reservierung zum Stornieren suchen fehlgeschlagen:", findErr);
-      await sendWhatsApp(from, "Entschuldigung, ich kann deine Reservierung gerade nicht abrufen. Deine Reservierung besteht weiterhin. Bitte ruf uns kurz an damit wir die Stornierung sicher erledigen.");
+      await reply("Entschuldigung, ich kann deine Reservierung gerade nicht abrufen. Deine Reservierung besteht weiterhin. Bitte ruf uns kurz an damit wir die Stornierung sicher erledigen.");
       return NextResponse.json({ ok: true });
     }
 
@@ -260,15 +295,15 @@ ${isNewConversation
 
       if (cancelErr) {
         console.error("Stornieren fehlgeschlagen:", cancelErr);
-        await sendWhatsApp(from, "Entschuldigung, die Stornierung hat gerade nicht geklappt — deine Reservierung besteht also weiterhin. Bitte ruf uns kurz an, dann erledigen wir das sofort für dich.");
+        await reply("Entschuldigung, die Stornierung hat gerade nicht geklappt — deine Reservierung besteht also weiterhin. Bitte ruf uns kurz an, dann erledigen wir das sofort für dich.");
         return NextResponse.json({ ok: true });
       }
 
       const cleanMsg = aiMessage.replace(/CANCEL_RESERVATION:\s*\{[^}]*\}/i, "").trim();
-      await sendWhatsApp(from, cleanMsg || `Deine Reservierung wurde storniert. Schade dass es diesmal nicht klappt — wir freuen uns auf deinen nächsten Besuch!`);
+      await reply(cleanMsg || `Deine Reservierung wurde storniert. Schade dass es diesmal nicht klappt — wir freuen uns auf deinen nächsten Besuch!`);
     } else {
       const cleanMsg = aiMessage.replace(/CANCEL_RESERVATION:\s*\{[^}]*\}/i, "").trim();
-      await sendWhatsApp(from, cleanMsg || `Ich konnte leider keine aktive Reservierung unter dieser Nummer finden. Falls du mit einer anderen Nummer gebucht hast, melde dich bitte direkt bei uns.`);
+      await reply(cleanMsg || `Ich konnte leider keine aktive Reservierung unter dieser Nummer finden. Falls du mit einer anderen Nummer gebucht hast, melde dich bitte direkt bei uns.`);
     }
     return NextResponse.json({ ok: true });
   }
@@ -292,13 +327,13 @@ ${isNewConversation
       }]);
       if (insErr) {
         console.error("Großgruppen-Anfrage speichern fehlgeschlagen:", insErr);
-        await sendWhatsApp(from, "Entschuldigung, deine Anfrage konnte gerade nicht gespeichert werden. Bitte ruf uns kurz an oder versuch es in ein paar Minuten nochmal — sonst geht deine Anfrage verloren.");
+        await reply("Entschuldigung, deine Anfrage konnte gerade nicht gespeichert werden. Bitte ruf uns kurz an oder versuch es in ein paar Minuten nochmal — sonst geht deine Anfrage verloren.");
         return NextResponse.json({ ok: true });
       }
-      await sendWhatsApp(from, `Vielen Dank für deine Anfrage, ${resData.name}! 🙏\n\nFür Gruppen ab ${resData.party_size} Personen meldet sich unser Team persönlich bei dir — wir prüfen die Verfügbarkeit und bestätigen deinen Wunschtermin so schnell wie möglich.\n\nWir freuen uns auf euch! 🍽️`);
+      await reply(`Vielen Dank für deine Anfrage, ${resData.name}! 🙏\n\nFür Gruppen ab ${resData.party_size} Personen meldet sich unser Team persönlich bei dir — wir prüfen die Verfügbarkeit und bestätigen deinen Wunschtermin so schnell wie möglich.\n\nWir freuen uns auf euch! 🍽️`);
     } catch (e) {
       console.error("Großgruppen-Anfrage verarbeiten fehlgeschlagen:", e);
-      await sendWhatsApp(from, "Entschuldigung, deine Anfrage konnte gerade nicht gespeichert werden. Bitte ruf uns kurz an oder versuch es in ein paar Minuten nochmal — sonst geht deine Anfrage verloren.");
+      await reply("Entschuldigung, deine Anfrage konnte gerade nicht gespeichert werden. Bitte ruf uns kurz an oder versuch es in ein paar Minuten nochmal — sonst geht deine Anfrage verloren.");
     }
     return NextResponse.json({ ok: true });
   }
@@ -322,7 +357,7 @@ ${isNewConversation
 
       if (exErr) {
         console.error("Belegung laden fehlgeschlagen:", exErr);
-        await sendWhatsApp(from, "Entschuldigung, ich kann die Tischverfügbarkeit gerade nicht prüfen. Bitte versuch es in ein paar Minuten nochmal oder ruf uns direkt an.");
+        await reply("Entschuldigung, ich kann die Tischverfügbarkeit gerade nicht prüfen. Bitte versuch es in ein paar Minuten nochmal oder ruf uns direkt an.");
         return NextResponse.json({ ok: true });
       }
 
@@ -334,7 +369,7 @@ ${isNewConversation
 
       if (tblErr) {
         console.error("Tische laden fehlgeschlagen:", tblErr);
-        await sendWhatsApp(from, "Entschuldigung, ich kann die Tischverfügbarkeit gerade nicht prüfen. Bitte versuch es in ein paar Minuten nochmal oder ruf uns direkt an.");
+        await reply("Entschuldigung, ich kann die Tischverfügbarkeit gerade nicht prüfen. Bitte versuch es in ein paar Minuten nochmal oder ruf uns direkt an.");
         return NextResponse.json({ ok: true });
       }
 
@@ -400,10 +435,10 @@ ${isNewConversation
         }]);
         if (pendErr) {
           console.error("Pending-Reservierung speichern fehlgeschlagen:", pendErr);
-          await sendWhatsApp(from, "Entschuldigung, deine Anfrage konnte gerade nicht gespeichert werden. Bitte ruf uns kurz an oder versuch es in ein paar Minuten nochmal — sonst geht deine Anfrage verloren.");
+          await reply("Entschuldigung, deine Anfrage konnte gerade nicht gespeichert werden. Bitte ruf uns kurz an oder versuch es in ein paar Minuten nochmal — sonst geht deine Anfrage verloren.");
           return NextResponse.json({ ok: true });
         }
-        await sendWhatsApp(from, `Hallo ${resData.name}! 🙏\n\nLeider sind zu dieser Zeit keine passenden Tische frei. Unser Team prüft das und meldet sich bei dir mit Alternativen.\n\nVielen Dank für deine Geduld!`);
+        await reply(`Hallo ${resData.name}! 🙏\n\nLeider sind zu dieser Zeit keine passenden Tische frei. Unser Team prüft das und meldet sich bei dir mit Alternativen.\n\nVielen Dank für deine Geduld!`);
       } else {
         // Tisch(e) zuweisen — confirmed
         const { error: confErr } = await supabase.from("reservations").insert([{
@@ -422,21 +457,25 @@ ${isNewConversation
         // der Gast wuerde ohne Reservierung vor der Tuer stehen.
         if (confErr) {
           console.error("Reservierung speichern fehlgeschlagen:", confErr);
-          await sendWhatsApp(from, "Entschuldigung, deine Reservierung konnte gerade nicht gespeichert werden — sie ist also noch NICHT bestätigt. Bitte ruf uns kurz an oder versuch es in ein paar Minuten nochmal.");
+          await reply("Entschuldigung, deine Reservierung konnte gerade nicht gespeichert werden — sie ist also noch NICHT bestätigt. Bitte ruf uns kurz an oder versuch es in ein paar Minuten nochmal.");
           return NextResponse.json({ ok: true });
         }
-        await sendWhatsApp(from, aiMessage.replace(/RESERVATION_DATA:\s*\{[^}]+\}/i, "").trim());
+        // Fallback, falls das Modell nur den Marker und keinen Satz geschrieben
+        // hat: eine leere WhatsApp-Nachricht wird von der API abgelehnt, der
+        // Gast bekaeme trotz gespeicherter Buchung gar nichts.
+        const cleanMsg = aiMessage.replace(/RESERVATION_DATA:\s*\{[^}]+\}/i, "").trim();
+        await reply(cleanMsg || `Deine Reservierung ist bestätigt: ${resData.date} um ${resData.time} Uhr für ${party} Personen. Wir freuen uns auf dich!`);
       }
     } catch (e) {
       // Vorher wurde hier die KI-Bestaetigung gesendet — obwohl gar nichts
       // gespeichert war. Der Gast muss wissen dass die Buchung offen ist.
       console.error("Reservierung verarbeiten fehlgeschlagen:", e);
-      await sendWhatsApp(from, "Entschuldigung, bei der Reservierung ist etwas schiefgelaufen — sie ist noch NICHT bestätigt. Bitte ruf uns kurz an oder versuch es in ein paar Minuten nochmal.");
+      await reply("Entschuldigung, bei der Reservierung ist etwas schiefgelaufen — sie ist noch NICHT bestätigt. Bitte ruf uns kurz an oder versuch es in ein paar Minuten nochmal.");
     }
     return NextResponse.json({ ok: true });
   }
 
-  await sendWhatsApp(from, aiMessage);
+  await reply(aiMessage);
   return NextResponse.json({ ok: true });
 }
 
