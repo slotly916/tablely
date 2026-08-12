@@ -12,32 +12,54 @@ const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID!;
 const GROQ_KEY = process.env.GROQ_API_KEY!;
 
 // ===== KI-KENNZEICHNUNG (EU AI Act Art. 50 Abs. 1) =====
-// Wer mit diesem Dienst schreibt, muss bei der ERSTEN Interaktion erfahren,
-// dass er mit einem KI-System schreibt. Die Pflicht darf nicht davon abhaengen,
-// ob das Sprachmodell eine Prompt-Regel befolgt oder welchen Antwortpfad der
-// Gast zufaellig trifft — deshalb laeuft JEDE ausgehende Nachricht durch reply()
-// bzw. traegt den generischen Hinweis.
+// Wer mit diesem Dienst schreibt, muss erfahren, dass er mit einem KI-System
+// schreibt. Bewusste Entscheidung des Betreibers: der Hinweis steht in JEDER
+// Nachricht, nicht nur in der ersten. Das geht ueber die Pflicht hinaus und
+// macht die Frage, ob eine Unterhaltung "neu" ist, gegenstandslos.
+// Die Pflicht darf nicht davon abhaengen, ob das Sprachmodell eine Prompt-Regel
+// befolgt oder welchen Antwortpfad der Gast trifft — deshalb laeuft JEDE
+// ausgehende Nachricht durch reply() bzw. traegt den generischen Hinweis.
 
-// Erkennt, ob eine Nachricht die Kennzeichnung bereits enthaelt (dann wird sie
-// nicht doppelt vorangestellt). \S* deckt Zusammensetzungen wie
-// "digitaler Reservierungsassistent" mit ab.
+// Sicherung gegen Dopplung: erkennt eine Selbstvorstellung AM ANFANG der
+// Nachricht. Bewusst nur auf den Anfang angewendet (siehe reply) — sonst wuerde
+// ein beilaeufiges "KI" mitten im Text die Kennzeichnung unterdruecken.
+// \S* deckt Zusammensetzungen wie "digitaler Reservierungsassistent" mit ab.
 const SELF_ID = /digitale[rn]?\s+\S*assistent|künstliche[rn]?\s+intelligenz|\bKI\b/i;
 
 // Fuer Antworten, die faellig werden bevor (oder weil) das Restaurant nicht
 // geladen werden konnte. Ohne Namen, weil es keinen gibt.
 const GENERIC_DISCLOSURE = "Hallo, ich bin ein digitaler Reservierungsassistent.";
 
-// Meldet sich ein Gast nach dieser Zeit wieder, beginnt praktisch eine neue
-// Unterhaltung und bekommt die Kennzeichnung erneut.
-const RE_DISCLOSE_AFTER_HOURS = 24;
+// ===== TEXTBAUSTEINE FUER DEN GAST =====
+// Datum und Uhrzeit werden fuer den Gast IMMER hier formatiert, nie vom
+// Sprachmodell formuliert: der bestaetigte Termin muss Wort fuer Wort dem
+// entsprechen, was in der Datenbank steht.
+function formatDateDe(iso: string): string {
+  // Mittags ansetzen, damit keine Zeitzone das Datum auf den Vortag zieht.
+  const d = new Date(`${iso}T12:00:00`);
+  if (isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("de-AT", { weekday: "long", day: "numeric", month: "long" });
+}
 
-// whatsapp_conversations.updated_at ist "timestamp without time zone": PostgREST
-// liefert den Wert OHNE Offset ("2026-08-12T18:05:08.763"). new Date() liest so
-// einen String als LOKALZEIT — auf Vercel (UTC) zufaellig richtig, auf einem
-// Rechner in Wien um zwei Stunden daneben. Gespeichert wird UTC
-// (new Date().toISOString()), also explizit als UTC parsen.
-function parseStamp(s: string): number {
-  return new Date(/(Z|[+-]\d{2}:?\d{2})$/.test(s) ? s : `${s}Z`).getTime();
+function formatTimeDe(time: string): string {
+  const m = String(time).match(/^(\d{1,2}):(\d{2})/);
+  return m ? `${m[1].padStart(2, "0")}:${m[2]}` : String(time);
+}
+
+function guests(n: number): string {
+  return n === 1 ? "1 Person" : `${n} Personen`;
+}
+
+// "Servus Max Muster!" — ohne Namen bleibt es bei "Servus!".
+function greet(name?: string | null): string {
+  const clean = (name || "").trim();
+  return clean ? `Servus ${clean}!` : "Servus!";
+}
+
+// Grussformel unter abschliessende Nachrichten (Bestaetigung, Storno, Absage).
+// Nicht unter Rueckfragen, sonst wirkt jede Zwischenfrage wie ein Briefende.
+function signOff(restaurantName: string): string {
+  return `\n\nLiebe Grüße\n${restaurantName}`;
 }
 
 type RestaurantRow = {
@@ -139,28 +161,20 @@ export async function POST(req: Request) {
 
   const history: { role: string; content: string }[] = conv?.messages || [];
 
-  // Neue Konversation = noch keine Historie zu dieser Nummer, oder der letzte
-  // Kontakt liegt laenger als RE_DISCLOSE_AFTER_HOURS zurueck. Steuert die
-  // KI-Kennzeichnung nach EU AI Act Art. 50. Fehlt der Zeitstempel, wird
-  // gekennzeichnet: im Zweifel lieber einmal zu viel als die Pflicht verfehlen.
-  const lastContact: string | null = conv?.updated_at || null;
-  const hoursSinceLastContact = lastContact ? (Date.now() - parseStamp(lastContact)) / 3_600_000 : Infinity;
-  const isNewConversation = history.length === 0 || !(hoursSinceLastContact <= RE_DISCLOSE_AFTER_HOURS);
-
   // .trim(): mehrere Restaurantnamen haben ein Leerzeichen am Ende ("Alpengasthof "),
   // sonst steht im Satz eine Luecke vor dem Punkt.
-  const AI_DISCLOSURE = `Hallo, ich bin der digitale Assistent von ${rest.name.trim()}.`;
+  const restaurantName = rest.name.trim();
+  const AI_DISCLOSURE = `Hallo, ich bin der digitale Assistent von ${restaurantName}.`;
 
-  // EINZIGE Ausgangstuer fuer Nachrichten an den Gast ab hier. Bei der ersten
-  // Interaktion traegt jede davon die Kennzeichnung — auch die fest verdrahteten
+  // EINZIGE Ausgangstuer fuer Nachrichten an den Gast ab hier. JEDE Nachricht
+  // traegt die Kennzeichnung als erste Zeile — auch die fest verdrahteten
   // Bestaetigungs- und Fehlertexte weiter unten, die aiMessage gar nicht senden.
-  // Hat das Modell sich schon selbst vorgestellt, erkennt SELF_ID das und der
-  // Hinweis wird nicht doppelt gesetzt.
+  // Der SELF_ID-Test laeuft nur ueber den Anfang der Nachricht: er soll eine
+  // Selbstvorstellung des Modells abfangen, aber ein beilaeufiges "KI" weiter
+  // hinten im Text darf die Kennzeichnung nicht verschlucken.
   async function reply(msg: string) {
-    const out = isNewConversation && !SELF_ID.test(msg)
-      ? `${AI_DISCLOSURE}\n\n${msg}`
-      : msg;
-    await sendWhatsApp(from, out);
+    const alreadyDisclosed = SELF_ID.test(msg.slice(0, 120));
+    await sendWhatsApp(from, alreadyDisclosed ? msg : `${AI_DISCLOSURE}\n\n${msg}`);
   }
 
   // Öffnungszeiten
@@ -187,7 +201,7 @@ export async function POST(req: Request) {
     ? "Haustiere erlaubt: ja — Gäste dürfen ihren Hund oder ein anderes Haustier mitbringen. Sag das freundlich zu, wenn jemand danach fragt."
     : "Haustiere erlaubt: nein — Haustiere können leider nicht mitgebracht werden (Assistenzhunde ausgenommen, das klärt das Team persönlich). Sag das höflich, wenn jemand danach fragt.";
 
-  const systemPrompt = `Du bist der freundliche Reservierungsassistent von "${rest.name}" in Österreich.
+  const systemPrompt = `Du bist der freundliche Reservierungsassistent von "${restaurantName}" in Österreich.
 Heute ist ${todayStr} (${today.toISOString().split("T")[0]}).
 
 Öffnungszeiten:
@@ -228,10 +242,14 @@ KRITISCH — PERSONENZAHL PRÜFEN:
 5. Schreibe RESERVATION_DATA, LARGE_GROUP und CANCEL_RESERVATION immer exakt so — niemals auf Deutsch übersetzen.
 6. Antworte NIE mit einer leeren Nachricht: schreibe immer auch einen Satz für den Gast, nicht nur den Marker.
 
+TON UND ANREDE:
+- Sprich den Gast mit "Servus" und seinem Namen an, sobald du den Namen kennst: "Servus Max Muster!" Kennst du ihn noch nicht, reicht "Servus!".
+- Schreibe wie ein Gastgeber: ganze, flüssige Sätze, herzlich und direkt. Keine Stichpunkte, keine Formularsprache, keine Emojis.
+- Duze den Gast durchgehend.
+- Beispiel für den Ton einer Rückfrage: "Servus Max Muster! Für wie viele Personen darf ich den Tisch reservieren?"
+
 KI-KENNZEICHNUNG (EU AI Act Art. 50 — verpflichtend):
-${isNewConversation
-  ? `- Das hier ist die ERSTE Nachricht dieser Unterhaltung. Beginne deine Antwort mit genau diesem Satz: "${AI_DISCLOSURE}" Danach gehst du normal auf das Anliegen ein.`
-  : `- Du hast dich in dieser Unterhaltung bereits als digitaler Assistent vorgestellt. Stelle dich NICHT erneut vor.`}
+- Der Hinweis "${AI_DISCLOSURE}" wird jeder Nachricht automatisch vorangestellt. Schreibe ihn NICHT selbst, sonst steht er doppelt da. Beginne direkt mit der Anrede.
 - Gib dich niemals als Mensch aus. Fragt der Gast, ob er mit einem Menschen oder einer KI schreibt, sage ehrlich, dass du ein digitaler Assistent bist und das Restaurant persönlich erreichbar ist.`;
 
   const messages = [
@@ -260,8 +278,6 @@ ${isNewConversation
 
   // Historie ist nur Gedaechtnis — schlaegt das Speichern fehl, laeuft die
   // Buchung trotzdem weiter. Nur loggen, den Gast nicht damit behelligen.
-  // updated_at auch beim Insert setzen, sonst fehlt der Zeitstempel, an dem
-  // die erneute Kennzeichnung nach 24h haengt.
   const { error: histErr } = conv
     ? await supabase.from("whatsapp_conversations")
         .update({ messages: newHistory, updated_at: new Date().toISOString() })
@@ -289,7 +305,7 @@ ${isNewConversation
     // der Gast wuerde denken er sei storniert bzw. habe nie gebucht.
     if (findErr) {
       console.error("Reservierung zum Stornieren suchen fehlgeschlagen:", findErr);
-      await reply("Entschuldigung, ich kann deine Reservierung gerade nicht abrufen. Deine Reservierung besteht weiterhin. Bitte ruf uns kurz an damit wir die Stornierung sicher erledigen.");
+      await reply("Entschuldigung, ich kann deine Reservierung gerade nicht abrufen. Sie besteht also weiterhin. Bitte ruf kurz im Restaurant an, damit die Stornierung sicher erledigt wird.");
       return NextResponse.json({ ok: true });
     }
 
@@ -304,15 +320,23 @@ ${isNewConversation
 
       if (cancelErr) {
         console.error("Stornieren fehlgeschlagen:", cancelErr);
-        await reply("Entschuldigung, die Stornierung hat gerade nicht geklappt — deine Reservierung besteht also weiterhin. Bitte ruf uns kurz an, dann erledigen wir das sofort für dich.");
+        await reply("Entschuldigung, die Stornierung hat gerade nicht geklappt, deine Reservierung besteht also weiterhin. Bitte ruf kurz an, dann wird das sofort für dich erledigt.");
         return NextResponse.json({ ok: true });
       }
 
-      const cleanMsg = aiMessage.replace(/CANCEL_RESERVATION:\s*\{[^}]*\}/i, "").trim();
-      await reply(cleanMsg || `Deine Reservierung wurde storniert. Schade dass es diesmal nicht klappt — wir freuen uns auf deinen nächsten Besuch!`);
+      // Storno-Bestaetigung deterministisch: der Gast muss schwarz auf weiss
+      // sehen, WELCHER Termin storniert wurde, und der kommt aus der Datenbank.
+      await reply(
+        `${greet(target.guest_name)} Deine Reservierung am ${formatDateDe(target.date)} um ${formatTimeDe(target.time)} Uhr für ${guests(target.party_size)} ist storniert. ` +
+        `Schade, dass es diesmal nicht klappt. Wir freuen uns auf deinen nächsten Besuch.` +
+        signOff(restaurantName)
+      );
     } else {
-      const cleanMsg = aiMessage.replace(/CANCEL_RESERVATION:\s*\{[^}]*\}/i, "").trim();
-      await reply(cleanMsg || `Ich konnte leider keine aktive Reservierung unter dieser Nummer finden. Falls du mit einer anderen Nummer gebucht hast, melde dich bitte direkt bei uns.`);
+      await reply(
+        `Ich konnte unter dieser Nummer leider keine aktive Reservierung finden. ` +
+        `Falls du mit einer anderen Nummer gebucht hast, melde dich bitte direkt im Restaurant, dann wird das sofort erledigt.` +
+        signOff(restaurantName)
+      );
     }
     return NextResponse.json({ ok: true });
   }
@@ -336,13 +360,18 @@ ${isNewConversation
       }]);
       if (insErr) {
         console.error("Großgruppen-Anfrage speichern fehlgeschlagen:", insErr);
-        await reply("Entschuldigung, deine Anfrage konnte gerade nicht gespeichert werden. Bitte ruf uns kurz an oder versuch es in ein paar Minuten nochmal — sonst geht deine Anfrage verloren.");
+        await reply("Entschuldigung, deine Anfrage konnte gerade nicht gespeichert werden, sie ist also noch nicht angekommen. Bitte ruf kurz im Restaurant an oder versuch es in ein paar Minuten nochmal.");
         return NextResponse.json({ ok: true });
       }
-      await reply(`Vielen Dank für deine Anfrage, ${resData.name}! 🙏\n\nFür Gruppen ab ${resData.party_size} Personen meldet sich unser Team persönlich bei dir — wir prüfen die Verfügbarkeit und bestätigen deinen Wunschtermin so schnell wie möglich.\n\nWir freuen uns auf euch! 🍽️`);
+      await reply(
+        `${greet(resData.name)} Vielen Dank für deine Anfrage am ${formatDateDe(resData.date)} um ${formatTimeDe(resData.time)} Uhr für ${guests(resData.party_size)}. ` +
+        `Bei einer Gruppe dieser Größe schaut sich das Team den Termin persönlich an und bestätigt dir die Reservierung so schnell wie möglich. ` +
+        `Wir freuen uns auf euch.` +
+        signOff(restaurantName)
+      );
     } catch (e) {
       console.error("Großgruppen-Anfrage verarbeiten fehlgeschlagen:", e);
-      await reply("Entschuldigung, deine Anfrage konnte gerade nicht gespeichert werden. Bitte ruf uns kurz an oder versuch es in ein paar Minuten nochmal — sonst geht deine Anfrage verloren.");
+      await reply("Entschuldigung, deine Anfrage konnte gerade nicht gespeichert werden, sie ist also noch nicht angekommen. Bitte ruf kurz im Restaurant an oder versuch es in ein paar Minuten nochmal.");
     }
     return NextResponse.json({ ok: true });
   }
@@ -444,10 +473,14 @@ ${isNewConversation
         }]);
         if (pendErr) {
           console.error("Pending-Reservierung speichern fehlgeschlagen:", pendErr);
-          await reply("Entschuldigung, deine Anfrage konnte gerade nicht gespeichert werden. Bitte ruf uns kurz an oder versuch es in ein paar Minuten nochmal — sonst geht deine Anfrage verloren.");
+          await reply("Entschuldigung, deine Anfrage konnte gerade nicht gespeichert werden, sie ist also noch nicht angekommen. Bitte ruf kurz im Restaurant an oder versuch es in ein paar Minuten nochmal.");
           return NextResponse.json({ ok: true });
         }
-        await reply(`Hallo ${resData.name}! 🙏\n\nLeider sind zu dieser Zeit keine passenden Tische frei. Unser Team prüft das und meldet sich bei dir mit Alternativen.\n\nVielen Dank für deine Geduld!`);
+        await reply(
+          `${greet(resData.name)} Am ${formatDateDe(resData.date)} um ${formatTimeDe(resData.time)} Uhr ist für ${guests(party)} leider kein passender Tisch mehr frei. ` +
+          `Das Team schaut sich das an und meldet sich mit Alternativen bei dir.` +
+          signOff(restaurantName)
+        );
       } else {
         // Tisch(e) zuweisen — confirmed
         const { error: confErr } = await supabase.from("reservations").insert([{
@@ -466,25 +499,35 @@ ${isNewConversation
         // der Gast wuerde ohne Reservierung vor der Tuer stehen.
         if (confErr) {
           console.error("Reservierung speichern fehlgeschlagen:", confErr);
-          await reply("Entschuldigung, deine Reservierung konnte gerade nicht gespeichert werden — sie ist also noch NICHT bestätigt. Bitte ruf uns kurz an oder versuch es in ein paar Minuten nochmal.");
+          await reply("Entschuldigung, deine Reservierung konnte gerade nicht gespeichert werden, sie ist also noch NICHT bestätigt. Bitte ruf kurz im Restaurant an oder versuch es in ein paar Minuten nochmal.");
           return NextResponse.json({ ok: true });
         }
-        // Fallback, falls das Modell nur den Marker und keinen Satz geschrieben
-        // hat: eine leere WhatsApp-Nachricht wird von der API abgelehnt, der
-        // Gast bekaeme trotz gespeicherter Buchung gar nichts.
-        const cleanMsg = aiMessage.replace(/RESERVATION_DATA:\s*\{[^}]+\}/i, "").trim();
-        await reply(cleanMsg || `Deine Reservierung ist bestätigt: ${resData.date} um ${resData.time} Uhr für ${party} Personen. Wir freuen uns auf dich!`);
+        // Die Bestaetigung wird bewusst NICHT vom Sprachmodell uebernommen,
+        // sondern aus den gespeicherten Daten gebaut. Das Modell hat schon
+        // Wochentage und Uhrzeiten verwechselt, und dieser Satz ist der, auf
+        // den sich der Gast verlaesst. Er muss der Datenbank entsprechen.
+        await reply(
+          `${greet(resData.name)} Gerne bestätige ich deine Reservierung am ${formatDateDe(resData.date)} um ${formatTimeDe(resData.time)} Uhr für ${guests(party)}. ` +
+          `Wir freuen uns auf dein Kommen.` +
+          signOff(restaurantName)
+        );
       }
     } catch (e) {
       // Vorher wurde hier die KI-Bestaetigung gesendet — obwohl gar nichts
       // gespeichert war. Der Gast muss wissen dass die Buchung offen ist.
       console.error("Reservierung verarbeiten fehlgeschlagen:", e);
-      await reply("Entschuldigung, bei der Reservierung ist etwas schiefgelaufen — sie ist noch NICHT bestätigt. Bitte ruf uns kurz an oder versuch es in ein paar Minuten nochmal.");
+      await reply("Entschuldigung, bei der Reservierung ist etwas schiefgelaufen, sie ist noch NICHT bestätigt. Bitte ruf kurz im Restaurant an oder versuch es in ein paar Minuten nochmal.");
     }
     return NextResponse.json({ ok: true });
   }
 
-  await reply(aiMessage);
+  // Normale Antwort ohne Marker. Sicherheitsnetz: schreibt das Modell einen
+  // Marker mit kaputtem JSON, greift oben keine Regex und der Rohtext
+  // "RESERVATION_DATA:{..." landete bisher ungefiltert beim Gast.
+  const cleaned = aiMessage
+    .replace(/\b(RESERVATION_DATA|LARGE_GROUP|CANCEL_RESERVATION)\s*:\s*\{[^}]*\}?/gi, "")
+    .trim();
+  await reply(cleaned || "Entschuldigung, da ist mir gerade etwas durcheinandergekommen. Magst du mir Datum, Uhrzeit und Personenzahl nochmal schreiben?");
   return NextResponse.json({ ok: true });
 }
 
